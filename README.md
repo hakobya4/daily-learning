@@ -4,9 +4,15 @@ Daily practice covering SQL, Unix/shell, Python, ABAP/RAP, and other CS
 fundamentals while studying Computer Science (Seneca Polytechnic) and
 job-hunting for junior developer roles.
 
-Each entry under `topics/<topic>/` is a small, real, working exercise —
-not filler — written the day it's committed. `LOG.md` at the repo root
-tracks what was built and when.
+## How this repo works
+
+Each day, a new exercise is *posed* under `topics/<topic>/` — a problem
+statement, function signatures/stubs, and a test suite that currently
+fails (usually via `NotImplementedError`). Nothing is pre-solved.
+
+The actual learning happens when I sit down, implement the solution
+myself until the tests pass, and commit + push it myself. `LOG.md`
+tracks whether an entry is still "posed" (unsolved) or has been solved.
 
 ## Topics rotated
 

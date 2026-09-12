@@ -1,1 +1,1 @@
-- 2026-09-12 — python — Implemented iterative and recursive binary search (O(log n)) with a small hand-rolled test suite covering empty/single-element lists, boundary targets, misses, and duplicates.
+- 2026-09-12 — python — Posed: implement binary search (iterative + recursive), O(log n), with tests provided but unsolved. To be solved and pushed by Narek.
