@@ -4,30 +4,30 @@
 -- Load it with: sqlite3 practice.db < schema.sql
 -- (sqlite3 ships with macOS by default, no install needed.)
 
-DROP TABLE IF EXISTS orders;
-DROP TABLE IF EXISTS customers;
+DROP TABLE IF EXISTS orders_sql;
+DROP TABLE IF EXISTS customers_sql;
 
-CREATE TABLE customers (
+CREATE TABLE customers_sql (
     id      INTEGER PRIMARY KEY,
     name    TEXT NOT NULL,
     city    TEXT NOT NULL
 );
 
-CREATE TABLE orders (
+CREATE TABLE orders_sql (
     id            INTEGER PRIMARY KEY,
-    customer_id   INTEGER NOT NULL REFERENCES customers(id),
+    customer_id   INTEGER NOT NULL REFERENCES customers_sql(id),
     order_date    TEXT NOT NULL,   -- 'YYYY-MM-DD'
     amount        REAL NOT NULL
 );
 
-INSERT INTO customers (id, name, city) VALUES
+INSERT INTO customers_sql (id, name, city) VALUES
     (1, 'Alice', 'Toronto'),
     (2, 'Bob',   'Toronto'),
     (3, 'Carol', 'Vancouver'),
     (4, 'Dave',  'Montreal'),
     (5, 'Erin',  'Toronto');   -- note: Erin has never ordered anything
 
-INSERT INTO orders (id, customer_id, order_date, amount) VALUES
+INSERT INTO orders_sql (id, customer_id, order_date, amount) VALUES
     (1, 1, '2026-01-05', 120.50),
     (2, 1, '2026-03-12', 45.00),
     (3, 2, '2026-02-20', 300.00),
