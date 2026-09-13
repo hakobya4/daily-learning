@@ -1,1 +1,3 @@
 - 2026-09-12 — python — Posed: implement binary search (iterative + recursive), O(log n), with tests provided but unsolved. To be solved and pushed by Narek.
+- 2026-09-12 — python — Solved by Narek: implemented iterative and recursive binary search himself; pushed to GitHub (hakobya4/daily-learning).
+- 2026-09-13 — sql — Posed: 5 unsolved queries over a small customers/orders schema covering INNER JOIN vs LEFT JOIN, GROUP BY + aggregation, NULL-based anti-joins, and a subquery/CTE comparison against an AVG(). Expected results given for self-checking; no solutions provided.
