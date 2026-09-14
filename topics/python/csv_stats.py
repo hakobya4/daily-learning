@@ -28,11 +28,27 @@ Run: python3 csv_stats.py
 import csv
 import io
 
+sample_csv = "name,score\nAlice,10\nBob,20\nCarol,30\n"
+rows = list(csv.DictReader(io.StringIO(sample_csv)))
+
+print(rows)  
 
 def summarize(rows: list[dict], column: str) -> dict:
     # TODO: extract `column` from each row, cast to float, and compute
     # min/max/mean. Raise ValueError if `rows` is empty.
-    raise NotImplementedError
+    if not rows:
+        raise ValueError("rows cannot be empty")
+    
+    values = []
+    for row in rows:
+        values.append(float(row[column]))
+
+
+    return {
+        "min": min(values),
+        "max": max(values),
+        "mean": sum(values) / len(values)
+    }
 
 
 def _run_tests() -> None:
