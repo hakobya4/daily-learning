@@ -23,9 +23,26 @@ Run: python3 flatten_nested_list.py
 
 
 def flatten(nested: list) -> list:
-    # TODO: walk `nested`; for each element, if it's a list, recurse
-    # and extend the result with what comes back, otherwise append it.
-    raise NotImplementedError
+    result = []
+    for element in nested:
+        if isinstance(element, list):
+            result.extend(flatten(element))
+        else:
+            result.append(element)
+    return result
+
+
+def flatten_iterative(nested: list) -> list:
+    """Second version: explicit stack instead of recursion."""
+    result = []
+    stack = list(reversed(nested))
+    while stack:
+        element = stack.pop()
+        if isinstance(element, list):
+            stack.extend(reversed(element))
+        else:
+            result.append(element)
+    return result
 
 
 def _run_tests() -> None:
@@ -39,6 +56,10 @@ def _run_tests() -> None:
     for nested, expected in cases:
         got = flatten(nested)
         assert got == expected, f"flatten({nested!r}) -> {got!r}, expected {expected!r}"
+        got_iter = flatten_iterative(nested)
+        assert got_iter == expected, (
+            f"flatten_iterative({nested!r}) -> {got_iter!r}, expected {expected!r}"
+        )
     print("All flatten_nested_list tests passed.")
 
 
