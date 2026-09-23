@@ -30,20 +30,20 @@ class Stack:
         self._items = []
 
     def push(self, value) -> None:
-        # TODO
-        raise NotImplementedError
+        self._items.append(value)
 
     def pop(self):
-        # TODO: raise IndexError if empty
-        raise NotImplementedError
+        if self.is_empty():
+            raise IndexError("pop from empty stack")
+        return self._items.pop()
 
     def peek(self):
-        # TODO: raise IndexError if empty
-        raise NotImplementedError
+        if self.is_empty():
+            raise IndexError("peek at empty stack")
+        return self._items[-1]
 
     def is_empty(self) -> bool:
-        # TODO
-        raise NotImplementedError
+        return len(self._items) == 0
 
 
 class Queue:
@@ -51,16 +51,15 @@ class Queue:
         self._items = []
 
     def enqueue(self, value) -> None:
-        # TODO
-        raise NotImplementedError
+        self._items.append(value)
 
     def dequeue(self):
-        # TODO: raise IndexError if empty
-        raise NotImplementedError
+        if self.is_empty():
+            raise IndexError("dequeue from empty queue")
+        return self._items.pop(0)
 
     def is_empty(self) -> bool:
-        # TODO
-        raise NotImplementedError
+        return len(self._items) == 0
 
 
 def _run_tests() -> None:

@@ -22,6 +22,4 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-# TODO: replace this line with your implementation.
-echo "not implemented" >&2
-exit 1
+awk '!seen[$0]++' "$1"

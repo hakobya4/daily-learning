@@ -24,4 +24,18 @@ signal to employers than two reps in the same codebase.
 
 ## WHAT I DID (fill in once you've acted)
 
-TODO: which issue, what you did, and a link to your PR/comment once it exists.
+Not done yet, and not something the automation can do on your behalf --
+this task means actually browsing GitHub with your own account,
+picking a real issue that's still open and unclaimed right now, and
+posting a genuine PR or comment under your own name. Day 2's Task 10
+already has a short list of vetted "good first issue" candidates
+(Python, `label:"good first issue" state:open`) that are still fair
+game if none of them got claimed since -- worth a quick recheck before
+starting a fresh search. For variety, also worth searching a language
+or framework you haven't used yet in these reps: swap `language:python`
+for e.g. `language:typescript` or `language:go` in
+https://github.com/search?q=label%3A%22good+first+issue%22+state%3Aopen&type=issues
+and run the checklist above against whatever looks promising.
+
+Once you've actually opened the PR or left the comment, replace this
+paragraph with: which issue, what you did, and the link.
