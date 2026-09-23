@@ -27,14 +27,26 @@ Run: python3 fibonacci_memo.py
 
 
 def fib_naive(n: int) -> int:
-    # TODO: base cases n=0, n=1, else fib_naive(n-1) + fib_naive(n-2).
-    raise NotImplementedError
+    if n == 0:
+        return 0
+    if n == 1:
+        return 1
+    return fib_naive(n - 1) + fib_naive(n - 2)
 
 
 def fib_memo(n: int, _cache: dict | None = None) -> int:
-    # TODO: same recursion as fib_naive, but check/populate _cache
-    # (create it as {} on first call) so each n is computed once.
-    raise NotImplementedError
+    if _cache is None:
+        _cache = {}
+    if n in _cache:
+        return _cache[n]
+    if n == 0:
+        result = 0
+    elif n == 1:
+        result = 1
+    else:
+        result = fib_memo(n - 1, _cache) + fib_memo(n - 2, _cache)
+    _cache[n] = result
+    return result
 
 
 def _run_tests() -> None:
