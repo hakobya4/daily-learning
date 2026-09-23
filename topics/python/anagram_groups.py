@@ -23,9 +23,11 @@ Run: python3 anagram_groups.py
 
 
 def group_anagrams(words: list[str]) -> list[list[str]]:
-    # TODO: dict keyed by sorted(word) -> list of matching words,
-    # then return dict.values() as a list of lists.
-    raise NotImplementedError
+    groups: dict[str, list[str]] = {}
+    for word in words:
+        key = "".join(sorted(word))
+        groups.setdefault(key, []).append(word)
+    return list(groups.values())
 
 
 def _run_tests() -> None:
