@@ -28,6 +28,4 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-# TODO: replace this line with your implementation.
-echo "not implemented" >&2
-exit 1
+awk '{count[$1]++} END {for (level in count) print count[level], level}' "$1" | sort -rn
