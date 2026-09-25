@@ -37,10 +37,16 @@ Run: python3 valid_parentheses.py
 
 
 def is_valid(s: str) -> bool:
-    # TODO: use a list as a stack. Push openers. On a closer, pop and
-    # check it matches (return False on empty stack or mismatch).
-    # Return True only if the stack is empty at the end.
-    raise NotImplementedError
+    pairs = {")": "(", "]": "[", "}": "{"}
+    openers = set(pairs.values())
+    stack: list[str] = []
+    for ch in s:
+        if ch in openers:
+            stack.append(ch)
+        elif ch in pairs:
+            if not stack or stack.pop() != pairs[ch]:
+                return False
+    return not stack
 
 
 def _run_tests() -> None:
