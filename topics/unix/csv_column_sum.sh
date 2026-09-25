@@ -27,6 +27,4 @@ if [ -z "$1" ] || [ -z "$2" ]; then
     exit 1
 fi
 
-# TODO: replace this line with your implementation.
-echo "not implemented" >&2
-exit 1
+awk -F, -v col="$2" 'NR > 1 { sum += $col } END { print sum }' "$1"
