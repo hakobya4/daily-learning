@@ -26,6 +26,4 @@ if [ -z "$1" ] || [ -z "$2" ]; then
     exit 1
 fi
 
-# TODO: replace this line with your implementation.
-echo "not implemented" >&2
-exit 1
+find "$1" -type f -size +"$2"k -exec du -h {} \; | sort -rh
