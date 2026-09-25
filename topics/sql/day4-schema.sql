@@ -1,7 +1,7 @@
 -- Day 4 -- SQL: window functions (products & sales).
 --
 -- Load it with: sqlite3 practice_day4.db < day4-schema.sql
-
+USE db_narekhak;
 DROP TABLE IF EXISTS sales_sql;
 DROP TABLE IF EXISTS products_sql;
 
