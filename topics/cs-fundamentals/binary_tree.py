@@ -47,22 +47,47 @@ class BinarySearchTree:
         self.root = None
 
     def insert(self, value) -> None:
-        # TODO: if the tree is empty, `value` becomes the root.
-        # Otherwise walk left/right by comparison until you find an
-        # empty slot, and attach a new _Node there. No-op if a node
-        # with this value already exists.
-        raise NotImplementedError
+        if self.root is None:
+            self.root = _Node(value)
+            return
+        node = self.root
+        while True:
+            if value == node.value:
+                return
+            elif value < node.value:
+                if node.left is None:
+                    node.left = _Node(value)
+                    return
+                node = node.left
+            else:
+                if node.right is None:
+                    node.right = _Node(value)
+                    return
+                node = node.right
 
     def contains(self, value) -> bool:
-        # TODO: walk left/right by comparison starting at self.root;
-        # return True if you land on a node with this value, False if
-        # you fall off the tree.
-        raise NotImplementedError
+        node = self.root
+        while node is not None:
+            if value == node.value:
+                return True
+            elif value < node.value:
+                node = node.left
+            else:
+                node = node.right
+        return False
 
     def inorder(self) -> list:
-        # TODO: in-order traversal (left, node, right) starting from
-        # self.root, collecting values into a list as you go.
-        raise NotImplementedError
+        result: list = []
+
+        def _walk(node):
+            if node is None:
+                return
+            _walk(node.left)
+            result.append(node.value)
+            _walk(node.right)
+
+        _walk(self.root)
+        return result
 
 
 def _run_tests() -> None:
