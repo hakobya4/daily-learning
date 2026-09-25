@@ -54,18 +54,40 @@ INSERT INTO enrollments_sql (student_id, course_id, grade) VALUES
 -- Q1: List the names of students enrolled in AT LEAST ONE 'Computer
 -- Science' course (join courses_sql via enrollments_sql). Do this
 -- with an EXISTS correlated subquery, not a JOIN + DISTINCT.
--- TODO: write this query.
+SELECT s.name
+FROM students_sql s
+WHERE EXISTS (
+    SELECT 1
+    FROM enrollments_sql e
+    JOIN courses_sql c ON c.id = e.course_id
+    WHERE e.student_id = s.id
+      AND c.department = 'Computer Science'
+);
 
 
 -- Q2: List the names of students who are NOT enrolled in ANY course
 -- at all. Day 2's Q3 solved a similar shape with a LEFT JOIN ...
 -- WHERE ... IS NULL antipattern -- do THIS one with a NOT EXISTS
 -- correlated subquery instead, for comparison.
--- TODO: write this query.
+SELECT s.name
+FROM students_sql s
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM enrollments_sql e
+    WHERE e.student_id = s.id
+);
 
 
 -- Q3: For each course, list the students whose grade is HIGHER than
 -- the AVERAGE grade in that SAME course. The average has to be
 -- recomputed per course, so the subquery needs to reference the
 -- outer query's course_id (a correlated subquery, not a plain one).
--- TODO: write this query.
+SELECT c.title, s.name, e.grade
+FROM enrollments_sql e
+JOIN students_sql s ON s.id = e.student_id
+JOIN courses_sql c ON c.id = e.course_id
+WHERE e.grade > (
+    SELECT AVG(e2.grade)
+    FROM enrollments_sql e2
+    WHERE e2.course_id = e.course_id
+);
