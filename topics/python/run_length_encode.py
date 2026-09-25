@@ -30,15 +30,24 @@ Run: python3 run_length_encode.py
 
 
 def encode(s: str) -> list[tuple[str, int]]:
-    # TODO: walk `s`, collapsing consecutive repeats into (char, count)
-    # tuples. Remember to flush the last run after the loop.
-    raise NotImplementedError
+    result: list[tuple[str, int]] = []
+    if not s:
+        return result
+    current_char = s[0]
+    count = 1
+    for ch in s[1:]:
+        if ch == current_char:
+            count += 1
+        else:
+            result.append((current_char, count))
+            current_char = ch
+            count = 1
+    result.append((current_char, count))
+    return result
 
 
 def decode(pairs: list[tuple[str, int]]) -> str:
-    # TODO: for each (char, count) pair, repeat char count times and
-    # join everything into one string.
-    raise NotImplementedError
+    return "".join(char * count for char, count in pairs)
 
 
 def _run_tests() -> None:
