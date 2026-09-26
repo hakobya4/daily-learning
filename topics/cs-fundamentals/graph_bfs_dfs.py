@@ -33,14 +33,34 @@ from collections import deque
 
 
 def bfs(graph: dict, start: str) -> list:
-    # TODO: queue-based breadth-first traversal. Mark a node visited
-    # at ENQUEUE time, not at pop time.
-    raise NotImplementedError
+    visited = {start}
+    order = []
+    queue = deque([start])
+
+    while queue:
+        node = queue.popleft()
+        order.append(node)
+        for neighbor in graph.get(node, []):
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(neighbor)
+
+    return order
 
 
 def dfs(graph: dict, start: str) -> list:
-    # TODO: recursive (or explicit-stack) depth-first traversal.
-    raise NotImplementedError
+    visited = set()
+    order = []
+
+    def _visit(node: str) -> None:
+        visited.add(node)
+        order.append(node)
+        for neighbor in graph.get(node, []):
+            if neighbor not in visited:
+                _visit(neighbor)
+
+    _visit(start)
+    return order
 
 
 def _run_tests() -> None:
