@@ -27,15 +27,19 @@ Run: python3 caesar_cipher.py
 
 
 def encode(text: str, shift: int) -> str:
-    # TODO: shift each letter by `shift` positions, wrapping mod 26,
-    # preserving case, leaving non-letters untouched.
-    raise NotImplementedError
+    result_chars = []
+    for c in text:
+        if not c.isalpha():
+            result_chars.append(c)
+            continue
+        base = ord('A') if c.isupper() else ord('a')
+        offset = (ord(c) - base + shift) % 26
+        result_chars.append(chr(base + offset))
+    return "".join(result_chars)
 
 
 def decode(text: str, shift: int) -> str:
-    # TODO: this should just be a call to encode() with the shift
-    # negated -- don't duplicate the logic.
-    raise NotImplementedError
+    return encode(text, -shift)
 
 
 def _run_tests() -> None:
