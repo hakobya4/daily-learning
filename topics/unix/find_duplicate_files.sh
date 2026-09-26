@@ -28,6 +28,31 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-# TODO: replace this line with your implementation.
-echo "not implemented" >&2
-exit 1
+find "$1" -type f -exec sha256sum {} + \
+    | sort \
+    | awk '
+        function flush() {
+            if (count >= 2) {
+                if (printed_any) {
+                    print ""
+                }
+                printf "%s", buffer
+                printed_any = 1
+            }
+        }
+        {
+            hash = $1
+            path = $0
+            sub(/^[^ ]+ +/, "", path)
+            if (hash != prev_hash) {
+                flush()
+                buffer = ""
+                count = 0
+            }
+            buffer = buffer path "\n"
+            count++
+            prev_hash = hash
+        }
+        END { flush() }
+    '
+
