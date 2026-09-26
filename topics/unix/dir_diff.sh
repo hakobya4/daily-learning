@@ -31,6 +31,19 @@ if [ -z "$1" ] || [ -z "$2" ]; then
     exit 1
 fi
 
-# TODO: replace this line with your implementation.
-echo "not implemented" >&2
-exit 1
+tmp1=$(mktemp)
+tmp2=$(mktemp)
+trap 'rm -f "$tmp1" "$tmp2"' EXIT
+
+(cd "$1" && find . -type f | sed 's|^\./||' | sort) > "$tmp1"
+(cd "$2" && find . -type f | sed 's|^\./||' | sort) > "$tmp2"
+
+echo "Only in $1:"
+comm -23 "$tmp1" "$tmp2"
+echo
+echo "Only in $2:"
+comm -13 "$tmp1" "$tmp2"
+echo
+echo "In both:"
+comm -12 "$tmp1" "$tmp2"
+
