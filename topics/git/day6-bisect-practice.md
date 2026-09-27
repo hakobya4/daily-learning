@@ -32,16 +32,89 @@ introduced a bug, instead of guessing or reading diffs one by one.
 
 ## WHAT I RAN
 
-TODO: paste the actual commands you ran, in order, including the
-`git bisect` output showing it narrowing down commits and the final
-"first bad commit" it identified.
+I ran this in a scratch git repo to keep the demo self-contained (not
+inside this daily-learning repo's own history). Commands, in order:
+
+```
+git init
+# calc.sh: sum() { echo $(( $1 + $2 )); }
+
+git add calc.sh && git commit -m "Add calc.sh: sum() adds two integers"   # 4029944, good baseline
+# comment wording tweak, unrelated
+git commit -am "Tweak comment wording"                                    # 8714057
+# THE BUG: flipped + to - inside sum()
+git commit -am "Refactor sum() internals"                                 # 8876733 <- bad commit
+# formatting tweak, unrelated
+git commit -am "Minor formatting tweak"                                   # 494a8c8
+# header comment, unrelated
+git commit -am "Add file header comment"                                  # 3b64f88 (HEAD)
+
+git log --oneline
+# 3b64f88 Add file header comment
+# 494a8c8 Minor formatting tweak
+# 8876733 Refactor sum() internals
+# 8714057 Tweak comment wording
+# 4029944 Add calc.sh: sum() adds two integers
+
+# check.sh -- exits 0 if calc.sh's sum() is correct (2+3==5), 1 if buggy:
+#   result=$(./calc.sh 2 3)
+#   [ "$result" -eq 5 ]
+
+git bisect start
+git bisect bad HEAD
+git bisect good 4029944
+git bisect run ./check.sh
+
+# Bisecting: 1 revision left to test after this (roughly 1 step)
+# [8876733...] Refactor sum() internals
+# running './check.sh'
+# Bisecting: 0 revisions left to test after this (roughly 0 steps)
+# [8714057...] Tweak comment wording
+# running './check.sh'
+# 8876733 is the first bad commit
+# commit 8876733
+#     Refactor sum() internals
+#  calc.sh | 2 +-
+#  1 file changed, 1 insertion(+), 1 deletion(-)
+# bisect found first bad commit
+
+git bisect reset
+
+# fix as a NEW commit, not by rewriting the bad one:
+sed -i 's/\$(( \$1 - \$2 ))/$(( $1 + $2 ))/' calc.sh
+git commit -am "Fix sum(): restore + (was flipped to - in 8876733)"       # 51fc35d
+./calc.sh 2 3   # -> 5, confirmed fixed
+git push
+```
+
+`git bisect run` needed only 2 real checkouts (out of 4 candidate
+commits between good and bad) to land exactly on 8876733 -- the
+commit whose diff shows the `+` silently flipped to a `-`.
 
 ## WHAT BISECT IS ACTUALLY FOR (write AFTER doing the steps)
 
-TODO: a few sentences -- with only 5-6 commits, checking each one by
-hand isn't much slower than bisecting. At what point (how many commits
-back, or how expensive is "checking" a single commit) does
-`git bisect run` with an automated check actually start saving real
-time over a linear search? Why is a binary search the right strategy
-here at all -- what does it assume about the bug (hint: that it was
-introduced at some point and never "un-introduced" later)?
+With only 5-6 commits, checking each one by hand really is barely
+faster than bisecting -- binary search on n commits takes about
+log2(n) checks instead of n, and log2(5) versus 5 isn't a meaningful
+time saver when each check is a 5-second manual glance. The payoff
+shows up in two situations instead: when the history between "known
+good" and "known bad" is large (hundreds of commits -- log2(500) is
+about 9 checks instead of 500, which is the entire point), and when
+each individual check is itself expensive (a full test suite run, a
+slow build, a manual reproduction steps that take minutes), because
+then even a modest commit count makes a linear scan too slow to be
+practical while log2(n) automated checks stays cheap. `git bisect run`
+compounds that further by removing the human from the loop entirely,
+so it scales to large histories without someone babysitting every
+checkout.
+
+Binary search only works here because of one assumption: the bug was
+introduced at some single point and stayed present in every commit
+after that (it was never "un-introduced" and then re-introduced
+again later). That's what makes "good...bad" a clean boundary you can
+narrow in half each time -- if the bug flickered in and out across the
+history (present, then accidentally fixed, then reintroduced by an
+unrelated change), the good/bad answers wouldn't be monotonic along
+the commit line, bisect's halving logic would land on inconsistent
+answers, and it could report the wrong commit or fail to converge at
+all.
