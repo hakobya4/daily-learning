@@ -47,20 +47,39 @@ class MinHeap:
         return len(self._data)
 
     def peek(self):
-        # TODO: return self._data[0], raising IndexError (the default
-        # from indexing an empty list is fine) if the heap is empty.
-        raise NotImplementedError
+        return self._data[0]
 
     def push(self, value) -> None:
-        # TODO: append to the end, then sift up: while the new
-        # element is smaller than its parent, swap with the parent.
-        raise NotImplementedError
+        self._data.append(value)
+        i = len(self._data) - 1
+        while i > 0:
+            parent = (i - 1) // 2
+            if self._data[i] < self._data[parent]:
+                self._data[i], self._data[parent] = self._data[parent], self._data[i]
+                i = parent
+            else:
+                break
 
     def pop(self):
-        # TODO: save self._data[0], move the last element to index 0
-        # (or just pop it if it WAS the last element), then sift down
-        # from the root by repeatedly swapping with the smaller child.
-        raise NotImplementedError
+        top = self._data[0]
+        last = self._data.pop()
+        if self._data:
+            self._data[0] = last
+            i = 0
+            n = len(self._data)
+            while True:
+                left = 2 * i + 1
+                right = 2 * i + 2
+                smallest = i
+                if left < n and self._data[left] < self._data[smallest]:
+                    smallest = left
+                if right < n and self._data[right] < self._data[smallest]:
+                    smallest = right
+                if smallest == i:
+                    break
+                self._data[i], self._data[smallest] = self._data[smallest], self._data[i]
+                i = smallest
+        return top
 
 
 def _run_tests() -> None:
