@@ -30,6 +30,13 @@ if [ "$#" -lt 2 ]; then
     exit 1
 fi
 
-# TODO: replace this line with your implementation.
-echo "not implemented" >&2
-exit 1
+sort -m "$@"
+# Note: plain `sort -m` assumes every input file was already sorted
+# using the SAME collation/sort order that this `sort` invocation
+# would use by default (locale-dependent, e.g. LC_COLLATE). If one
+# file was pre-sorted case-sensitively (byte order, so "Zebra" sorts
+# before "apple") and another was pre-sorted case-insensitively (or
+# under a different locale), merging them with `sort -m` silently
+# produces a subtly wrong interleaving -- `-m` only merges, it never
+# re-sorts, so it trusts each input's existing order instead of
+# verifying it.
