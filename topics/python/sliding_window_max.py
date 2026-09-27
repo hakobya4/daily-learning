@@ -35,9 +35,17 @@ from collections import deque
 
 
 def sliding_window_max(nums: list[int], k: int) -> list[int]:
-    # TODO: maintain a deque of indices, decreasing by value, front is
-    # always the current window's max index.
-    raise NotImplementedError
+    dq = deque()  # indices, values decreasing left to right
+    result = []
+    for i, num in enumerate(nums):
+        while dq and dq[0] <= i - k:
+            dq.popleft()
+        while dq and nums[dq[-1]] <= num:
+            dq.pop()
+        dq.append(i)
+        if i >= k - 1:
+            result.append(nums[dq[0]])
+    return result
 
 
 def _run_tests() -> None:
