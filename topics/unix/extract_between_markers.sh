@@ -28,6 +28,8 @@ if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
     exit 1
 fi
 
-# TODO: replace this line with your implementation.
-echo "not implemented" >&2
-exit 1
+awk -v start="$2" -v end="$3" '
+    $0 ~ start { found = 1 }
+    found { print }
+    found && $0 ~ end { exit }
+' "$1"
