@@ -32,9 +32,9 @@ from collections import Counter
 
 
 def top_k_frequent(items: list, k: int) -> list:
-    # TODO: Counter(items) to count, then a STABLE sort by count
-    # descending, then take the first k items (not counts).
-    raise NotImplementedError
+    counts = Counter(items)
+    ordered = sorted(counts.items(), key=lambda pair: -pair[1])
+    return [item for item, _count in ordered[:k]]
 
 
 def _run_tests() -> None:
