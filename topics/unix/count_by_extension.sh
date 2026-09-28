@@ -38,6 +38,20 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-# TODO: replace this line with your implementation.
-echo "not implemented" >&2
-exit 1
+find "$1" -type f | awk -F/ '
+{
+    filename = $NF
+    if (index(filename, ".") > 0) {
+        n = split(filename, parts, ".")
+        ext = parts[n]
+    } else {
+        ext = "noext"
+    }
+    counts[ext]++
+}
+END {
+    for (ext in counts) {
+        print counts[ext], ext
+    }
+}
+' | sort -rn
