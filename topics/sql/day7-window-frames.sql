@@ -9,7 +9,17 @@
 -- just average whatever's actually in the window). Order by city,
 -- then reading_date. You'll need an explicit window frame:
 -- ROWS BETWEEN 2 PRECEDING AND CURRENT ROW.
--- TODO: write this query.
+SELECT
+    city,
+    reading_date,
+    temp_c,
+    AVG(temp_c) OVER (
+        PARTITION BY city
+        ORDER BY reading_date
+        ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+    ) AS moving_avg_3day
+FROM daily_readings_sql
+ORDER BY city, reading_date;
 
 
 -- Q2: For each row, show the city, reading_date, temp_c, and that
@@ -20,4 +30,19 @@
 -- ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING,
 -- LAST_VALUE will just return the current row's own value instead of
 -- the city's true latest reading.
--- TODO: write this query.
+SELECT
+    city,
+    reading_date,
+    temp_c,
+    FIRST_VALUE(temp_c) OVER (
+        PARTITION BY city
+        ORDER BY reading_date
+        ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+    ) AS earliest_reading,
+    LAST_VALUE(temp_c) OVER (
+        PARTITION BY city
+        ORDER BY reading_date
+        ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+    ) AS latest_reading
+FROM daily_readings_sql
+ORDER BY city, reading_date;
