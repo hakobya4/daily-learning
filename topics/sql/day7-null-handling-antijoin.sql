@@ -43,7 +43,10 @@ INSERT INTO purchases_sql (id, shopper_id, amount, discount_pct) VALUES
 -- "anti-join" -- rows on the left with no match on the right). Use a
 -- LEFT JOIN plus a WHERE clause checking for the absence of a match,
 -- not a subquery.
--- TODO: write this query.
+SELECT s.id, s.name
+FROM shoppers_sql s
+LEFT JOIN purchases_sql p ON p.shopper_id = s.id
+WHERE p.id IS NULL;
 
 
 -- Q2: For EVERY shopper (including ones with zero purchases), show
@@ -51,7 +54,13 @@ INSERT INTO purchases_sql (id, shopper_id, amount, discount_pct) VALUES
 -- NULL phone, and their total spend with COALESCE(...) substituting 0
 -- for a shopper with no purchases (a plain SUM() over a LEFT JOIN
 -- would give NULL for those shoppers instead of 0).
--- TODO: write this query.
+SELECT
+    s.name,
+    COALESCE(s.phone, 'N/A') AS phone,
+    COALESCE(SUM(p.amount), 0) AS total_spend
+FROM shoppers_sql s
+LEFT JOIN purchases_sql p ON p.shopper_id = s.id
+GROUP BY s.id, s.name, s.phone;
 
 
 -- Q3: For each shopper who has at least one purchase, show their name
@@ -61,4 +70,9 @@ INSERT INTO purchases_sql (id, shopper_id, amount, discount_pct) VALUES
 -- dragging it down toward -1. (AVG() already ignores NULLs on its
 -- own -- NULLIF is what turns the -1 placeholder into a real NULL in
 -- the first place.)
--- TODO: write this query.
+SELECT
+    s.name,
+    AVG(NULLIF(p.discount_pct, -1)) AS avg_discount_pct
+FROM shoppers_sql s
+JOIN purchases_sql p ON p.shopper_id = s.id
+GROUP BY s.id, s.name;
