@@ -37,13 +37,29 @@ Run: python3 dict_flatten.py
 
 
 def flatten(d: dict) -> dict:
-    # TODO: recurse through dict-valued entries, joining keys with '.'.
-    raise NotImplementedError
+    result = {}
+
+    def _walk(current: dict, prefix: str) -> None:
+        for key, value in current.items():
+            full_key = f"{prefix}{key}"
+            if isinstance(value, dict):
+                _walk(value, f"{full_key}.")
+            else:
+                result[full_key] = value
+
+    _walk(d, "")
+    return result
 
 
 def unflatten(d: dict) -> dict:
-    # TODO: split each key on '.' and rebuild the nested structure.
-    raise NotImplementedError
+    result: dict = {}
+    for compound_key, value in d.items():
+        parts = compound_key.split(".")
+        node = result
+        for part in parts[:-1]:
+            node = node.setdefault(part, {})
+        node[parts[-1]] = value
+    return result
 
 
 def _run_tests() -> None:
