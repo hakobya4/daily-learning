@@ -55,19 +55,28 @@ class Trie:
         self.root = TrieNode()
 
     def insert(self, word: str) -> None:
-        # TODO: walk from root, creating child nodes as needed; mark
-        # the last node's is_end = True.
-        raise NotImplementedError
+        node = self.root
+        for char in word:
+            if char not in node.children:
+                node.children[char] = TrieNode()
+            node = node.children[char]
+        node.is_end = True
 
     def search(self, word: str) -> bool:
-        # TODO: walk from root; return False early if a character is
-        # missing, otherwise return the final node's is_end.
-        raise NotImplementedError
+        node = self.root
+        for char in word:
+            if char not in node.children:
+                return False
+            node = node.children[char]
+        return node.is_end
 
     def starts_with(self, prefix: str) -> bool:
-        # TODO: same walk as search, but return True once every
-        # character is found, regardless of is_end.
-        raise NotImplementedError
+        node = self.root
+        for char in prefix:
+            if char not in node.children:
+                return False
+            node = node.children[char]
+        return True
 
 
 def _run_tests() -> None:
