@@ -34,6 +34,18 @@ if [ -z "$1" ] || [ -z "$2" ]; then
     exit 1
 fi
 
-# TODO: replace this line with your implementation.
-echo "not implemented" >&2
-exit 1
+awk -F, -v cols="$2" '
+BEGIN {
+    n = split(cols, col_order, ",")
+}
+{
+    line = ""
+    for (i = 1; i <= n; i++) {
+        if (i > 1) {
+            line = line ","
+        }
+        line = line $(col_order[i])
+    }
+    print line
+}
+' "$1"
