@@ -52,7 +52,9 @@ INSERT INTO transactions_sql (id, account_id, amount) VALUES
 -- clause -- don't hardcode 134.
 -- Expected after this UPDATE: Amara 110, Ben 200 (unchanged, was
 -- already >= average), Chen 55, Dana 300 (unchanged), Eli 22.
--- TODO: write this statement.
+UPDATE accounts_sql
+SET balance = balance * 1.1
+WHERE balance < (SELECT AVG(balance) FROM accounts_sql);
 
 
 -- Q2: DELETE every account that has NEVER appeared in
@@ -61,7 +63,8 @@ INSERT INTO transactions_sql (id, account_id, amount) VALUES
 -- correlated subquery -- either is fine).
 -- Expected after this DELETE: only Amara, Ben, and Dana remain (Chen
 -- and Eli, having never transacted, are gone).
--- TODO: write this statement.
+DELETE FROM accounts_sql
+WHERE NOT EXISTS (SELECT 1 FROM transactions_sql t WHERE t.account_id = accounts_sql.id);
 
 
 -- Q3: INSERT INTO archived_accounts_sql ... SELECT ... every account
@@ -70,4 +73,5 @@ INSERT INTO transactions_sql (id, account_id, amount) VALUES
 -- separate table).
 -- Expected: archived_accounts_sql ends up with exactly one row --
 -- Dana, 300 (Amara's 110 and Ben's 200 are both below the 250 cutoff).
--- TODO: write this statement.
+INSERT INTO archived_accounts_sql (id, name, balance)
+SELECT id, name, balance FROM accounts_sql WHERE balance > 250;
