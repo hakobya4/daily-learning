@@ -39,6 +39,6 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-# TODO: replace this line with your implementation.
-echo "not implemented" >&2
-exit 1
+find "$1" -type l | while IFS= read -r link; do
+    [ ! -e "$link" ] && echo "$link"
+done | sort
