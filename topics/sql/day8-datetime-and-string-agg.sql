@@ -12,14 +12,20 @@
 -- build doesn't support ORDER BY inside GROUP_CONCAT).
 -- Expected: North -> 'Amara, Ben, Eli, Gus',
 --           South -> 'Chen, Dana, Farah, Hana'.
--- TODO: write this query.
+SELECT region, GROUP_CONCAT(driver, ', ') AS drivers
+FROM (SELECT region, driver FROM deliveries_sql ORDER BY region, driver)
+GROUP BY region
+ORDER BY region;
 
 
 -- Q2: Using STRFTIME('%Y-%m', delivered_at), show each YEAR-MONTH
 -- present in the table and how many deliveries happened in it,
 -- ordered by year-month ascending.
 -- Expected: 2 rows -- '2026-05' -> 1, '2026-06' -> 7.
--- TODO: write this query.
+SELECT STRFTIME('%Y-%m', delivered_at) AS year_month, COUNT(*) AS deliveries
+FROM deliveries_sql
+GROUP BY year_month
+ORDER BY year_month;
 
 
 -- Q3: Using DATE() arithmetic (DATE('2026-06-15', '-7 days') gives you
@@ -29,4 +35,7 @@
 -- ordered by delivered_at.
 -- Expected: 4 rows, in delivered_at order -- Dana/South/06-10,
 --           Eli/North/06-12, Hana/South/06-14, Gus/North/06-15.
--- TODO: write this query.
+SELECT driver, region, delivered_at
+FROM deliveries_sql
+WHERE delivered_at BETWEEN DATE('2026-06-15', '-7 days') AND '2026-06-15'
+ORDER BY delivered_at;
