@@ -30,8 +30,13 @@ Run: python3 matrix_rotate.py
 
 
 def rotate_90_clockwise(matrix: list[list[int]]) -> list[list[int]]:
-    # TODO: transpose in place, then reverse every row in place.
-    raise NotImplementedError
+    n = len(matrix)
+    for i in range(n):
+        for j in range(i + 1, n):
+            matrix[i][j], matrix[j][i] = matrix[j][i], matrix[i][j]
+    for row in matrix:
+        row.reverse()
+    return matrix
 
 
 def _run_tests() -> None:
