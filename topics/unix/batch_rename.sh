@@ -42,6 +42,13 @@ if [ -z "$1" ] || [ -z "$2" ]; then
     exit 1
 fi
 
-# TODO: replace this line with your implementation.
-echo "not implemented" >&2
-exit 1
+dir="$1"
+prefix="$2"
+
+find "$dir" -maxdepth 1 -type f | while IFS= read -r f; do
+    base=$(basename "$f")
+    case "$base" in
+        "$prefix"*) continue ;;
+    esac
+    mv -- "$f" "$dir/$prefix$base" && echo "$f -> $dir/$prefix$base"
+done
