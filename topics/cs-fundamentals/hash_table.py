@@ -43,33 +43,40 @@ class HashTable:
     def __init__(self, num_buckets: int = 8):
         self.num_buckets = num_buckets
         self.buckets = [[] for _ in range(num_buckets)]
+        self._size = 0
 
     def _bucket_index(self, key) -> int:
-        # TODO: hash(key) % self.num_buckets
-        raise NotImplementedError
+        return hash(key) % self.num_buckets
 
     def put(self, key, value) -> None:
-        # TODO: find the bucket, overwrite a matching key's value if
-        # present, otherwise append a new [key, value] pair.
-        raise NotImplementedError
+        bucket = self.buckets[self._bucket_index(key)]
+        for pair in bucket:
+            if pair[0] == key:
+                pair[1] = value
+                return
+        bucket.append([key, value])
+        self._size += 1
 
     def get(self, key):
-        # TODO: scan the bucket for a matching key; raise KeyError if
-        # not found.
-        raise NotImplementedError
+        for k, v in self.buckets[self._bucket_index(key)]:
+            if k == key:
+                return v
+        raise KeyError(key)
 
     def delete(self, key) -> None:
-        # TODO: scan the bucket for a matching key and remove it;
-        # raise KeyError if not found.
-        raise NotImplementedError
+        bucket = self.buckets[self._bucket_index(key)]
+        for i, pair in enumerate(bucket):
+            if pair[0] == key:
+                del bucket[i]
+                self._size -= 1
+                return
+        raise KeyError(key)
 
     def __contains__(self, key) -> bool:
-        # TODO: True if a matching key is present, else False.
-        raise NotImplementedError
+        return any(k == key for k, _ in self.buckets[self._bucket_index(key)])
 
     def __len__(self) -> int:
-        # TODO: number of keys currently stored.
-        raise NotImplementedError
+        return self._size
 
 
 def _run_tests() -> None:
