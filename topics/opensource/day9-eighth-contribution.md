@@ -22,5 +22,17 @@ fixes if code issues feel heavy -- maintainers value them.
 
 ## WHAT I DID (fill in once you've acted)
 
-TODO: which issue, what you did, and the link. (Must be done by you with
-your own GitHub account -- the automation can't do this part.)
+I have NOT opened a PR or comment yet for this rep -- it has to be done
+from my own GitHub account, and I am not going to invent a link.
+
+Plan for doing it for real:
+
+1. Search GitHub for `label:"good first issue" label:documentation
+   is:open no:assignee` in a language/repo I use (not one used in Days
+   2-8).
+2. Tick the checklist above (recent commits, unclaimed, CONTRIBUTING.md).
+3. Comment first to say I'd like to take it and restate the ask in one
+   sentence, then open a small docs/test-only PR.
+
+Issue: (fill in when chosen)
+PR / comment link: (fill in when done)
