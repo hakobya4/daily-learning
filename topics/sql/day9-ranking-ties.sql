@@ -34,11 +34,21 @@ INSERT INTO scores_sql (id, player, game, points) VALUES
     (7, 'Di',   'go',    88),
     (8, 'Bo',   'go',    70);
 
--- Q1: TODO: write this query
+-- Q1: RANK within each game
+SELECT player, game, points,
+       RANK() OVER (PARTITION BY game ORDER BY points DESC) AS rnk
+FROM scores_sql
+ORDER BY game, rnk, player;
 
+-- Q2: RANK vs DENSE_RANK side by side
+SELECT player, game, points,
+       RANK()       OVER (PARTITION BY game ORDER BY points DESC) AS rnk,
+       DENSE_RANK() OVER (PARTITION BY game ORDER BY points DESC) AS dense_rnk
+FROM scores_sql
+ORDER BY game, player;
 
--- Q2: TODO: write this query
-
-
--- Q3: TODO: write this query
-
+-- Q3: three buckets over all rows, highest points = bucket 1
+SELECT player, points,
+       NTILE(3) OVER (ORDER BY points DESC, player) AS bucket
+FROM scores_sql
+ORDER BY bucket, points DESC, player;
