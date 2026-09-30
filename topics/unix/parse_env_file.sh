@@ -32,6 +32,17 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-# TODO: replace this line (hint: awk with index/substr + an array)
-echo "not implemented" >&2
-exit 1
+awk '
+function trim(s) { sub(/^[ \t\r]+/, "", s); sub(/[ \t\r]+$/, "", s); return s }
+{
+    line = trim($0)
+    if (line == "" || substr(line, 1, 1) == "#") next
+    i = index(line, "=")
+    if (i == 0) next
+    key = trim(substr(line, 1, i - 1))
+    val = trim(substr(line, i + 1))
+    if (key == "") next
+    vals[key] = val
+}
+END { for (k in vals) print k " -> " vals[k] }
+' "$1" | sort
