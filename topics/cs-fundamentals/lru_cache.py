@@ -21,15 +21,59 @@ Run: python3 lru_cache.py
 """
 
 
+class _Node:
+    __slots__ = ("key", "value", "prev", "next")
+
+    def __init__(self, key: int = 0, value: int = 0) -> None:
+        self.key = key
+        self.value = value
+        self.prev = None
+        self.next = None
+
+
 class LRUCache:
     def __init__(self, capacity: int) -> None:
-        raise NotImplementedError
+        self.capacity = capacity
+        self.map = {}
+        self.head = _Node()   # sentinel: most recent side
+        self.tail = _Node()   # sentinel: least recent side
+        self.head.next = self.tail
+        self.tail.prev = self.head
+
+    def _remove(self, node: _Node) -> None:
+        node.prev.next = node.next
+        node.next.prev = node.prev
+
+    def _add_front(self, node: _Node) -> None:
+        node.next = self.head.next
+        node.prev = self.head
+        self.head.next.prev = node
+        self.head.next = node
 
     def get(self, key: int) -> int:
-        raise NotImplementedError
+        node = self.map.get(key)
+        if node is None:
+            return -1
+        self._remove(node)
+        self._add_front(node)
+        return node.value
 
     def put(self, key: int, value: int) -> None:
-        raise NotImplementedError
+        node = self.map.get(key)
+        if node is not None:
+            node.value = value
+            self._remove(node)
+            self._add_front(node)
+            return
+        if self.capacity <= 0:
+            return
+        if len(self.map) >= self.capacity:
+            lru = self.tail.prev
+            self._remove(lru)
+            del self.map[lru.key]
+        node = _Node(key, value)
+        self.map[key] = node
+        self._add_front(node)
 
 
 def _run_tests() -> None:
