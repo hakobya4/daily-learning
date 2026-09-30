@@ -23,7 +23,17 @@ import functools  # noqa: F401  (you'll want functools.wraps)
 
 
 def retry(times: int, exceptions: tuple = (Exception,)):
-    raise NotImplementedError
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(1, times + 1):
+                try:
+                    return func(*args, **kwargs)
+                except exceptions:
+                    if attempt == times:
+                        raise
+        return wrapper
+    return decorator
 
 
 def _run_tests() -> None:
