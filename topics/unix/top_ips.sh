@@ -25,6 +25,4 @@ if [ $# -ne 2 ]; then
     exit 1
 fi
 
-# TODO: replace this line (hint: awk | sort | uniq -c | sort | head)
-echo "not implemented" >&2
-exit 1
+awk '{print $1}' "$1" | sort | uniq -c | sort -k1,1nr -k2,2 | head -n "$2" | awk '{print $1, $2}'
