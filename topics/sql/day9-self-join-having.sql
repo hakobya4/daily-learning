@@ -32,11 +32,25 @@ INSERT INTO staff_sql (id, name, manager_id, salary) VALUES
     (5, 'Vic',   2,    90),
     (6, 'Uma',   3,    80);
 
--- Q1: TODO: write this query
+-- Q1: employee with manager name (LEFT JOIN keeps the boss)
+SELECT e.name AS employee, m.name AS manager
+FROM staff_sql e
+LEFT JOIN staff_sql m ON e.manager_id = m.id
+ORDER BY employee;
 
+-- Q2: managers with 2+ direct reports
+SELECT m.name AS manager, COUNT(*) AS report_count
+FROM staff_sql e
+JOIN staff_sql m ON e.manager_id = m.id
+GROUP BY m.id, m.name
+HAVING COUNT(*) >= 2
+ORDER BY manager;
 
--- Q2: TODO: write this query
-
-
--- Q3: TODO: write this query
-
+-- Q3: pairs with same manager and same salary (each pair once)
+SELECT a.name AS a_name, b.name AS b_name
+FROM staff_sql a
+JOIN staff_sql b
+  ON a.manager_id = b.manager_id
+ AND a.salary = b.salary
+ AND a.id < b.id
+ORDER BY a_name, b_name;
