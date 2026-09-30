@@ -19,7 +19,15 @@ Run: python3 longest_common_prefix.py
 
 
 def longest_common_prefix(strs: list[str]) -> str:
-    raise NotImplementedError
+    if not strs:
+        return ""
+    prefix = strs[0]
+    for s in strs[1:]:
+        while not s.startswith(prefix):
+            prefix = prefix[:-1]
+            if not prefix:
+                return ""
+    return prefix
 
 
 def _run_tests() -> None:
