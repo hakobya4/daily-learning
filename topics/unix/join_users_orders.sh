@@ -26,5 +26,8 @@ if [ $# -ne 2 ]; then
     exit 1
 fi
 
-# TODO: replace this line
-exit 1
+awk -F, '
+NR == FNR { name[$1] = $2; next }
+($1 in name) { total[$1] += $2 }
+END { for (id in total) print name[id] "," total[id] }
+' "$1" "$2" | sort
