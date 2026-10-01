@@ -30,15 +30,34 @@ import itertools  # noqa: F401
 
 
 def chunked(iterable, n):
-    raise NotImplementedError
+    if n < 1:
+        raise ValueError("n must be >= 1")
+    it = iter(iterable)
+    while True:
+        chunk = list(itertools.islice(it, n))
+        if not chunk:
+            return
+        yield chunk
 
 
 def pairwise(iterable):
-    raise NotImplementedError
+    it = iter(iterable)
+    try:
+        prev = next(it)
+    except StopIteration:
+        return
+    for item in it:
+        yield (prev, item)
+        prev = item
 
 
 def take_while_sum(iterable, limit):
-    raise NotImplementedError
+    total = 0
+    for item in iterable:
+        total += item
+        if total > limit:
+            return
+        yield item
 
 
 def _run_tests() -> None:
