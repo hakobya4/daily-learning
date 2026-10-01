@@ -26,12 +26,25 @@ Run: python3 duration_format.py
 import re  # noqa: F401
 
 
+_DURATION_RE = re.compile(r"^(?:(?P<h>\d+)h)?(?:(?P<m>\d+)m)?(?:(?P<s>\d+)s)?$")
+
+
 def parse_duration(s: str) -> int:
-    raise NotImplementedError
+    m = _DURATION_RE.match(s)
+    if not s or m is None or all(v is None for v in m.groupdict().values()):
+        raise ValueError(f"malformed duration: {s!r}")
+    h, mi, sec = (int(m.group(k) or 0) for k in "hms")
+    return h * 3600 + mi * 60 + sec
 
 
 def format_duration(seconds: int) -> str:
-    raise NotImplementedError
+    if seconds < 0:
+        raise ValueError("seconds must be >= 0")
+    if seconds == 0:
+        return "0s"
+    h, rem = divmod(seconds, 3600)
+    m, s = divmod(rem, 60)
+    return "".join(f"{v}{u}" for v, u in ((h, "h"), (m, "m"), (s, "s")) if v)
 
 
 def _run_tests() -> None:
