@@ -29,7 +29,15 @@ class Node:
 
 
 def is_valid_bst(root) -> bool:
-    raise NotImplementedError
+    # Pass (low, high) exclusive bounds down. Time O(n), space O(h) recursion.
+    def check(node, low, high):
+        if node is None:
+            return True
+        if (low is not None and node.val <= low) or (high is not None and node.val >= high):
+            return False
+        return check(node.left, low, node.val) and check(node.right, node.val, high)
+
+    return check(root, None, None)
 
 
 def _run_tests() -> None:
