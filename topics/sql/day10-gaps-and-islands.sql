@@ -29,11 +29,55 @@ INSERT INTO login_days (user_id, day) VALUES
     (3, '2026-09-10'), (3, '2026-09-11'), (3, '2026-09-12'), (3, '2026-09-13'),
     (3, '2026-09-20');
 
--- Q1:
--- TODO
+-- Q1: every streak per user
+SELECT user_id,
+       MIN(day) AS streak_start,
+       MAX(day) AS streak_end,
+       COUNT(*) AS streak_len
+FROM (
+    SELECT user_id, day,
+           julianday(day) - ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY day) AS grp
+    FROM login_days
+)
+GROUP BY user_id, grp
+ORDER BY user_id, streak_start;
 
--- Q2:
--- TODO
+-- Q2: longest streak per user
+WITH streaks AS (
+    SELECT user_id,
+           MIN(day) AS streak_start,
+           MAX(day) AS streak_end,
+           COUNT(*) AS streak_len
+    FROM (
+        SELECT user_id, day,
+               julianday(day) - ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY day) AS grp
+        FROM login_days
+    )
+    GROUP BY user_id, grp
+)
+SELECT user_id, MAX(streak_len) AS best_streak
+FROM streaks
+GROUP BY user_id
+ORDER BY user_id;
 
--- Q3:
--- TODO
+-- Q3: users whose longest streak is >= 3 days, with the date it ended
+WITH streaks AS (
+    SELECT user_id,
+           MIN(day) AS streak_start,
+           MAX(day) AS streak_end,
+           COUNT(*) AS streak_len
+    FROM (
+        SELECT user_id, day,
+               julianday(day) - ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY day) AS grp
+        FROM login_days
+    )
+    GROUP BY user_id, grp
+),
+ranked AS (
+    SELECT *, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY streak_len DESC, streak_end) AS rn
+    FROM streaks
+)
+SELECT user_id, streak_len AS best_streak, streak_end
+FROM ranked
+WHERE rn = 1 AND streak_len >= 3
+ORDER BY user_id;
