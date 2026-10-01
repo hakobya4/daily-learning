@@ -20,5 +20,4 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-# TODO: replace this line
-exit 1
+awk '{ if (length($0) > max) { max = length($0); line = NR } } END { if (line) print line, max }' "$1"
