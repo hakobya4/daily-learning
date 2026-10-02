@@ -30,13 +30,33 @@ Run: python3 token_bucket.py
 
 class TokenBucket:
     def __init__(self, capacity, refill_rate, clock):
-        raise NotImplementedError
+        if capacity <= 0 or refill_rate <= 0:
+            raise ValueError("capacity and refill_rate must be positive")
+        self._capacity = capacity
+        self._rate = refill_rate
+        self._clock = clock
+        self._tokens = float(capacity)
+        self._last = clock()
+
+    def _refill(self):
+        now = self._clock()
+        elapsed = now - self._last
+        if elapsed > 0:
+            self._tokens = min(self._capacity, self._tokens + elapsed * self._rate)
+        self._last = now
 
     def allow(self, n=1):
-        raise NotImplementedError
+        if n <= 0 or n > self._capacity:
+            raise ValueError("n must be in 1..capacity")
+        self._refill()
+        if self._tokens >= n - 1e-9:
+            self._tokens = max(0.0, self._tokens - n)
+            return True
+        return False
 
     def tokens(self):
-        raise NotImplementedError
+        self._refill()
+        return self._tokens
 
 
 def _run_tests() -> None:
