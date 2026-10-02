@@ -26,12 +26,44 @@ Run: python3 dijkstra.py
 import heapq  # noqa: F401
 
 
+def _dijkstra(graph, source):
+    for edges in graph.values():
+        for _, w in edges:
+            if w < 0:
+                raise ValueError("negative edge weight")
+    dist = {source: 0}
+    prev = {}
+    heap = [(0, 0, source)]
+    counter = 0  # tiebreaker so nodes are never compared
+    done = set()
+    while heap:
+        d, _, u = heapq.heappop(heap)
+        if u in done or d > dist.get(u, float("inf")):
+            continue
+        done.add(u)
+        for v, w in graph.get(u, []):
+            nd = d + w
+            if nd < dist.get(v, float("inf")):
+                dist[v] = nd
+                prev[v] = u
+                counter += 1
+                heapq.heappush(heap, (nd, counter, v))
+    return dist, prev
+
+
 def shortest_distances(graph, source):
-    raise NotImplementedError
+    return _dijkstra(graph, source)[0]
 
 
 def shortest_path(graph, source, target):
-    raise NotImplementedError
+    dist, prev = _dijkstra(graph, source)
+    if target not in dist:
+        return None
+    path = [target]
+    while path[-1] != source:
+        path.append(prev[path[-1]])
+    path.reverse()
+    return path
 
 
 def _run_tests() -> None:
