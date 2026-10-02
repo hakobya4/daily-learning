@@ -32,12 +32,54 @@ import functools  # noqa: F401
 import re  # noqa: F401
 
 
+_SEMVER = re.compile(
+    r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
+    r"(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$"
+)
+
+
+def _parse(v: str):
+    m = _SEMVER.match(v) if isinstance(v, str) else None
+    if not m:
+        raise ValueError(f"invalid version: {v!r}")
+    major, minor, patch, pre = m.groups()
+    ids = tuple(pre.split(".")) if pre else ()
+    return int(major), int(minor), int(patch), ids
+
+
+def _cmp(x, y):
+    return (x > y) - (x < y)
+
+
 def compare_versions(a: str, b: str) -> int:
-    raise NotImplementedError
+    pa, pb = _parse(a), _parse(b)
+    c = _cmp(pa[:3], pb[:3])
+    if c:
+        return c
+    ia, ib = pa[3], pb[3]
+    if not ia and not ib:
+        return 0
+    if not ia:
+        return 1
+    if not ib:
+        return -1
+    for x, y in zip(ia, ib):
+        xn, yn = x.isdigit(), y.isdigit()
+        if xn and yn:
+            c = _cmp(int(x), int(y))
+        elif xn:
+            c = -1
+        elif yn:
+            c = 1
+        else:
+            c = _cmp(x, y)
+        if c:
+            return c
+    return _cmp(len(ia), len(ib))
 
 
 def sort_versions(versions: list[str]) -> list[str]:
-    raise NotImplementedError
+    return sorted(versions, key=functools.cmp_to_key(compare_versions))
 
 
 def _run_tests() -> None:
