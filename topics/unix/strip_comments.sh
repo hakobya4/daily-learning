@@ -27,5 +27,4 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-# TODO: replace this line
-exit 1
+sed -e 's/#.*$//' -e 's/[[:space:]]*$//' -e '/^$/d' "$1"
