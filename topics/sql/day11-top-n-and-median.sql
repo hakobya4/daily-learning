@@ -33,10 +33,40 @@ INSERT INTO employees (name, dept, salary) VALUES
     ('Gus',   'ops',    60), ('Hana',  'hr',     65), ('Ivo',   'hr',     65),
     ('Jo',    'hr',     75);
 
--- Q1: TODO
+-- Q1
+SELECT dept, name, salary
+FROM (
+    SELECT dept, name, salary,
+           DENSE_RANK() OVER (PARTITION BY dept ORDER BY salary DESC) AS rnk
+    FROM employees
+)
+WHERE rnk <= 2
+ORDER BY dept, salary DESC, name;
 
--- Q2: TODO
+-- Q2
+SELECT name, dept,
+       ROUND(100.0 * salary / SUM(salary) OVER (PARTITION BY dept), 1) AS pct_of_dept
+FROM employees
+ORDER BY dept, name;
 
--- Q3: TODO
+-- Q3
+SELECT dept, AVG(salary) AS median_salary
+FROM (
+    SELECT dept, salary,
+           ROW_NUMBER() OVER (PARTITION BY dept ORDER BY salary, name) AS rn,
+           COUNT(*)     OVER (PARTITION BY dept) AS cnt
+    FROM employees
+)
+WHERE rn IN ((cnt + 1) / 2, (cnt + 2) / 2)
+GROUP BY dept
+ORDER BY dept;
 
--- Q4: TODO
+-- Q4
+SELECT name, dept, salary, ROUND(dept_avg, 0) AS dept_avg
+FROM (
+    SELECT name, dept, salary,
+           AVG(salary) OVER (PARTITION BY dept) AS dept_avg
+    FROM employees
+)
+WHERE salary > dept_avg
+ORDER BY dept, salary DESC, name;
