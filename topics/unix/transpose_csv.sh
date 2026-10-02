@@ -27,5 +27,13 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-# TODO: replace this line
-exit 1
+awk -F',' '
+    { for (i = 1; i <= NF; i++) cell[NR, i] = $i; if (NF > maxc) maxc = NF }
+    END {
+        for (i = 1; i <= maxc; i++) {
+            line = ""
+            for (r = 1; r <= NR; r++) line = line (r > 1 ? "," : "") cell[r, i]
+            print line
+        }
+    }
+' "$1"
