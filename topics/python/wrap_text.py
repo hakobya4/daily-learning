@@ -26,7 +26,30 @@ Run: python3 wrap_text.py
 
 
 def wrap_text(text: str, width: int) -> list[str]:
-    raise NotImplementedError
+    if width < 1:
+        raise ValueError("width must be >= 1")
+    lines = []
+    cur = []
+    cur_len = 0
+    for word in text.split():
+        while len(word) > width:
+            # hard-split: flush the current line, emit full chunks
+            if cur:
+                lines.append(" ".join(cur))
+                cur, cur_len = [], 0
+            lines.append(word[:width])
+            word = word[width:]
+        if not cur:
+            cur, cur_len = [word], len(word)
+        elif cur_len + 1 + len(word) <= width:
+            cur.append(word)
+            cur_len += 1 + len(word)
+        else:
+            lines.append(" ".join(cur))
+            cur, cur_len = [word], len(word)
+    if cur:
+        lines.append(" ".join(cur))
+    return lines
 
 
 def _run_tests() -> None:
