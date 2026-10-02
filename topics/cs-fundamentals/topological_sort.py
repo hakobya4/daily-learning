@@ -24,7 +24,28 @@ import heapq  # noqa: F401
 
 
 def topo_order(deps):
-    raise NotImplementedError
+    nodes = set(deps)
+    for ds in deps.values():
+        nodes.update(ds)
+    indeg = {n: 0 for n in nodes}
+    dependents = {n: [] for n in nodes}
+    for task, ds in deps.items():
+        for d in set(ds):
+            indeg[task] += 1
+            dependents[d].append(task)
+    heap = [n for n in nodes if indeg[n] == 0]
+    heapq.heapify(heap)
+    out = []
+    while heap:
+        n = heapq.heappop(heap)
+        out.append(n)
+        for m in dependents[n]:
+            indeg[m] -= 1
+            if indeg[m] == 0:
+                heapq.heappush(heap, m)
+    if len(out) != len(nodes):
+        raise ValueError("cycle")
+    return out
 
 
 def _run_tests() -> None:
