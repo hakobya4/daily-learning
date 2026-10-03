@@ -22,16 +22,34 @@ about moving branches and the three modes of `git reset`, versus
 
 ## WHAT I RAN
 
-TODO: paste the commands you ran.
+rm -rf /tmp/reset-lab && mkdir /tmp/reset-lab && cd /tmp/reset-lab
+git init -b main
+for i in 1 2 3 4; do echo "line $i" >> notes.txt; git add notes.txt; git commit -m "c$i"; done
+git reset --soft HEAD~2
+git status --short          # M  notes.txt (staged)
+git commit -m "c3+c4 combined"
+git reset --mixed HEAD~1    # same as: git reset HEAD~1
+git status --short          # " M notes.txt" (unstaged)
+git add notes.txt && git commit -m "c3+c4 again"
+git reset --hard HEAD~1
+git reflog
+git reset --hard HEAD@{1}   # get the commit back
+git revert HEAD --no-edit
+git restore notes.txt
+git restore --staged notes.txt
 
 ## WHAT EACH COMMAND SHOWED (write AFTER)
 
-- `--soft`: TODO
-- `--mixed`: TODO
-- `--hard` and recovery: TODO
-- `revert` vs `reset` on shared branches: TODO
-- `restore` vs `reset`: TODO
+- `--soft`: moves only the branch pointer (HEAD). The changes of c3 and c4 stay in the index (staged), and the working tree is untouched, so I can re-commit them as one commit.
+- `--mixed`: moves HEAD and resets the index, but keeps the working tree. Nothing is staged any more; the changes are still in the file as unstaged modifications.
+- `--hard` and recovery: moves HEAD, resets the index AND overwrites the working tree, so the changes disappear from the file. The commit is not deleted, only unreachable: `git reflog` still lists it and `git reset --hard HEAD@{1}` (or `git branch rescue <sha>`) brings it back. Uncommitted work lost by --hard is NOT recoverable this way.
+- `revert` vs `reset` on shared branches: revert adds a NEW commit that undoes an earlier one, so history only moves forward and nobody has to rewrite anything. Reset rewrites history; after pushing, teammates who already have the old commits would need a force-push and would hit diverged branches. So revert is right on pushed/shared branches.
+- `restore` vs `reset`: `git restore <file>` discards working-tree changes of that file (back to the index); `git restore --staged <file>` unstages it (index back to HEAD) and keeps the edits. Unlike reset they act on files, not on the branch pointer, so no commits move.
 
 ## WHEN I WOULD USE EACH (write in your own words)
 
-TODO
+- `reset --soft`: I want to redo or squash the last few local commits (fix a message, combine commits) before pushing.
+- `reset --mixed`: I want to unstage things / split a commit into smaller ones, keeping my edits.
+- `reset --hard`: throw away local commits and changes completely, only when I am sure (reflog is the safety net for commits).
+- `revert`: undo a commit that is already pushed or shared.
+- `restore`: discard edits in a file or unstage a file without touching history.
