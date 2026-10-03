@@ -24,12 +24,45 @@ Run: python3 min_path_sum.py
 """
 
 
+def _dp(grid):
+    if not grid or not grid[0] or any(len(row) != len(grid[0]) for row in grid):
+        raise ValueError("grid must be non-empty and rectangular")
+    rows, cols = len(grid), len(grid[0])
+    dp = [[0] * cols for _ in range(rows)]
+    for r in range(rows):
+        for c in range(cols):
+            best = 0
+            if r and c:
+                best = min(dp[r - 1][c], dp[r][c - 1])
+            elif r:
+                best = dp[r - 1][c]
+            elif c:
+                best = dp[r][c - 1]
+            dp[r][c] = grid[r][c] + best
+    return dp
+
+
 def min_path_sum(grid):
-    raise NotImplementedError
+    dp = _dp(grid)
+    return dp[-1][-1]
 
 
 def min_path(grid):
-    raise NotImplementedError
+    dp = _dp(grid)
+    r, c = len(grid) - 1, len(grid[0]) - 1
+    path = [(r, c)]
+    while (r, c) != (0, 0):
+        if r == 0:
+            c -= 1
+        elif c == 0:
+            r -= 1
+        elif dp[r - 1][c] <= dp[r][c - 1]:
+            r -= 1
+        else:
+            c -= 1
+        path.append((r, c))
+    path.reverse()
+    return path
 
 
 def _run_tests() -> None:
