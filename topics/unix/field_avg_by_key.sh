@@ -22,5 +22,9 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-# TODO: replace this line
-exit 1
+awk -F',' '
+    NR == 1 { next }
+    NF < 2 || $1 == "" { next }
+    { sum[$1] += $2; n[$1]++ }
+    END { for (k in sum) printf "%s %.2f\n", k, sum[k] / n[k] }
+' "$1" | LC_ALL=C sort
