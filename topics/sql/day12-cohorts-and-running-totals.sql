@@ -38,9 +38,40 @@ INSERT INTO orders (id, customer, order_date, amount) VALUES
     (9,  'eve', '2026-03-10', 90), (10, 'dee', '2026-03-22', 30);
 
 -- Q1
+SELECT customer, order_date, amount,
+       SUM(amount) OVER (PARTITION BY customer ORDER BY order_date, id) AS running_total
+FROM orders
+ORDER BY customer, order_date, id;
 
 -- Q2
+WITH monthly AS (
+    SELECT substr(order_date, 1, 7) AS month, SUM(amount) AS revenue
+    FROM orders
+    GROUP BY month
+)
+SELECT month, revenue,
+       LAG(revenue) OVER (ORDER BY month) AS prev_revenue,
+       revenue - LAG(revenue) OVER (ORDER BY month) AS change
+FROM monthly
+ORDER BY month;
 
 -- Q3
+SELECT id, amount,
+       NTILE(4) OVER (ORDER BY amount, id) AS quartile
+FROM orders
+ORDER BY id;
 
 -- Q4
+WITH months AS (
+    SELECT DISTINCT customer, substr(order_date, 1, 7) AS month FROM orders
+),
+cohort AS (
+    SELECT customer, MIN(month) AS first_month FROM months GROUP BY customer
+)
+SELECT c.first_month AS cohort_month,
+       COUNT(DISTINCT c.customer) AS customers,
+       COUNT(DISTINCT m.customer) AS returned
+FROM cohort c
+LEFT JOIN months m ON m.customer = c.customer AND m.month > c.first_month
+GROUP BY c.first_month
+ORDER BY c.first_month;
