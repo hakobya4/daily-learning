@@ -29,15 +29,35 @@ Run: python3 ipv4_cidr.py
 
 
 def ip_to_int(ip):
-    raise NotImplementedError
+    parts = ip.split(".")
+    if len(parts) != 4:
+        raise ValueError(f"invalid IPv4 address: {ip!r}")
+    n = 0
+    for p in parts:
+        if not (p.isascii() and p.isdigit()):
+            raise ValueError(f"invalid IPv4 address: {ip!r}")
+        v = int(p)
+        if v > 255:
+            raise ValueError(f"invalid IPv4 address: {ip!r}")
+        n = (n << 8) | v
+    return n
 
 
 def int_to_ip(n):
-    raise NotImplementedError
+    if not 0 <= n <= 2**32 - 1:
+        raise ValueError("out of range")
+    return ".".join(str((n >> s) & 255) for s in (24, 16, 8, 0))
 
 
 def in_cidr(ip, cidr):
-    raise NotImplementedError
+    base, sep, prefix = cidr.partition("/")
+    if not sep or not prefix.isascii() or not prefix.isdigit():
+        raise ValueError(f"invalid CIDR: {cidr!r}")
+    prefix = int(prefix)
+    if not 0 <= prefix <= 32:
+        raise ValueError("prefix must be 0..32")
+    mask = ((1 << 32) - 1) ^ ((1 << (32 - prefix)) - 1)
+    return (ip_to_int(ip) & mask) == (ip_to_int(base) & mask)
 
 
 def _run_tests() -> None:
