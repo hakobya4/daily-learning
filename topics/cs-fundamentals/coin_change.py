@@ -26,11 +26,25 @@ Run: python3 coin_change.py
 
 
 def min_coins(coins, amount):
-    raise NotImplementedError
+    if amount < 0:
+        raise ValueError("amount must be >= 0")
+    INF = float("inf")
+    dp = [0] + [INF] * amount
+    for x in range(1, amount + 1):
+        for c in coins:
+            if c <= x and dp[x - c] + 1 < dp[x]:
+                dp[x] = dp[x - c] + 1
+    return -1 if dp[amount] == INF else dp[amount]
 
 
 def count_ways(coins, amount):
-    raise NotImplementedError
+    if amount < 0:
+        return 0
+    dp = [1] + [0] * amount
+    for c in coins:
+        for x in range(c, amount + 1):
+            dp[x] += dp[x - c]
+    return dp[amount]
 
 
 def _run_tests() -> None:
