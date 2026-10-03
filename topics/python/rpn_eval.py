@@ -26,7 +26,33 @@ Run: python3 rpn_eval.py
 
 
 def eval_rpn(tokens):
-    raise NotImplementedError
+    if not tokens:
+        raise ValueError("empty expression")
+    ops = {
+        "+": lambda a, b: a + b,
+        "-": lambda a, b: a - b,
+        "*": lambda a, b: a * b,
+        "/": lambda a, b: a / b,
+    }
+    stack = []
+    for tok in tokens:
+        if tok in ops:
+            if len(stack) < 2:
+                raise ValueError("not enough operands")
+            b = stack.pop()
+            a = stack.pop()
+            stack.append(ops[tok](a, b))
+        else:
+            try:
+                stack.append(int(tok))
+            except ValueError:
+                try:
+                    stack.append(float(tok))
+                except ValueError:
+                    raise ValueError(f"unknown token: {tok!r}") from None
+    if len(stack) != 1:
+        raise ValueError("leftover operands")
+    return stack[0]
 
 
 def _run_tests() -> None:
