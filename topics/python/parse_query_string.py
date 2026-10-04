@@ -25,8 +25,34 @@ Run: python3 parse_query_string.py
 """
 
 
+def _unquote(s: str) -> str:
+    s = s.replace("+", " ")
+    out = bytearray()
+    i = 0
+    while i < len(s):
+        c = s[i]
+        if c == "%":
+            h = s[i + 1:i + 3]
+            if len(h) != 2 or any(ch not in "0123456789abcdefABCDEF" for ch in h):
+                raise ValueError(f"malformed escape in {s!r}")
+            out.append(int(h, 16))
+            i += 3
+        else:
+            out.extend(c.encode("utf-8"))
+            i += 1
+    return out.decode("utf-8")
+
+
 def parse_query(qs: str) -> dict:
-    raise NotImplementedError
+    if qs.startswith("?"):
+        qs = qs[1:]
+    result: dict = {}
+    for pair in qs.split("&"):
+        if not pair:
+            continue
+        key, _, value = pair.partition("=")
+        result.setdefault(_unquote(key), []).append(_unquote(value))
+    return result
 
 
 def _run_tests() -> None:
