@@ -27,5 +27,11 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-# TODO: replace this line
-exit 1
+awk '
+    NF >= 5 && $4 ~ /^[0-9]+$/ && $5 ~ /^[0-9]+$/ {
+        c = substr($4, 1, 1) "xx"
+        count[c]++
+        bytes[c] += $5
+    }
+    END { for (c in count) print c, count[c], bytes[c] }
+' "$1" | LC_ALL=C sort
