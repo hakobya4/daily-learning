@@ -21,11 +21,34 @@ Run: python3 lis.py
 
 
 def lis_length(nums: list[int]) -> int:
-    raise NotImplementedError
+    from bisect import bisect_left
+    tails: list[int] = []
+    for x in nums:
+        i = bisect_left(tails, x)
+        if i == len(tails):
+            tails.append(x)
+        else:
+            tails[i] = x
+    return len(tails)
 
 
 def lis(nums: list[int]) -> list[int]:
-    raise NotImplementedError
+    if not nums:
+        return []
+    n = len(nums)
+    length = [1] * n
+    prev = [-1] * n
+    for i in range(n):
+        for j in range(i):
+            if nums[j] < nums[i] and length[j] + 1 > length[i]:
+                length[i] = length[j] + 1
+                prev[i] = j
+    end = max(range(n), key=lambda i: (length[i], -i))
+    out = []
+    while end != -1:
+        out.append(nums[end])
+        end = prev[end]
+    return out[::-1]
 
 
 def _is_subsequence(sub, seq) -> bool:
