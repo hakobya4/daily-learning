@@ -23,11 +23,31 @@ Run: python3 compress_ranges.py
 
 
 def compress_ranges(nums: list[int]) -> str:
-    raise NotImplementedError
+    vals = sorted(set(nums))
+    parts = []
+    i = 0
+    while i < len(vals):
+        j = i
+        while j + 1 < len(vals) and vals[j + 1] == vals[j] + 1:
+            j += 1
+        parts.append(str(vals[i]) if i == j else f"{vals[i]}-{vals[j]}")
+        i = j + 1
+    return ",".join(parts)
 
 
 def expand_ranges(s: str) -> list[int]:
-    raise NotImplementedError
+    import re
+    if not s:
+        return []
+    out: list[int] = []
+    for piece in s.split(","):
+        m = re.match(r"^(-?\d+)(?:-(-?\d+))?$", piece)
+        if not m:
+            raise ValueError(f"bad range piece {piece!r}")
+        lo = int(m.group(1))
+        hi = int(m.group(2)) if m.group(2) is not None else lo
+        out.extend(range(lo, hi + 1))
+    return out
 
 
 def _run_tests() -> None:
