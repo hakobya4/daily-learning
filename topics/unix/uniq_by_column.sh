@@ -22,5 +22,4 @@ if [ $# -ne 2 ]; then
     exit 1
 fi
 
-# TODO: replace this line
-exit 1
+awk -F',' -v col="$2" 'NR == 1 { print; next } !seen[$col]++' "$1"
