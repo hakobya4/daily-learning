@@ -23,11 +23,28 @@ Run: python3 knapsack.py
 
 
 def knapsack(items: list[tuple[int, int]], capacity: int) -> int:
-    raise NotImplementedError
+    dp = [0] * (capacity + 1)
+    for w, v in items:
+        for c in range(capacity, w - 1, -1):
+            dp[c] = max(dp[c], dp[c - w] + v)
+    return dp[capacity]
 
 
 def knapsack_items(items: list[tuple[int, int]], capacity: int) -> list[int]:
-    raise NotImplementedError
+    n = len(items)
+    dp = [[0] * (capacity + 1) for _ in range(n + 1)]
+    for i, (w, v) in enumerate(items, 1):
+        for c in range(capacity + 1):
+            dp[i][c] = dp[i - 1][c]
+            if c >= w:
+                dp[i][c] = max(dp[i][c], dp[i - 1][c - w] + v)
+    chosen = []
+    c = capacity
+    for i in range(n, 0, -1):
+        if dp[i][c] != dp[i - 1][c]:
+            chosen.append(i - 1)
+            c -= items[i - 1][0]
+    return sorted(chosen)
 
 
 def _run_tests() -> None:
