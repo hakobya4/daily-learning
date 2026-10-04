@@ -21,11 +21,28 @@ Run: python3 histogram_area.py
 
 
 def max_area(heights: list[int]) -> int:
-    raise NotImplementedError
+    return largest_rectangle(heights)[0]
 
 
 def largest_rectangle(heights: list[int]) -> tuple[int, int, int]:
-    raise NotImplementedError
+    if not heights:
+        return (0, -1, -1)
+    best = (0, -1, -1)
+    stack: list[int] = []  # indices with increasing heights
+    n = len(heights)
+    for i in range(n + 1):
+        cur = heights[i] if i < n else -1
+        while stack and heights[stack[-1]] >= cur:
+            h = heights[stack.pop()]
+            left = stack[-1] + 1 if stack else 0
+            right = i - 1
+            cand = (h * (right - left + 1), left, right)
+            if cand[0] > best[0] or (cand[0] == best[0] and best[0] > 0 and cand[1] < best[1]):
+                best = cand
+        stack.append(i)
+    if best[0] == 0:
+        return (0, 0, 0)
+    return best
 
 
 def _run_tests() -> None:
