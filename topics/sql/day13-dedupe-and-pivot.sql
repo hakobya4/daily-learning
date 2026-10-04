@@ -39,13 +39,40 @@ INSERT INTO events (id, user_id, kind, ts) VALUES
     (12, 4, 'login',    '2026-03-04 07:45');
 
 -- Q1
-
+SELECT user_id, kind, ts
+FROM (
+    SELECT user_id, kind, ts,
+           ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY ts DESC, id DESC) AS rn
+    FROM events
+)
+WHERE rn = 1
+ORDER BY user_id;
 
 -- Q2
-
+SELECT id
+FROM (
+    SELECT id,
+           ROW_NUMBER() OVER (PARTITION BY user_id, kind, ts ORDER BY id) AS rn
+    FROM events
+)
+WHERE rn > 1
+ORDER BY id;
 
 -- Q3
-
+SELECT user_id,
+       SUM(CASE WHEN kind = 'login'    THEN 1 ELSE 0 END) AS logins,
+       SUM(CASE WHEN kind = 'view'     THEN 1 ELSE 0 END) AS views,
+       SUM(CASE WHEN kind = 'purchase' THEN 1 ELSE 0 END) AS purchases
+FROM events
+GROUP BY user_id
+ORDER BY user_id;
 
 -- Q4
-
+SELECT DISTINCT e.user_id
+FROM events e
+WHERE e.kind = 'view'
+  AND NOT EXISTS (
+      SELECT 1 FROM events p
+      WHERE p.user_id = e.user_id AND p.kind = 'purchase'
+  )
+ORDER BY e.user_id;
