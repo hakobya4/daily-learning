@@ -29,18 +29,92 @@ Run: python3 infix_to_rpn.py
 
 
 def tokenize(expr: str) -> list[str]:
-    # TODO: split into number / operator / paren tokens.
-    raise NotImplementedError
+    tokens = []
+    i = 0
+    while i < len(expr):
+        ch = expr[i]
+        if ch.isspace():
+            i += 1
+        elif ch.isdigit():
+            j = i
+            while j < len(expr) and expr[j].isdigit():
+                j += 1
+            tokens.append(expr[i:j])
+            i = j
+        elif ch in "+-*/^()":
+            tokens.append(ch)
+            i += 1
+        else:
+            raise ValueError(f"unknown character {ch!r}")
+    return tokens
 
 
 def to_rpn(expr: str) -> list[str]:
-    # TODO: shunting-yard.
-    raise NotImplementedError
+    prec = {"+": 1, "-": 1, "*": 2, "/": 2, "^": 3}
+    out: list[str] = []
+    stack: list[str] = []
+    expect_operand = True  # validates alternation of operands/operators
+    tokens = tokenize(expr)
+    if not tokens:
+        raise ValueError("empty expression")
+    for tok in tokens:
+        if tok.isdigit():
+            if not expect_operand:
+                raise ValueError("unexpected number")
+            out.append(tok)
+            expect_operand = False
+        elif tok == "(":
+            if not expect_operand:
+                raise ValueError("unexpected '('")
+            stack.append(tok)
+        elif tok == ")":
+            if expect_operand:
+                raise ValueError("unexpected ')'")
+            while stack and stack[-1] != "(":
+                out.append(stack.pop())
+            if not stack:
+                raise ValueError("mismatched parentheses")
+            stack.pop()
+        else:
+            if expect_operand:
+                raise ValueError("unexpected operator")
+            while (stack and stack[-1] != "(" and
+                   (prec[stack[-1]] > prec[tok] or
+                    (prec[stack[-1]] == prec[tok] and tok != "^"))):
+                out.append(stack.pop())
+            stack.append(tok)
+            expect_operand = True
+    if expect_operand:
+        raise ValueError("expression ends unexpectedly")
+    while stack:
+        top = stack.pop()
+        if top == "(":
+            raise ValueError("mismatched parentheses")
+        out.append(top)
+    return out
 
 
 def evaluate(expr: str) -> float:
-    # TODO: to_rpn + stack evaluation.
-    raise NotImplementedError
+    stack: list[float] = []
+    for tok in to_rpn(expr):
+        if tok.isdigit():
+            stack.append(int(tok))
+            continue
+        b = stack.pop()
+        a = stack.pop()
+        if tok == "+":
+            stack.append(a + b)
+        elif tok == "-":
+            stack.append(a - b)
+        elif tok == "*":
+            stack.append(a * b)
+        elif tok == "/":
+            if b == 0:
+                raise ValueError("division by zero")
+            stack.append(a / b)
+        else:
+            stack.append(a ** b)
+    return stack[0]
 
 
 def _run_tests() -> None:
