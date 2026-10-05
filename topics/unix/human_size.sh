@@ -24,5 +24,13 @@
 # Check with:
 #   printf '0\n1536\n1048576\n' | ./human_size.sh   -> 0B / 1.5K / 1.0M
 
-# TODO: replace this line with your awk program (read stdin, print results).
-exit 1
+awk '
+NF == 0 { next }
+{
+    v = $1 + 0
+    if (v < 1024) { printf "%dB\n", v; next }
+    split("B K M G T", u, " ")
+    i = 1
+    while (v >= 1024 && i < 5) { v /= 1024; i++ }
+    printf "%.1f%s\n", v, u[i]
+}'
