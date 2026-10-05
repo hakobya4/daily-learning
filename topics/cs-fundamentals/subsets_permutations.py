@@ -32,18 +32,63 @@ Run: python3 subsets_permutations.py
 
 
 def subsets(items: list) -> list[list]:
-    # TODO: backtracking; group results by size.
-    raise NotImplementedError
+    result: list[list] = []
+    n = len(items)
+
+    def backtrack(start: int, path: list, size: int) -> None:
+        if len(path) == size:
+            result.append(path[:])
+            return
+        for i in range(start, n):
+            path.append(items[i])
+            backtrack(i + 1, path, size)
+            path.pop()
+
+    for size in range(n + 1):
+        backtrack(0, [], size)
+    return result
 
 
 def permutations(items: list) -> list[list]:
-    # TODO: backtracking with a used[] array.
-    raise NotImplementedError
+    result: list[list] = []
+    n = len(items)
+    used = [False] * n
+
+    def backtrack(path: list) -> None:
+        if len(path) == n:
+            result.append(path[:])
+            return
+        for i in range(n):
+            if used[i]:
+                continue
+            used[i] = True
+            path.append(items[i])
+            backtrack(path)
+            path.pop()
+            used[i] = False
+
+    backtrack([])
+    return result
 
 
 def combination_sum(candidates: list[int], target: int) -> list[list[int]]:
-    # TODO: sort candidates, recurse with a start index (reuse allowed).
-    raise NotImplementedError
+    cands = sorted(candidates)
+    result: list[list[int]] = []
+
+    def backtrack(start: int, remaining: int, path: list[int]) -> None:
+        if remaining == 0:
+            result.append(path[:])
+            return
+        for i in range(start, len(cands)):
+            c = cands[i]
+            if c > remaining:
+                break
+            path.append(c)
+            backtrack(i, remaining - c, path)
+            path.pop()
+
+    backtrack(0, target, [])
+    return sorted(result)
 
 
 def _run_tests() -> None:
