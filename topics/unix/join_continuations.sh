@@ -32,5 +32,18 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-# TODO: replace this line with your sed/awk command.
-exit 1
+awk '
+{
+    line = $0
+    if (cont) sub(/^[ \t]+/, "", line)
+    if (line ~ /\\$/) {
+        sub(/\\$/, "", line)
+        buf = buf line
+        cont = 1
+    } else {
+        print buf line
+        buf = ""
+        cont = 0
+    }
+}
+END { if (cont) print buf }' "$1"
