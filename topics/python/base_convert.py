@@ -30,13 +30,35 @@ DIGITS = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 
 def to_base(n: int, base: int) -> str:
-    # TODO: implement without format()/bin()/hex().
-    raise NotImplementedError
+    if not isinstance(base, int) or base < 2 or base > 36:
+        raise ValueError("base must be in 2..36")
+    if n == 0:
+        return "0"
+    neg = n < 0
+    n = -n if neg else n
+    out = []
+    while n:
+        n, r = divmod(n, base)
+        out.append(DIGITS[r])
+    if neg:
+        out.append("-")
+    return "".join(reversed(out))
 
 
 def from_base(s: str, base: int) -> int:
-    # TODO: implement without int(s, base).
-    raise NotImplementedError
+    if not isinstance(base, int) or base < 2 or base > 36:
+        raise ValueError("base must be in 2..36")
+    neg = s.startswith("-")
+    body = s[1:] if neg else s
+    if not body:
+        raise ValueError("no digits")
+    value = 0
+    for ch in body.lower():
+        d = DIGITS.find(ch)
+        if d < 0 or d >= base:
+            raise ValueError(f"invalid digit {ch!r} for base {base}")
+        value = value * base + d
+    return -value if neg else value
 
 
 def _run_tests() -> None:
