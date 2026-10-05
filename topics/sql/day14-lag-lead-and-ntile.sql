@@ -45,16 +45,41 @@ INSERT INTO monthly_sales (id, region, month, revenue) VALUES
     (12, 'north','2026-04',  95);
 
 -- Q1:
--- TODO
+SELECT region, month, revenue,
+       LAG(revenue) OVER (PARTITION BY region ORDER BY month) AS prev_revenue,
+       revenue - LAG(revenue) OVER (PARTITION BY region ORDER BY month) AS change
+FROM monthly_sales
+ORDER BY region, month;
 
 -- Q2:
--- TODO
+WITH mom AS (
+    SELECT region, month,
+           revenue - LAG(revenue) OVER (PARTITION BY region ORDER BY month) AS change
+    FROM monthly_sales
+)
+SELECT region, month, change
+FROM mom
+WHERE change < 0
+ORDER BY region, month;
 
 -- Q3:
--- TODO
+SELECT region, month, revenue,
+       MAX(revenue) OVER (PARTITION BY region) AS best,
+       MAX(revenue) OVER (PARTITION BY region) - revenue AS gap_to_best
+FROM monthly_sales
+ORDER BY region, month;
 
 -- Q4:
--- TODO
+SELECT region, month,
+       ROUND(100.0 * revenue / SUM(revenue) OVER (PARTITION BY month), 1) AS pct
+FROM monthly_sales
+ORDER BY month, region;
 
 -- Q5:
--- TODO
+SELECT region, month, revenue, half
+FROM (
+    SELECT region, month, revenue,
+           NTILE(2) OVER (ORDER BY revenue DESC) AS half
+    FROM monthly_sales
+)
+ORDER BY half, revenue DESC, region;
