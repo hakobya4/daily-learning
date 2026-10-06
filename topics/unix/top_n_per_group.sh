@@ -21,5 +21,8 @@
 #   printf 'a 5\nb 1\na 9\na 7\nb 4\nc 2\n' | ./top_n_per_group.sh
 #   -> a 9 7 / b 4 1 / c 2
 
-# TODO: replace this line
-exit 1
+sort -k1,1 -k2,2nr | awk '
+    $1 != g { if (NR > 1) print line; g = $1; n = 0; line = $1 }
+    n < 2   { line = line " " $2; n++ }
+    END     { if (NR > 0) print line }
+'
