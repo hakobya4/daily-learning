@@ -34,22 +34,35 @@ class LinkedList:
         self.head = None
 
     def append(self, value) -> None:
-        # TODO: if empty, new node becomes head; otherwise walk to the
-        # last node and attach the new node after it.
-        raise NotImplementedError
+        node = Node(value)
+        if self.head is None:
+            self.head = node
+            return
+        cur = self.head
+        while cur.next is not None:
+            cur = cur.next
+        cur.next = node
 
     def prepend(self, value) -> None:
-        # TODO: new node's `next` points at the current head, then it
-        # becomes the new head.
-        raise NotImplementedError
+        node = Node(value)
+        node.next = self.head
+        self.head = node
 
     def find(self, value) -> bool:
-        # TODO: walk the chain from head, return True if any node matches.
-        raise NotImplementedError
+        cur = self.head
+        while cur is not None:
+            if cur.value == value:
+                return True
+            cur = cur.next
+        return False
 
     def to_list(self) -> list:
-        # TODO: walk the chain from head, collecting values in order.
-        raise NotImplementedError
+        out = []
+        cur = self.head
+        while cur is not None:
+            out.append(cur.value)
+            cur = cur.next
+        return out
 
 
 def _run_tests() -> None:
