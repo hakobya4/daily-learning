@@ -31,11 +31,37 @@ Run: python3 word_break.py
 
 
 def can_break(s: str, words: list[str]) -> bool:
-    raise NotImplementedError
+    word_set = set(words)
+    lengths = {len(w) for w in word_set}
+    dp = [False] * (len(s) + 1)
+    dp[0] = True
+    for i in range(1, len(s) + 1):
+        for L in lengths:
+            if L <= i and dp[i - L] and s[i - L:i] in word_set:
+                dp[i] = True
+                break
+    return dp[len(s)]
 
 
 def all_breaks(s: str, words: list[str]) -> list[str]:
-    raise NotImplementedError
+    word_set = set(words)
+    memo: dict[int, list[str]] = {}
+
+    def go(start: int) -> list[str]:
+        if start == len(s):
+            return [""]
+        if start in memo:
+            return memo[start]
+        out = []
+        for end in range(start + 1, len(s) + 1):
+            w = s[start:end]
+            if w in word_set:
+                for rest in go(end):
+                    out.append(w if rest == "" else w + " " + rest)
+        memo[start] = out
+        return out
+
+    return sorted(go(0))
 
 
 def _run_tests() -> None:
