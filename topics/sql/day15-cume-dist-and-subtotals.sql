@@ -35,16 +35,43 @@ INSERT INTO scores (id, student, course, score) VALUES
  (9,'Ana','UNIX',70),(10,'Ben','UNIX',95),(11,'Cy','UNIX',82),(12,'Dee','UNIX',49);
 
 -- Q1
--- TODO
+SELECT course, student, score,
+       ROUND(PERCENT_RANK() OVER (PARTITION BY course ORDER BY score), 2) AS pct_rank,
+       ROUND(CUME_DIST()    OVER (PARTITION BY course ORDER BY score), 2) AS cume
+FROM scores
+ORDER BY course, score, student;
 
 -- Q2
--- TODO
+WITH ranked AS (
+    SELECT course, student, score,
+           CUME_DIST() OVER (PARTITION BY course ORDER BY score) AS cd
+    FROM scores
+)
+SELECT course, student, score
+FROM ranked
+WHERE cd >= 0.75
+ORDER BY course, score DESC, student;
 
 -- Q3
--- TODO
+SELECT course, avg_score FROM (
+    SELECT course, ROUND(AVG(score), 1) AS avg_score, 0 AS grp FROM scores GROUP BY course
+    UNION ALL
+    SELECT 'ALL', ROUND(AVG(score), 1), 1 FROM scores
+)
+ORDER BY grp, course;
 
 -- Q4
--- TODO
+WITH per_student AS (
+    SELECT student, AVG(score) AS avg_score FROM scores GROUP BY student
+)
+SELECT student,
+       ROUND(avg_score, 1) AS avg_score,
+       ROUND(avg_score - (SELECT AVG(avg_score) FROM per_student), 1) AS diff
+FROM per_student
+ORDER BY diff DESC, student;
 
 -- Q5
--- TODO
+SELECT id, student, score,
+       SUM(CASE WHEN score >= 80 THEN 1 ELSE 0 END) OVER (ORDER BY id) AS running_high
+FROM scores
+ORDER BY id;
