@@ -23,8 +23,13 @@ Run: python3 two_sum.py
 """
 
 def two_sum(nums: list[int], target: int) -> tuple[int, int]:
-    # TODO: single pass, dict mapping value -> index seen so far.
-    raise NotImplementedError
+    seen: dict[int, int] = {}
+    for i, n in enumerate(nums):
+        j = seen.get(target - n)
+        if j is not None:
+            return (j, i)
+        seen[n] = i
+    raise ValueError("no two numbers add up to target")
 
 
 def _run_tests() -> None:
