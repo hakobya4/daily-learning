@@ -30,7 +30,21 @@ Run: python3 ini_parser.py
 
 
 def parse_ini(text: str) -> dict[str, dict[str, str]]:
-    raise NotImplementedError
+    result: dict[str, dict[str, str]] = {}
+    section = ""
+    for lineno, raw in enumerate(text.splitlines(), 1):
+        line = raw.strip()
+        if not line or line[0] in ";#":
+            continue
+        if line.startswith("[") and line.endswith("]"):
+            section = line[1:-1].strip()
+            result.setdefault(section, {})
+        elif "=" in line:
+            key, value = line.split("=", 1)
+            result.setdefault(section, {})[key.strip()] = value.strip()
+        else:
+            raise ValueError(f"line {lineno}: invalid line {raw!r}")
+    return result
 
 
 def _run_tests() -> None:
