@@ -29,16 +29,37 @@ Run: python3 kth_largest.py
 """
 
 
+import heapq
+
+
 def kth_largest(nums: list[int], k: int) -> int:
-    raise NotImplementedError
+    if k < 1 or k > len(nums):
+        raise ValueError("k out of range")
+    heap: list[int] = []
+    for x in nums:
+        if len(heap) < k:
+            heapq.heappush(heap, x)
+        elif x > heap[0]:
+            heapq.heapreplace(heap, x)
+    return heap[0]
 
 
 class KthLargest:
     def __init__(self, k: int, nums: list[int]):
-        raise NotImplementedError
+        self.k = k
+        self.heap: list[int] = []
+        for x in nums:
+            self._push(x)
+
+    def _push(self, val: int) -> None:
+        if len(self.heap) < self.k:
+            heapq.heappush(self.heap, val)
+        elif val > self.heap[0]:
+            heapq.heapreplace(self.heap, val)
 
     def add(self, val: int) -> int:
-        raise NotImplementedError
+        self._push(val)
+        return self.heap[0]
 
 
 def _run_tests() -> None:
