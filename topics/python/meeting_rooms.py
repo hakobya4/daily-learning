@@ -25,15 +25,28 @@ Run: python3 meeting_rooms.py
 
 
 def can_attend_all(meetings: list[tuple[int, int]]) -> bool:
-    raise NotImplementedError
+    ordered = sorted(meetings)
+    return all(ordered[i][1] <= ordered[i + 1][0] for i in range(len(ordered) - 1))
+
+
+def _sweep(meetings):
+    # events: (time, delta); ends (-1) sort before starts (+1) at the same time
+    events = sorted([(s, 1) for s, _ in meetings] + [(e, -1) for _, e in meetings])
+    cur = best = 0
+    best_time = None
+    for t, d in events:
+        cur += d
+        if cur > best:
+            best, best_time = cur, t
+    return best, best_time
 
 
 def min_rooms(meetings: list[tuple[int, int]]) -> int:
-    raise NotImplementedError
+    return _sweep(meetings)[0]
 
 
 def busiest_time(meetings: list[tuple[int, int]]):
-    raise NotImplementedError
+    return _sweep(meetings)[1]
 
 
 def _run_tests() -> None:
