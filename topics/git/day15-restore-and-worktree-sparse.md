@@ -25,12 +25,52 @@ In a SCRATCH repo (`/tmp/restore-lab`, `git init -b main`):
 ## WHAT I RAN
 
 ```
-# TODO: paste the commands you ran
+cd /tmp/restore-lab && git init -b main
+for i in 1 2 3 4 5 6; do echo "line $i"; done > notes.txt
+git add . && git commit -m init
+sed -i 's/line 2/line 2 edited/; s/line 5/line 5 edited/' notes.txt
+git add -p notes.txt        # s (split), y for the line-2 hunk, n for line 5
+git commit -m "stage line 2 only"
+git status --short          # " M notes.txt"
+git restore notes.txt       # discard the line-5 change
+echo "line 3 changed" >> notes.txt && git add notes.txt
+git restore --source=HEAD~1 --staged --worktree notes.txt
+git switch -c experiment    # commit something
+git switch -                # back to main
+echo junk > junk.txt
+git clean -n                # "Would remove junk.txt"
+git clean -f
 ```
 
 ## WHAT I SAW / ANSWERS
 
-TODO: answers to the questions in steps 2-6, in your own words.
+Step 2: after `git add -p` with `s` to split the big hunk and `y`/`n`
+answers, only the line-2 change was committed. `git status` showed
+` M notes.txt` (modified, NOT staged) for the leftover line-5 change, so
+the same file is partly committed and partly still just a working-tree edit.
+
+Step 3: `git restore notes.txt` copies the index version back into the
+working tree, throwing away the unstaged line-5 edit (it cannot be undone).
+To unstage instead, `git restore --staged notes.txt` moves the file out of
+the index but keeps my edits in the working tree.
+
+Step 4: `--source=HEAD~1` says "take the content from the previous commit"
+instead of the default (index / HEAD). `--staged` writes that content into
+the index; `--worktree` writes it into the working file. With both, the file
+and the index both become the HEAD~1 version (line 2 back to the original, my
+extra line gone), and HEAD itself doesn't move. Afterwards `git status` shows
+`M  notes.txt` (staged), because that version differs from HEAD.
+
+Step 5: `git switch -c experiment` creates and moves to a branch. `-` means
+"the previously checked-out branch" (like `cd -`), so it took me back to
+main. `git switch` only changes branches, while `git restore` only changes
+files; the old `git checkout` did both jobs, which made mistakes easy (e.g.
+a typo'd branch name being treated as a file path).
+
+Step 6: `git clean -n` is a dry run that lists what would be deleted
+("Would remove junk.txt"). Always dry-run first because `clean -f` deletes
+untracked files permanently - they're not in any commit, so there is no
+reflog or other way to get them back.
 
 ## DONE WHEN
 
