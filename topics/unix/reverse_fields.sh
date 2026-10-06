@@ -21,5 +21,8 @@
 #   printf 'one two three\nsolo\n\na   b\n' | ./reverse_fields.sh
 #   -> three two one / solo / (blank) / b a
 
-# TODO: replace this line
-exit 1
+awk '{
+    out = ""
+    for (i = NF; i >= 1; i--) out = out (out == "" ? "" : " ") $i
+    print out
+}'
