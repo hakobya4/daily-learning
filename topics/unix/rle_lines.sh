@@ -20,5 +20,9 @@
 #   printf 'a\na\nb\na\na\na\n' | ./rle_lines.sh | cat -A
 #   -> 2^Ia$ / 1^Ib$ / 3^Ia$
 
-# TODO: replace this line
-exit 1
+awk '
+NR == 1 { prev = $0; n = 1; next }
+$0 == prev { n++; next }
+{ printf "%d\t%s\n", n, prev; prev = $0; n = 1 }
+END { if (NR > 0) printf "%d\t%s\n", n, prev }
+'
