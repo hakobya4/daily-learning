@@ -21,5 +21,19 @@
 #   printf '2026-01-30 5\n2026-02-02 3\n' | ./fill_missing_dates.sh
 #   -> 2026-01-30 5 / 2026-01-31 0 / 2026-02-01 0 / 2026-02-02 3
 
-# TODO: replace this line
-exit 1
+first=""
+declare -A counts
+last=""
+while read -r d c _; do
+    [ -z "$d" ] && continue
+    [ -z "$first" ] && first="$d"
+    counts[$d]=$(( ${counts[$d]:-0} + c ))
+    last="$d"
+done
+[ -z "$first" ] && exit 0
+d="$first"
+while :; do
+    echo "$d ${counts[$d]:-0}"
+    [ "$d" = "$last" ] && break
+    d=$(date -d "$d +1 day" +%F)
+done
