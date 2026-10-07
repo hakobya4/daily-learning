@@ -41,16 +41,55 @@ INSERT INTO orders (user, amount, status) VALUES
     ('di', 5, 'refunded');
 
 -- Q1
+SELECT user, MIN(day) AS start_day, MAX(day) AS end_day, COUNT(*) AS length
+FROM (
+    SELECT user, day, day - ROW_NUMBER() OVER (PARTITION BY user ORDER BY day) AS grp
+    FROM logins
+)
+GROUP BY user, grp
+ORDER BY user, start_day;
 
 
 -- Q2
+SELECT user, MAX(length) AS longest
+FROM (
+    SELECT user, COUNT(*) AS length
+    FROM (
+        SELECT user, day, day - ROW_NUMBER() OVER (PARTITION BY user ORDER BY day) AS grp
+        FROM logins
+    )
+    GROUP BY user, grp
+)
+GROUP BY user
+ORDER BY longest DESC, user;
 
 
 -- Q3
+SELECT user, day + 1 AS gap_start, next_day - 1 AS gap_end
+FROM (
+    SELECT user, day, LEAD(day) OVER (PARTITION BY user ORDER BY day) AS next_day
+    FROM logins
+)
+WHERE next_day IS NOT NULL AND next_day - day > 1
+ORDER BY user, gap_start;
 
 
 -- Q4
+SELECT u.user,
+       COALESCE(SUM(CASE WHEN o.status = 'paid' THEN o.amount END), 0) AS paid,
+       COALESCE(SUM(CASE WHEN o.status = 'refunded' THEN o.amount END), 0) AS refunded,
+       COALESCE(SUM(CASE WHEN o.status = 'pending' THEN o.amount END), 0) AS pending
+FROM (SELECT DISTINCT user FROM logins UNION SELECT DISTINCT user FROM orders) AS u
+LEFT JOIN orders o ON o.user = u.user
+GROUP BY u.user
+ORDER BY u.user;
 
 
 -- Q5
+SELECT l.user
+FROM logins l
+GROUP BY l.user
+HAVING COUNT(DISTINCT l.day) >= 3
+   AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.user = l.user AND o.status = 'paid')
+ORDER BY l.user;
 
