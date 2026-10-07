@@ -27,7 +27,78 @@ Run: python3 basic_calculator.py
 
 
 def calc(expr: str) -> int:
-    raise NotImplementedError
+    tokens = []
+    i = 0
+    while i < len(expr):
+        c = expr[i]
+        if c.isspace():
+            i += 1
+        elif c.isdigit():
+            j = i
+            while j < len(expr) and expr[j].isdigit():
+                j += 1
+            tokens.append(int(expr[i:j]))
+            i = j
+        elif c in "+-*/()":
+            tokens.append(c)
+            i += 1
+        else:
+            raise ValueError(f"bad character {c!r}")
+    pos = 0
+
+    def peek():
+        return tokens[pos] if pos < len(tokens) else None
+
+    def parse_expr():
+        nonlocal pos
+        val = parse_term()
+        while peek() in ("+", "-"):
+            op = tokens[pos]
+            pos += 1
+            rhs = parse_term()
+            val = val + rhs if op == "+" else val - rhs
+        return val
+
+    def parse_term():
+        nonlocal pos
+        val = parse_factor()
+        while peek() in ("*", "/"):
+            op = tokens[pos]
+            pos += 1
+            rhs = parse_factor()
+            if op == "*":
+                val *= rhs
+            else:
+                if rhs == 0:
+                    raise ZeroDivisionError("division by zero")
+                val = int(val / rhs) if abs(val) < 2**52 else (abs(val) // abs(rhs)) * (1 if (val < 0) == (rhs < 0) else -1)
+        return val
+
+    def parse_factor():
+        nonlocal pos
+        t = peek()
+        if t == "-":
+            pos += 1
+            return -parse_factor()
+        if t == "+":
+            pos += 1
+            return parse_factor()
+        if t == "(":
+            pos += 1
+            val = parse_expr()
+            if peek() != ")":
+                raise ValueError("missing )")
+            pos += 1
+            return val
+        if isinstance(t, int):
+            pos += 1
+            return t
+        raise ValueError("unexpected token")
+
+    result = parse_expr()
+    if pos != len(tokens):
+        raise ValueError("trailing tokens")
+    return result
 
 
 def _run_tests():
