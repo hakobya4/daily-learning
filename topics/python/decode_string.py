@@ -25,7 +25,25 @@ Run: python3 decode_string.py
 
 
 def decode(s: str) -> str:
-    raise NotImplementedError
+    stack = []  # (previous_string, repeat_count)
+    cur = ""
+    num = 0
+    for ch in s:
+        if ch.isdigit():
+            num = num * 10 + int(ch)
+        elif ch == "[":
+            stack.append((cur, num))
+            cur, num = "", 0
+        elif ch == "]":
+            if not stack:
+                raise ValueError("unbalanced brackets")
+            prev, k = stack.pop()
+            cur = prev + cur * k
+        else:
+            cur += ch
+    if stack:
+        raise ValueError("unbalanced brackets")
+    return cur
 
 
 def _run_tests():
