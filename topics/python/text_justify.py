@@ -27,7 +27,29 @@ Run: python3 text_justify.py
 
 
 def justify(words: list[str], width: int) -> list[str]:
-    raise NotImplementedError
+    lines = []
+    i = 0
+    n = len(words)
+    while i < n:
+        j = i
+        length = 0
+        while j < n and length + len(words[j]) + (j - i) <= width:
+            length += len(words[j])
+            j += 1
+        line_words = words[i:j]
+        gaps = len(line_words) - 1
+        if j == n or gaps == 0:
+            line = " ".join(line_words)
+            line += " " * (width - len(line))
+        else:
+            base, extra = divmod(width - length, gaps)
+            line = ""
+            for k, w in enumerate(line_words[:-1]):
+                line += w + " " * (base + (1 if k < extra else 0))
+            line += line_words[-1]
+        lines.append(line)
+        i = j
+    return lines
 
 
 def _run_tests():
