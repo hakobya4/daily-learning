@@ -27,12 +27,32 @@ Run: python3 longest_palindromic_substring.py
 """
 
 
+def _expand(s: str, lo: int, hi: int):
+    while lo >= 0 and hi < len(s) and s[lo] == s[hi]:
+        lo -= 1
+        hi += 1
+    return lo + 1, hi  # [start, end)
+
+
 def longest_palindrome(s: str) -> str:
-    raise NotImplementedError
+    best_start, best_end = 0, 0
+    for center in range(2 * len(s) - 1):
+        lo = center // 2
+        hi = lo + center % 2
+        a, b = _expand(s, lo, hi)
+        if b - a > best_end - best_start:
+            best_start, best_end = a, b
+    return s[best_start:best_end]
 
 
 def count_palindromic_substrings(s: str) -> int:
-    raise NotImplementedError
+    total = 0
+    for center in range(2 * len(s) - 1):
+        lo = center // 2
+        hi = lo + center % 2
+        a, b = _expand(s, lo, hi)
+        total += (b - a + 1) // 2
+    return total
 
 
 def _run_tests():
