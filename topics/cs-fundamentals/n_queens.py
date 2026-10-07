@@ -26,12 +26,39 @@ Run: python3 n_queens.py
 """
 
 
+def _placements(n: int):
+    cols, d1, d2 = set(), set(), set()
+    placement = []
+
+    def bt(r):
+        if r == n:
+            yield tuple(placement)
+            return
+        for c in range(n):
+            if c in cols or (r - c) in d1 or (r + c) in d2:
+                continue
+            cols.add(c)
+            d1.add(r - c)
+            d2.add(r + c)
+            placement.append(c)
+            yield from bt(r + 1)
+            placement.pop()
+            cols.remove(c)
+            d1.remove(r - c)
+            d2.remove(r + c)
+
+    yield from bt(0)
+
+
 def count_n_queens(n: int) -> int:
-    raise NotImplementedError
+    return sum(1 for _ in _placements(n))
 
 
 def solve_n_queens(n: int) -> list[list[str]]:
-    raise NotImplementedError
+    return [
+        ["." * c + "Q" + "." * (n - c - 1) for c in p]
+        for p in _placements(n)
+    ]
 
 
 def _run_tests():
