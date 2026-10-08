@@ -34,16 +34,38 @@ INSERT INTO staff (id, name, boss_id) VALUES
  (1,'Ada',NULL),(2,'Ben',1),(3,'Cy',1),(4,'Di',2),(5,'Eve',2),(6,'Fay',4),(7,'Gus',NULL),(8,'Hal',7);
 
 -- Q1:
--- TODO: replace this line with your query;
+SELECT region, rep, amount FROM (
+  SELECT region, rep, amount,
+         ROW_NUMBER() OVER (PARTITION BY region ORDER BY amount DESC, id) AS rn
+  FROM sales
+) WHERE rn = 1
+ORDER BY region;
 
 -- Q2:
--- TODO: replace this line with your query;
+SELECT rep, sold_on, amount,
+       SUM(amount) OVER (PARTITION BY rep ORDER BY sold_on, id
+                         ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_total
+FROM sales
+ORDER BY rep, sold_on, id;
 
 -- Q3:
--- TODO: replace this line with your query;
+SELECT rep, ROUND(AVG(amount), 2) AS avg_amount
+FROM sales
+GROUP BY rep
+HAVING AVG(amount) > (SELECT AVG(amount) FROM sales)
+ORDER BY rep;
 
 -- Q4:
--- TODO: replace this line with your query;
+WITH RECURSIVE chain(id, name, depth) AS (
+  SELECT id, name, 1 FROM staff WHERE boss_id = (SELECT id FROM staff WHERE name = 'Ada')
+  UNION ALL
+  SELECT s.id, s.name, c.depth + 1 FROM staff s JOIN chain c ON s.boss_id = c.id
+)
+SELECT name, depth FROM chain ORDER BY depth, name;
 
 -- Q5:
--- TODO: replace this line with your query;
+SELECT region, COUNT(DISTINCT rep) AS reps, SUM(amount) AS total
+FROM sales
+GROUP BY region
+HAVING COUNT(DISTINCT rep) >= 2 AND SUM(amount) >= 500
+ORDER BY region;
