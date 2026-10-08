@@ -23,11 +23,20 @@ Run: python3 longest_unique_substring.py
 
 
 def length_of_longest_unique(s: str) -> int:
-    raise NotImplementedError
+    return len(longest_unique(s))
 
 
 def longest_unique(s: str) -> str:
-    raise NotImplementedError
+    last = {}
+    left = 0
+    best_start, best_len = 0, 0
+    for i, ch in enumerate(s):
+        if ch in last:
+            left = max(left, last[ch] + 1)
+        last[ch] = i
+        if i - left + 1 > best_len:
+            best_start, best_len = left, i - left + 1
+    return s[best_start:best_start + best_len]
 
 
 def _run_tests():
