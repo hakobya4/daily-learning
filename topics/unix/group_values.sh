@@ -20,5 +20,8 @@
 #   printf 'a 1\nb 2\na 3\nc 4\nb 5\n' | ./group_values.sh
 #   -> a: 1,3 / b: 2,5 / c: 4
 
-# TODO: replace this line with your solution
-exit 1
+awk 'NF >= 2 {
+  if (!($1 in vals)) { order[++n] = $1; vals[$1] = $2 }
+  else vals[$1] = vals[$1] "," $2
+}
+END { for (i = 1; i <= n; i++) print order[i] ": " vals[order[i]] }' 
