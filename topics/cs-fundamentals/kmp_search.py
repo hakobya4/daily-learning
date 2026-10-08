@@ -24,11 +24,32 @@ Run: python3 kmp_search.py
 
 
 def build_lps(p: str) -> list:
-    raise NotImplementedError
+    lps = [0] * len(p)
+    k = 0
+    for i in range(1, len(p)):
+        while k > 0 and p[i] != p[k]:
+            k = lps[k - 1]
+        if p[i] == p[k]:
+            k += 1
+        lps[i] = k
+    return lps
 
 
 def kmp_find_all(t: str, p: str) -> list:
-    raise NotImplementedError
+    if not p:
+        raise ValueError("empty pattern")
+    lps = build_lps(p)
+    res = []
+    k = 0
+    for i, ch in enumerate(t):
+        while k > 0 and ch != p[k]:
+            k = lps[k - 1]
+        if ch == p[k]:
+            k += 1
+        if k == len(p):
+            res.append(i - k + 1)
+            k = lps[k - 1]
+    return res
 
 
 def _run_tests():
