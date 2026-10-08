@@ -20,5 +20,4 @@
 #   printf '1\n2\n3\n4\n5\n' | ./rolling_sum.sh     -> 6 9 12
 #   printf '1.5\n2.5\n3\n' | ./rolling_sum.sh       -> 7
 
-# TODO: replace this line with your solution
-exit 1
+awk 'NF { n++; v[n] = $1; if (n >= 3) print v[n] + v[n-1] + v[n-2] }' 
