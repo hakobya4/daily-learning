@@ -22,7 +22,29 @@ Run: python3 min_window_substring.py
 
 
 def min_window(s: str, t: str) -> str:
-    raise NotImplementedError
+    from collections import Counter
+    if not t or not s:
+        return ""
+    need = Counter(t)
+    missing = len(t)
+    left = 0
+    best = (0, 0)
+    best_len = float("inf")
+    for right, ch in enumerate(s):
+        if need[ch] > 0:
+            missing -= 1
+        need[ch] -= 1
+        if missing == 0:
+            while need[s[left]] < 0:
+                need[s[left]] += 1
+                left += 1
+            if right - left + 1 < best_len:
+                best_len = right - left + 1
+                best = (left, right + 1)
+            need[s[left]] += 1
+            missing += 1
+            left += 1
+    return s[best[0]:best[1]] if best_len != float("inf") else ""
 
 
 def _run_tests():
