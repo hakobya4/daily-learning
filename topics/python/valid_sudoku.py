@@ -20,7 +20,27 @@ Run: python3 valid_sudoku.py
 
 
 def is_valid_sudoku(board: list) -> bool:
-    raise NotImplementedError
+    if not isinstance(board, list) or len(board) != 9:
+        raise ValueError("board must have 9 rows")
+    rows = [set() for _ in range(9)]
+    cols = [set() for _ in range(9)]
+    boxes = [set() for _ in range(9)]
+    ok = True
+    for r, row in enumerate(board):
+        if not isinstance(row, str) or len(row) != 9:
+            raise ValueError("each row must be a string of length 9")
+        for c, ch in enumerate(row):
+            if ch != "." and ch not in "123456789":
+                raise ValueError("invalid character %r" % ch)
+            if ch == ".":
+                continue
+            b = (r // 3) * 3 + c // 3
+            if ch in rows[r] or ch in cols[c] or ch in boxes[b]:
+                ok = False
+            rows[r].add(ch)
+            cols[c].add(ch)
+            boxes[b].add(ch)
+    return ok
 
 
 def _run_tests():
