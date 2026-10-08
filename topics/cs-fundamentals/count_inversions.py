@@ -22,7 +22,25 @@ Run: python3 count_inversions.py
 
 
 def count_inversions(a: list):
-    raise NotImplementedError
+    if len(a) <= 1:
+        return list(a), 0
+    mid = len(a) // 2
+    left, li = count_inversions(a[:mid])
+    right, ri = count_inversions(a[mid:])
+    merged = []
+    i = j = 0
+    inv = li + ri
+    while i < len(left) and j < len(right):
+        if left[i] <= right[j]:
+            merged.append(left[i])
+            i += 1
+        else:
+            merged.append(right[j])
+            j += 1
+            inv += len(left) - i
+    merged.extend(left[i:])
+    merged.extend(right[j:])
+    return merged, inv
 
 
 def _run_tests():
