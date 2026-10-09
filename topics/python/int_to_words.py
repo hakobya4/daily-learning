@@ -23,8 +23,46 @@ Run: python3 int_to_words.py
 """
 
 
+_SMALL = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven",
+          "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen",
+          "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"]
+_TENS = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy",
+         "Eighty", "Ninety"]
+_SCALES = ["", "Thousand", "Million", "Billion"]
+
+
+def _chunk_words(n):
+    parts = []
+    if n >= 100:
+        parts.append(_SMALL[n // 100])
+        parts.append("Hundred")
+        n %= 100
+    if n >= 20:
+        parts.append(_TENS[n // 10])
+        n %= 10
+        if n:
+            parts.append(_SMALL[n])
+    elif n:
+        parts.append(_SMALL[n])
+    return parts
+
+
 def int_to_words(n: int) -> str:
-    raise NotImplementedError
+    if isinstance(n, bool) or not isinstance(n, int) or n < 0:
+        raise ValueError("n must be a non-negative int")
+    if n == 0:
+        return "Zero"
+    parts = []
+    scale = 0
+    while n:
+        n, chunk = divmod(n, 1000)
+        if chunk:
+            words = _chunk_words(chunk)
+            if _SCALES[scale]:
+                words.append(_SCALES[scale])
+            parts = words + parts
+        scale += 1
+    return " ".join(parts)
 
 
 def _run_tests():
