@@ -34,11 +34,52 @@ INSERT INTO orders (id, customer_id, ordered_on, amount, status) VALUES
  (9,4,'2026-03-22',500,'pending');
 
 -- Q1:
+SELECT c.name
+FROM customers c
+LEFT JOIN orders o ON o.customer_id = c.id
+WHERE o.id IS NULL
+ORDER BY c.name;
 
 -- Q2:
+WITH monthly AS (
+  SELECT strftime('%Y-%m', ordered_on) AS month, SUM(amount) AS total
+  FROM orders
+  WHERE status = 'paid'
+  GROUP BY month
+)
+SELECT month,
+       total,
+       LAG(total) OVER (ORDER BY month) AS prev_total,
+       total - LAG(total) OVER (ORDER BY month) AS change
+FROM monthly
+ORDER BY month;
 
 -- Q3:
+SELECT id,
+       customer_id,
+       ROUND(100.0 * amount / SUM(amount) OVER (PARTITION BY customer_id), 1) AS pct
+FROM orders
+WHERE status = 'paid'
+ORDER BY id;
 
 -- Q4:
+SELECT DISTINCT c.name,
+       FIRST_VALUE(o.amount) OVER w AS first_amount,
+       LAST_VALUE(o.amount) OVER w AS last_amount
+FROM orders o
+JOIN customers c ON c.id = o.customer_id
+WHERE o.status = 'paid'
+WINDOW w AS (PARTITION BY o.customer_id ORDER BY o.ordered_on, o.id
+             ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)
+ORDER BY c.name;
 
 -- Q5:
+SELECT c.country,
+       COUNT(*) AS orders,
+       ROUND(AVG(o.amount), 2) AS avg_amount
+FROM orders o
+JOIN customers c ON c.id = o.customer_id
+WHERE o.status = 'paid'
+GROUP BY c.country
+HAVING COUNT(*) >= 2 AND AVG(o.amount) > 100
+ORDER BY c.country;
