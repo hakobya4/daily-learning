@@ -23,7 +23,22 @@ Run: python3 min_jumps.py
 
 
 def min_jumps(nums: list) -> int:
-    raise NotImplementedError
+    if not isinstance(nums, list) or not nums:
+        raise ValueError("nums must be a non-empty list")
+    n = len(nums)
+    if n == 1:
+        return 0
+    jumps = level_end = farthest = 0
+    for i in range(n - 1):
+        farthest = max(farthest, i + nums[i])
+        if i == level_end:
+            if farthest <= i:
+                return -1
+            jumps += 1
+            level_end = farthest
+            if level_end >= n - 1:
+                return jumps
+    return -1
 
 
 def _run_tests():
