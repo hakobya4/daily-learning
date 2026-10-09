@@ -25,7 +25,30 @@ Run: python3 word_ladder.py
 
 
 def ladder_length(begin: str, end: str, words: list) -> int:
-    raise NotImplementedError
+    from collections import defaultdict, deque
+    if begin == end:
+        return 1
+    word_set = set(words)
+    if end not in word_set:
+        return 0
+    buckets = defaultdict(list)
+    for w in word_set:
+        for i in range(len(w)):
+            buckets[w[:i] + "*" + w[i + 1:]].append(w)
+    queue = deque([(begin, 1)])
+    seen = {begin}
+    while queue:
+        word, length = queue.popleft()
+        for i in range(len(word)):
+            key = word[:i] + "*" + word[i + 1:]
+            for nxt in buckets.get(key, ()):
+                if nxt == end:
+                    return length + 1
+                if nxt not in seen:
+                    seen.add(nxt)
+                    queue.append((nxt, length + 1))
+            buckets[key] = []
+    return 0
 
 
 def _run_tests():
