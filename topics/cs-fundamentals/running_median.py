@@ -25,16 +25,29 @@ Run: python3 running_median.py
 
 class RunningMedian:
     def __init__(self):
-        raise NotImplementedError
+        self.lo = []  # max-heap (negated values): smaller half
+        self.hi = []  # min-heap: larger half
 
     def add(self, x):
-        raise NotImplementedError
+        import heapq
+        if self.lo and x > -self.lo[0]:
+            heapq.heappush(self.hi, x)
+        else:
+            heapq.heappush(self.lo, -x)
+        if len(self.lo) > len(self.hi) + 1:
+            heapq.heappush(self.hi, -heapq.heappop(self.lo))
+        elif len(self.hi) > len(self.lo):
+            heapq.heappush(self.lo, -heapq.heappop(self.hi))
 
     def median(self):
-        raise NotImplementedError
+        if not self.lo:
+            raise ValueError("median of empty RunningMedian")
+        if len(self.lo) > len(self.hi):
+            return -self.lo[0]
+        return (-self.lo[0] + self.hi[0]) / 2
 
     def __len__(self):
-        raise NotImplementedError
+        return len(self.lo) + len(self.hi)
 
 
 def _run_tests():
