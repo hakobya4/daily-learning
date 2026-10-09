@@ -19,5 +19,13 @@
 # Check with:
 #   printf 'a: x,y\nb: y,z\n' | ./invert_mapping.sh
 
-# TODO: replace this line
-exit 1
+awk -F': ' 'NF >= 2 {
+    n = split($2, vs, ",")
+    for (i = 1; i <= n; i++) {
+        v = vs[i]
+        gsub(/^[ \t]+|[ \t]+$/, "", v)
+        if (v == "") continue
+        out[v] = out[v] (out[v] != "" ? "," : "") $1
+    }
+}
+END { for (v in out) print v ": " out[v] }' | sort
