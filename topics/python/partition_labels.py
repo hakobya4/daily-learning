@@ -22,7 +22,16 @@ Run: python3 partition_labels.py
 
 
 def partition_labels(s: str) -> list:
-    raise NotImplementedError
+    if not isinstance(s, str):
+        raise ValueError("s must be a str")
+    last = {c: i for i, c in enumerate(s)}
+    sizes, start, end = [], 0, 0
+    for i, c in enumerate(s):
+        end = max(end, last[c])
+        if i == end:
+            sizes.append(i - start + 1)
+            start = i + 1
+    return sizes
 
 
 def _run_tests():
