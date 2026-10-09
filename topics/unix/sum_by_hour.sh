@@ -20,5 +20,5 @@
 # Check with:
 #   printf '2026-10-01 09:15 5\n2026-10-01 09:50 7\n2026-10-01 10:01 1\n' | ./sum_by_hour.sh
 
-# TODO: replace this line
-exit 1
+awk 'NF >= 3 { split($2, t, ":"); sum[$1 " " t[1]] += $3 }
+     END { for (k in sum) print k, sum[k] }' | sort
