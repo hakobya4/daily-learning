@@ -22,7 +22,17 @@ Run: python3 longest_consecutive.py
 
 
 def longest_consecutive(nums: list) -> int:
-    raise NotImplementedError
+    if not isinstance(nums, list):
+        raise ValueError("nums must be a list")
+    present = set(nums)
+    best = 0
+    for x in present:
+        if x - 1 not in present:
+            length = 1
+            while x + length in present:
+                length += 1
+            best = max(best, length)
+    return best
 
 
 def _run_tests():
