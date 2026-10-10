@@ -18,22 +18,29 @@ Run: python3 min_stack.py
 
 class MinStack:
     def __init__(self):
-        raise NotImplementedError
+        self._items = []  # (value, min_so_far)
 
     def push(self, x):
-        raise NotImplementedError
+        m = x if not self._items else min(x, self._items[-1][1])
+        self._items.append((x, m))
 
     def pop(self):
-        raise NotImplementedError
+        if not self._items:
+            raise IndexError("pop from empty stack")
+        return self._items.pop()[0]
 
     def top(self):
-        raise NotImplementedError
+        if not self._items:
+            raise IndexError("top of empty stack")
+        return self._items[-1][0]
 
     def get_min(self):
-        raise NotImplementedError
+        if not self._items:
+            raise IndexError("get_min of empty stack")
+        return self._items[-1][1]
 
     def __len__(self):
-        raise NotImplementedError
+        return len(self._items)
 
 
 def _run_tests():
