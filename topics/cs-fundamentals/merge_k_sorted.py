@@ -23,7 +23,17 @@ import heapq  # noqa: F401  (you will want it)
 
 
 def merge_k_sorted(lists: list) -> list:
-    raise NotImplementedError
+    if not isinstance(lists, list):
+        raise ValueError("lists must be a list")
+    heap = [(lst[0], i, 0) for i, lst in enumerate(lists) if lst]
+    heapq.heapify(heap)
+    out = []
+    while heap:
+        value, i, j = heapq.heappop(heap)
+        out.append(value)
+        if j + 1 < len(lists[i]):
+            heapq.heappush(heap, (lists[i][j + 1], i, j + 1))
+    return out
 
 
 def _run_tests():
