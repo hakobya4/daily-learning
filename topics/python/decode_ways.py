@@ -22,7 +22,19 @@ Run: python3 decode_ways.py
 
 
 def num_decodings(s: str) -> int:
-    raise NotImplementedError
+    if not isinstance(s, str) or not s or not s.isascii() or not s.isdigit():
+        raise ValueError("s must be a non-empty string of digits")
+    prev2, prev1 = 1, 1  # dp[i-2], dp[i-1]; dp[0] = 1
+    if s[0] == "0":
+        return 0
+    for i in range(1, len(s)):
+        cur = 0
+        if s[i] != "0":
+            cur += prev1
+        if 10 <= int(s[i - 1:i + 1]) <= 26:
+            cur += prev2
+        prev2, prev1 = prev1, cur
+    return prev1
 
 
 def _run_tests():
