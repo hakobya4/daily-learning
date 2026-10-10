@@ -34,7 +34,54 @@ INSERT INTO sales (id, product_id, sold_on, qty, unit_price) VALUES
  (9,3,'2026-03-05',6,9);
 
 -- Q1:
+SELECT p.name
+FROM products p
+WHERE NOT EXISTS (
+  SELECT 1 FROM sales s
+  WHERE s.product_id = p.id AND s.sold_on >= '2026-03-01'
+)
+ORDER BY p.name;
+
 -- Q2:
+SELECT name, sold_on, qty
+FROM (
+  SELECT p.name, s.sold_on, s.qty,
+         ROW_NUMBER() OVER (PARTITION BY p.id ORDER BY s.sold_on DESC, s.id DESC) AS rn
+  FROM products p
+  JOIN sales s ON s.product_id = p.id
+)
+WHERE rn = 1
+ORDER BY name;
+
 -- Q3:
+WITH daily AS (
+  SELECT sold_on, SUM(qty * unit_price) AS revenue
+  FROM sales
+  GROUP BY sold_on
+)
+SELECT sold_on,
+       revenue,
+       ROUND(AVG(revenue) OVER (ORDER BY sold_on ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 1) AS moving_avg
+FROM daily
+ORDER BY sold_on;
+
 -- Q4:
+SELECT category, revenue FROM (
+  SELECT p.category AS category, SUM(s.qty * s.unit_price) AS revenue, 0 AS ord
+  FROM sales s JOIN products p ON p.id = s.product_id
+  GROUP BY p.category
+  UNION ALL
+  SELECT 'ALL', SUM(qty * unit_price), 1 FROM sales
+)
+ORDER BY ord, category;
+
 -- Q5:
+WITH totals AS (
+  SELECT p.name, SUM(s.qty) AS total_qty
+  FROM products p JOIN sales s ON s.product_id = p.id
+  GROUP BY p.id
+)
+SELECT name, total_qty
+FROM totals
+WHERE total_qty > (SELECT AVG(total_qty) FROM totals)
+ORDER BY total_qty DESC, name;
