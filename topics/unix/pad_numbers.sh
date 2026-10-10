@@ -19,5 +19,13 @@
 # Check with:
 #   printf 'file1.txt file12.txt v2026\n' | ./pad_numbers.sh
 
-# TODO: replace this line
-exit 1
+awk '{
+    rest = $0; out = ""
+    while (match(rest, /[0-9]+/)) {
+        num = substr(rest, RSTART, RLENGTH)
+        while (length(num) < 4) num = "0" num
+        out = out substr(rest, 1, RSTART - 1) num
+        rest = substr(rest, RSTART + RLENGTH)
+    }
+    print out rest
+}'
