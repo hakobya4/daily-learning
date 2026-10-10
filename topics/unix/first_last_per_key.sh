@@ -20,5 +20,8 @@
 # Check with:
 #   printf 'a 1\nb 5\na 7\na 9\n' | ./first_last_per_key.sh
 
-# TODO: replace this line
-exit 1
+awk 'NF >= 2 {
+    if (!($1 in first)) { order[++n] = $1; first[$1] = $2 }
+    last[$1] = $2
+}
+END { for (i = 1; i <= n; i++) print order[i], first[order[i]], last[order[i]] }'
