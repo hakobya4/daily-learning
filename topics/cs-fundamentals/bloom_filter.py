@@ -30,16 +30,26 @@ import hashlib
 
 class BloomFilter:
     def __init__(self, size: int, num_hashes: int):
-        raise NotImplementedError
+        if size < 1 or num_hashes < 1:
+            raise ValueError("size and num_hashes must be >= 1")
+        self.size = size
+        self.num_hashes = num_hashes
+        self._bits = bytearray(size)
+
+    def _indexes(self, item: str):
+        for i in range(self.num_hashes):
+            digest = hashlib.sha256(f"{i}:{item}".encode()).digest()
+            yield int.from_bytes(digest, "big") % self.size
 
     def add(self, item: str) -> None:
-        raise NotImplementedError
+        for idx in self._indexes(item):
+            self._bits[idx] = 1
 
     def might_contain(self, item: str) -> bool:
-        raise NotImplementedError
+        return all(self._bits[idx] for idx in self._indexes(item))
 
     def bits_set(self) -> int:
-        raise NotImplementedError
+        return sum(self._bits)
 
 
 def _run_tests():
