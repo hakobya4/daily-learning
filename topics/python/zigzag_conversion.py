@@ -27,7 +27,20 @@ Run: python3 zigzag_conversion.py
 
 
 def convert(s: str, num_rows: int) -> str:
-    raise NotImplementedError
+    if num_rows < 1:
+        raise ValueError("num_rows must be >= 1")
+    if num_rows == 1 or num_rows >= len(s):
+        return s
+    rows = [[] for _ in range(num_rows)]
+    r, step = 0, 1
+    for ch in s:
+        rows[r].append(ch)
+        if r == 0:
+            step = 1
+        elif r == num_rows - 1:
+            step = -1
+        r += step
+    return "".join("".join(row) for row in rows)
 
 
 def _run_tests():
