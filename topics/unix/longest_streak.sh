@@ -18,5 +18,5 @@
 # Check with:
 #   printf 'OK\nOK\nFAIL\nOK\nOK\nOK\nFAIL\n' | ./longest_streak.sh
 
-# TODO: replace this line
-exit 1
+awk '{ cur = ($0 == "OK") ? cur + 1 : 0; if (cur > best) best = cur }
+END { print best + 0 }'
