@@ -22,7 +22,26 @@ Run: python3 find_anagram_indices.py
 
 
 def find_anagrams(s: str, p: str) -> list:
-    raise NotImplementedError
+    if not p:
+        raise ValueError("p must not be empty")
+    n, m = len(s), len(p)
+    if n < m:
+        return []
+    need = {}
+    for ch in p:
+        need[ch] = need.get(ch, 0) + 1
+    window = {}
+    result = []
+    for i, ch in enumerate(s):
+        window[ch] = window.get(ch, 0) + 1
+        if i >= m:
+            old = s[i - m]
+            window[old] -= 1
+            if window[old] == 0:
+                del window[old]
+        if i >= m - 1 and window == need:
+            result.append(i - m + 1)
+    return result
 
 
 def _run_tests():
