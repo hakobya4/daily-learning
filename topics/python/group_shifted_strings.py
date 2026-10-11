@@ -27,7 +27,15 @@ Run: python3 group_shifted_strings.py
 
 
 def group_shifted(strings: list) -> list:
-    raise NotImplementedError
+    if not isinstance(strings, list):
+        raise ValueError("strings must be a list")
+    groups = {}
+    for w in strings:
+        key = tuple((ord(w[i + 1]) - ord(w[i])) % 26 for i in range(len(w) - 1))
+        groups.setdefault((len(w), key), []).append(w)
+    result = [sorted(g) for g in groups.values()]
+    result.sort(key=lambda g: g[0])
+    return result
 
 
 def _run_tests():
