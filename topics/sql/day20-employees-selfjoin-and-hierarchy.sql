@@ -39,16 +39,49 @@ INSERT INTO employees (id, name, dept_id, manager_id, salary) VALUES
 -- Write your queries below:
 
 -- Q1
+SELECT e.name, e.salary, m.name AS manager_name, m.salary AS manager_salary
+FROM employees e
+JOIN employees m ON m.id = e.manager_id
+WHERE e.salary > m.salary
+ORDER BY e.name;
 
 
 -- Q2
+SELECT d.name AS dept,
+       SUM(e.salary) AS total_salary,
+       ROUND(100.0 * SUM(e.salary) / (SELECT SUM(salary) FROM employees), 1) AS pct
+FROM employees e
+JOIN departments d ON d.id = e.dept_id
+GROUP BY d.id, d.name
+ORDER BY pct DESC, dept;
 
 
 -- Q3
+SELECT e.name
+FROM employees e
+WHERE NOT EXISTS (SELECT 1 FROM employees r WHERE r.manager_id = e.id)
+ORDER BY e.name;
 
 
 -- Q4
+WITH RECURSIVE chain(id, name, depth) AS (
+  SELECT id, name, 0 FROM employees WHERE manager_id IS NULL
+  UNION ALL
+  SELECT e.id, e.name, c.depth + 1
+  FROM employees e
+  JOIN chain c ON e.manager_id = c.id
+)
+SELECT name, depth FROM chain ORDER BY depth, name;
 
 
 -- Q5
+SELECT dept, name, salary
+FROM (
+  SELECT d.name AS dept, e.name AS name, e.salary AS salary,
+         DENSE_RANK() OVER (PARTITION BY e.dept_id ORDER BY e.salary DESC) AS rnk
+  FROM employees e
+  JOIN departments d ON d.id = e.dept_id
+)
+WHERE rnk = 2
+ORDER BY dept, name;
 
