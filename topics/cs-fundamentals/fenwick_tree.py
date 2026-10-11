@@ -28,20 +28,45 @@ import random
 
 class FenwickTree:
     def __init__(self, n: int):
-        raise NotImplementedError
+        if n < 0:
+            raise ValueError("n must be >= 0")
+        self.n = n
+        self._tree = [0] * (n + 1)
 
     @classmethod
     def from_list(cls, values: list) -> "FenwickTree":
-        raise NotImplementedError
+        ft = cls(len(values))
+        for i, v in enumerate(values):
+            ft._tree[i + 1] += v
+            j = (i + 1) + ((i + 1) & -(i + 1))
+            if j <= ft.n:
+                ft._tree[j] += ft._tree[i + 1]
+        return ft
 
     def add(self, i: int, delta: int) -> None:
-        raise NotImplementedError
+        if not 0 <= i < self.n:
+            raise IndexError(i)
+        i += 1
+        while i <= self.n:
+            self._tree[i] += delta
+            i += i & -i
 
     def prefix_sum(self, i: int) -> int:
-        raise NotImplementedError
+        if not -1 <= i < self.n:
+            raise IndexError(i)
+        i += 1
+        total = 0
+        while i > 0:
+            total += self._tree[i]
+            i -= i & -i
+        return total
 
     def range_sum(self, l: int, r: int) -> int:
-        raise NotImplementedError
+        if l > r:
+            raise ValueError("l must be <= r")
+        if not 0 <= l < self.n or not 0 <= r < self.n:
+            raise IndexError((l, r))
+        return self.prefix_sum(r) - self.prefix_sum(l - 1)
 
 
 def _run_tests():
