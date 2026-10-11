@@ -25,5 +25,8 @@
 # Check with:
 #   printf 'a bbb cc\ndddd e\nf g hhhhh\n' | ./max_width_per_column.sh
 
-# TODO: replace this line
-exit 1
+awk '{
+  for (i = 1; i <= NF; i++) if (length($i) > w[i]) w[i] = length($i)
+  if (NF > max) max = NF
+}
+END { for (i = 1; i <= max; i++) printf "col %d: %d\n", i, w[i] }'
