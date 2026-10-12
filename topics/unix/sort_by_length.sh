@@ -19,5 +19,4 @@
 # Check with:
 #   printf 'pear\nfig\napple\nkiwi\nfig2\n' | ./sort_by_length.sh
 
-# TODO: replace this line
-exit 1
+awk '{ print length($0) "\t" $0 }' | LC_ALL=C sort -t "$(printf '\t')" -k1,1n -k2 | cut -f2-
