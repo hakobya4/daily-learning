@@ -25,7 +25,9 @@ Run: python3 gray_code.py
 
 
 def gray_code(n: int) -> list:
-    raise NotImplementedError
+    if n < 0:
+        raise ValueError("n must be >= 0")
+    return [i ^ (i >> 1) for i in range(1 << n)]
 
 
 def _one_bit(a: int, b: int) -> bool:
