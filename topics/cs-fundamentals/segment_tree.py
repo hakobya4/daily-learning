@@ -22,13 +22,37 @@ Run: python3 segment_tree.py
 
 class SegmentTree:
     def __init__(self, values):
-        raise NotImplementedError
+        self.n = len(values)
+        self.tree = [float("inf")] * self.n + list(values)
+        for j in range(self.n - 1, 0, -1):
+            self.tree[j] = min(self.tree[2 * j], self.tree[2 * j + 1])
 
     def update(self, i: int, v) -> None:
-        raise NotImplementedError
+        if not 0 <= i < self.n:
+            raise IndexError(i)
+        j = i + self.n
+        self.tree[j] = v
+        j //= 2
+        while j >= 1:
+            self.tree[j] = min(self.tree[2 * j], self.tree[2 * j + 1])
+            j //= 2
 
     def query(self, l: int, r: int):
-        raise NotImplementedError
+        if l < 0 or r > self.n or l >= r:
+            raise ValueError((l, r))
+        res = float("inf")
+        l += self.n
+        r += self.n
+        while l < r:
+            if l & 1:
+                res = min(res, self.tree[l])
+                l += 1
+            if r & 1:
+                r -= 1
+                res = min(res, self.tree[r])
+            l //= 2
+            r //= 2
+        return res
 
 
 def _run_tests():
