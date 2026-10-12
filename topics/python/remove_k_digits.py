@@ -24,7 +24,17 @@ Run: python3 remove_k_digits.py
 
 
 def remove_k_digits(num: str, k: int) -> str:
-    raise NotImplementedError
+    if k < 0 or k > len(num):
+        raise ValueError("k must be in 0..len(num)")
+    stack = []
+    for ch in num:
+        while k and stack and stack[-1] > ch:
+            stack.pop()
+            k -= 1
+        stack.append(ch)
+    if k:
+        stack = stack[:-k]
+    return "".join(stack).lstrip("0") or "0"
 
 
 def _run_tests():
