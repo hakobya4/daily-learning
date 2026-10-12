@@ -23,7 +23,12 @@ Run: python3 pascal_row.py
 
 
 def pascal_row(n: int) -> list:
-    raise NotImplementedError
+    if n < 0:
+        raise ValueError("n must be >= 0")
+    row = [1]
+    for k in range(n):
+        row.append(row[-1] * (n - k) // (k + 1))
+    return row
 
 
 def _run_tests():
