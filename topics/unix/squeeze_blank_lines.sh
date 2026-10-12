@@ -23,5 +23,6 @@
 # Check with:
 #   printf '\n\na  \n\n\n\nb\n\n' | ./squeeze_blank_lines.sh   # a, blank, b
 
-# TODO: replace this line
-exit 1
+awk '{ sub(/[ \t]+$/, "") }
+/^$/ { blanks++; next }
+{ if (printed && blanks) print ""; blanks = 0; print; printed = 1 }'
