@@ -21,12 +21,16 @@ never touched RAP.
 
 ## CONCEPT CHOSEN
 
-TODO
+Additional save and unmanaged save in a managed RAP business object.
 
 ## MY EXPLANATION (write this BEFORE looking anything up)
 
-TODO
+In a managed RAP BO the framework does the persistence for you: during the save sequence it writes the changes of the BO's entities to the database tables you mapped. Sometimes that is not enough. You may need to write to an extra table (a log, a change-document, an index), call a legacy function module or an API, or send out data in the same LUW. RAP lets you do that without giving up "managed".
+
+With `with additional save` in the behavior definition, the managed runtime still performs its own database writes, and then additionally calls the `save_modified` method of a saver class (`CLASS lsc_... DEFINITION INHERITING FROM cl_abap_behavior_saver`). In `save_modified` you receive the `create`, `update` and `delete` tables, containing the changed instances (and, via `%control`, which fields changed), and you do whatever extra persistence you need. If you declare `with unmanaged save`, the framework skips its own writes for that entity and you are fully responsible for persisting, which is useful when the data goes to a legacy API rather than to the mapped table.
+
+The classic-ABAP analogy: managed = the framework generates the "update task" for you; additional save = a hook at the end of PERFORM ON COMMIT where you add your own updates. It runs only in the save phase of the interaction phase / save sequence (after `finalize` and `check_before_save` succeeded), so you must not do anything that can fail or raise messages, no COMMIT WORK, and no DB writes in the interaction phase.
 
 ## WHAT I GOT WRONG / LEARNED AFTER CHECKING
 
-TODO
+Things to keep straight: additional save adds to the managed save, unmanaged save replaces it; saver methods must not commit or raise business errors (validations belong in `check_before_save`/validations earlier); and the saver is called once per BO per save with all changed instances, so work in bulk. I initially thought unmanaged save meant the whole BO becomes unmanaged, but it only replaces the persistence step for that entity; determinations, validations and actions still work as usual.
