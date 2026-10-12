@@ -25,7 +25,24 @@ Run: python3 rabin_karp.py
 
 
 def find_all(text: str, pattern: str) -> list:
-    raise NotImplementedError
+    if not pattern:
+        raise ValueError("empty pattern")
+    n, m = len(text), len(pattern)
+    if m > n:
+        return []
+    B, M = 256, 1_000_000_007
+    high = pow(B, m - 1, M)
+    hp = ht = 0
+    for i in range(m):
+        hp = (hp * B + ord(pattern[i])) % M
+        ht = (ht * B + ord(text[i])) % M
+    res = []
+    for i in range(n - m + 1):
+        if hp == ht and text[i:i + m] == pattern:
+            res.append(i)
+        if i + m < n:
+            ht = ((ht - ord(text[i]) * high) * B + ord(text[i + m])) % M
+    return res
 
 
 def _run_tests():
