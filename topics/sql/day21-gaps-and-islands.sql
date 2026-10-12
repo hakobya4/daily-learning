@@ -35,7 +35,35 @@ INSERT INTO logins_sql (user_name, day) VALUES
     ('dee',  '2026-09-07'), ('dee',  '2026-09-08'), ('dee',  '2026-09-09');
 
 -- Q1:
+WITH numbered AS (
+    SELECT user_name, day,
+           date(day, '-' || ROW_NUMBER() OVER (PARTITION BY user_name ORDER BY day) || ' days') AS grp
+    FROM logins_sql
+),
+islands AS (
+    SELECT user_name, MIN(day) AS streak_start, MAX(day) AS streak_end, COUNT(*) AS streak_days
+    FROM numbered GROUP BY user_name, grp
+)
+SELECT user_name, MAX(streak_days) AS longest_streak
+FROM islands GROUP BY user_name ORDER BY user_name;
 
 -- Q2:
+WITH numbered AS (
+    SELECT user_name, day,
+           date(day, '-' || ROW_NUMBER() OVER (PARTITION BY user_name ORDER BY day) || ' days') AS grp
+    FROM logins_sql
+)
+SELECT user_name, MIN(day) AS streak_start, MAX(day) AS streak_end, COUNT(*) AS streak_days
+FROM numbered GROUP BY user_name, grp
+ORDER BY user_name, streak_start;
 
 -- Q3:
+WITH numbered AS (
+    SELECT user_name, day,
+           date(day, '-' || ROW_NUMBER() OVER (PARTITION BY user_name ORDER BY day) || ' days') AS grp
+    FROM logins_sql
+)
+SELECT user_name
+FROM numbered GROUP BY user_name
+HAVING COUNT(DISTINCT grp) = 1
+ORDER BY user_name;
