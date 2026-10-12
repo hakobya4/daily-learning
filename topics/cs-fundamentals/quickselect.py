@@ -23,7 +23,22 @@ Run: python3 quickselect.py
 
 
 def quickselect(items: list, k: int):
-    raise NotImplementedError
+    import random
+
+    if not 0 <= k < len(items):
+        raise IndexError(k)
+    xs = list(items)
+    while True:
+        pivot = random.choice(xs)
+        less = [x for x in xs if x < pivot]
+        equal = [x for x in xs if x == pivot]
+        if k < len(less):
+            xs = less
+        elif k < len(less) + len(equal):
+            return pivot
+        else:
+            k -= len(less) + len(equal)
+            xs = [x for x in xs if x > pivot]
 
 
 def _run_tests():
