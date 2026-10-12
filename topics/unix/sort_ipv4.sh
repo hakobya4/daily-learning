@@ -19,5 +19,4 @@
 # Check with:
 #   printf '192.168.1.10\n10.0.0.2\n10.0.0.10\n10.0.0.2\n' | ./sort_ipv4.sh
 
-# TODO: replace this line
-exit 1
+sort -t. -k1,1n -k2,2n -k3,3n -k4,4n -u
