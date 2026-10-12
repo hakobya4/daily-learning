@@ -37,7 +37,53 @@ INSERT INTO clicks_sql (user_name, ts) VALUES
     ('cy',  '2026-10-01 09:00:00');
 
 -- Q1:
+WITH flagged AS (
+    SELECT user_name, ts,
+           CASE WHEN LAG(ts) OVER (PARTITION BY user_name ORDER BY ts) IS NULL
+                  OR strftime('%s', ts)
+                     - strftime('%s', LAG(ts) OVER (PARTITION BY user_name ORDER BY ts)) > 1800
+                THEN 1 ELSE 0 END AS new_session
+    FROM clicks_sql
+)
+SELECT user_name, ts,
+       SUM(new_session) OVER (PARTITION BY user_name ORDER BY ts) AS session_no
+FROM flagged
+ORDER BY user_name, ts;
 
 -- Q2:
+WITH flagged AS (
+    SELECT user_name, ts,
+           CASE WHEN LAG(ts) OVER (PARTITION BY user_name ORDER BY ts) IS NULL
+                  OR strftime('%s', ts)
+                     - strftime('%s', LAG(ts) OVER (PARTITION BY user_name ORDER BY ts)) > 1800
+                THEN 1 ELSE 0 END AS new_session
+    FROM clicks_sql
+),
+numbered AS (
+    SELECT user_name, ts,
+           SUM(new_session) OVER (PARTITION BY user_name ORDER BY ts) AS session_no
+    FROM flagged
+)
+SELECT user_name, session_no,
+       MIN(ts) AS session_start,
+       MAX(ts) AS session_end,
+       COUNT(*) AS clicks,
+       (strftime('%s', MAX(ts)) - strftime('%s', MIN(ts))) / 60 AS minutes
+FROM numbered
+GROUP BY user_name, session_no
+ORDER BY user_name, session_no;
 
 -- Q3:
+WITH flagged AS (
+    SELECT user_name, ts,
+           CASE WHEN LAG(ts) OVER (PARTITION BY user_name ORDER BY ts) IS NULL
+                  OR strftime('%s', ts)
+                     - strftime('%s', LAG(ts) OVER (PARTITION BY user_name ORDER BY ts)) > 1800
+                THEN 1 ELSE 0 END AS new_session
+    FROM clicks_sql
+)
+SELECT user_name, SUM(new_session) AS sessions
+FROM flagged
+GROUP BY user_name
+ORDER BY sessions DESC
+LIMIT 1;
