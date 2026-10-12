@@ -29,25 +29,43 @@ Run: python3 circular_buffer.py
 
 class CircularBuffer:
     def __init__(self, capacity: int):
-        raise NotImplementedError
+        if capacity < 1:
+            raise ValueError("capacity must be >= 1")
+        self._cap = capacity
+        self._data = [None] * capacity
+        self._head = 0
+        self._size = 0
 
     def push(self, x):
-        raise NotImplementedError
+        if self._size == self._cap:
+            self._data[self._head] = x
+            self._head = (self._head + 1) % self._cap
+        else:
+            self._data[(self._head + self._size) % self._cap] = x
+            self._size += 1
 
     def pop(self):
-        raise NotImplementedError
+        if self._size == 0:
+            raise IndexError("pop from empty buffer")
+        x = self._data[self._head]
+        self._data[self._head] = None
+        self._head = (self._head + 1) % self._cap
+        self._size -= 1
+        return x
 
     def peek(self):
-        raise NotImplementedError
+        if self._size == 0:
+            raise IndexError("peek at empty buffer")
+        return self._data[self._head]
 
     def __len__(self):
-        raise NotImplementedError
+        return self._size
 
     def to_list(self) -> list:
-        raise NotImplementedError
+        return [self._data[(self._head + i) % self._cap] for i in range(self._size)]
 
     def is_full(self) -> bool:
-        raise NotImplementedError
+        return self._size == self._cap
 
 
 def _run_tests():
