@@ -25,7 +25,14 @@ Run: python3 count_and_say.py
 
 
 def count_and_say(n: int) -> str:
-    raise NotImplementedError
+    from itertools import groupby
+
+    if n < 1:
+        raise ValueError("n must be >= 1")
+    term = "1"
+    for _ in range(n - 1):
+        term = "".join(f"{len(list(g))}{d}" for d, g in groupby(term))
+    return term
 
 
 def _run_tests():
