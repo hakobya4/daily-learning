@@ -23,7 +23,17 @@ Run: python3 kth_permutation.py
 
 
 def kth_permutation(n: int, k: int) -> str:
-    raise NotImplementedError
+    from math import factorial
+
+    if n < 1 or not 1 <= k <= factorial(n):
+        raise ValueError("need n >= 1 and 1 <= k <= n!")
+    digits = [str(d) for d in range(1, n + 1)]
+    k0 = k - 1
+    out = []
+    for remaining in range(n - 1, -1, -1):
+        idx, k0 = divmod(k0, factorial(remaining))
+        out.append(digits.pop(idx))
+    return "".join(out)
 
 
 def _run_tests():
