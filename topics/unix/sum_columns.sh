@@ -19,5 +19,5 @@
 # Check with:
 #   printf '1 2 3\n4 5\n6\n' | ./sum_columns.sh
 
-# TODO: replace this line
-exit 1
+awk '{ for (i = 1; i <= NF; i++) sum[i] += $i; if (NF > max) max = NF }
+END { if (max > 0) { out = ""; for (i = 1; i <= max; i++) out = out (i > 1 ? " " : "") (sum[i] + 0); print out } }'
