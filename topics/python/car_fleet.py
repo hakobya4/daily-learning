@@ -28,7 +28,17 @@ Run: python3 car_fleet.py
 
 
 def car_fleet(target: int, position: list, speed: list) -> int:
-    raise NotImplementedError
+    if len(position) != len(speed):
+        raise ValueError("position and speed must have the same length")
+    fleets = 0
+    lead_num, lead_den = 0, 1  # leader's time = lead_num / lead_den
+    for pos, spd in sorted(zip(position, speed), reverse=True):
+        num, den = target - pos, spd
+        # new fleet iff this car's time is strictly greater than leader's
+        if fleets == 0 or num * lead_den > lead_num * den:
+            fleets += 1
+            lead_num, lead_den = num, den
+    return fleets
 
 
 def _run_tests():
