@@ -23,7 +23,29 @@ Run: python3 heap_sort.py
 
 
 def heap_sort(items: list) -> list:
-    raise NotImplementedError
+    a = list(items)
+    n = len(a)
+
+    def sift_down(i, size):
+        while True:
+            left = 2 * i + 1
+            right = left + 1
+            largest = i
+            if left < size and a[left] > a[largest]:
+                largest = left
+            if right < size and a[right] > a[largest]:
+                largest = right
+            if largest == i:
+                return
+            a[i], a[largest] = a[largest], a[i]
+            i = largest
+
+    for i in range(n // 2 - 1, -1, -1):
+        sift_down(i, n)
+    for end in range(n - 1, 0, -1):
+        a[0], a[end] = a[end], a[0]
+        sift_down(0, end)
+    return a
 
 
 def _run_tests():
