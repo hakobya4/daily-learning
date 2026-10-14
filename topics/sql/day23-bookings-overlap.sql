@@ -41,7 +41,39 @@ INSERT INTO bookings_sql (id, room, start_ts, end_ts) VALUES
     (11,'D', '2026-10-02 08:00', '2026-10-02 09:00');
 
 -- Q1:
+SELECT a.room, a.id AS id_a, b.id AS id_b
+FROM bookings_sql a
+JOIN bookings_sql b
+  ON a.room = b.room
+ AND a.id < b.id
+ AND a.start_ts < b.end_ts
+ AND b.start_ts < a.end_ts
+ORDER BY a.room, a.id, b.id;
 
 -- Q2:
+SELECT room, MAX(cnt) AS max_concurrent
+FROM (
+    SELECT a.room, a.id,
+           (SELECT COUNT(*)
+            FROM bookings_sql b
+            WHERE b.room = a.room
+              AND b.start_ts <= a.start_ts
+              AND b.end_ts > a.start_ts) AS cnt
+    FROM bookings_sql a
+)
+GROUP BY room
+ORDER BY room;
 
 -- Q3:
+SELECT DISTINCT room
+FROM bookings_sql
+WHERE room NOT IN (
+    SELECT a.room
+    FROM bookings_sql a
+    JOIN bookings_sql b
+      ON a.room = b.room
+     AND a.id < b.id
+     AND a.start_ts < b.end_ts
+     AND b.start_ts < a.end_ts
+)
+ORDER BY room;
