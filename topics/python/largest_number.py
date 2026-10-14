@@ -22,7 +22,22 @@ Run: python3 largest_number.py
 
 
 def largest_number(nums: list) -> str:
-    raise NotImplementedError
+    from functools import cmp_to_key
+
+    strs = [str(n) for n in nums]
+
+    def cmp(a, b):
+        if a + b > b + a:
+            return -1
+        if a + b < b + a:
+            return 1
+        return 0
+
+    strs.sort(key=cmp_to_key(cmp))
+    result = "".join(strs)
+    if result and result[0] == "0":
+        return "0"
+    return result
 
 
 def _run_tests():
