@@ -25,7 +25,17 @@ Run: python3 word_pattern.py
 
 
 def word_pattern(pattern: str, s: str) -> bool:
-    raise NotImplementedError
+    words = s.split()
+    if len(pattern) != len(words):
+        return False
+    letter_to_word = {}
+    word_to_letter = {}
+    for ch, w in zip(pattern, words):
+        if letter_to_word.setdefault(ch, w) != w:
+            return False
+        if word_to_letter.setdefault(w, ch) != ch:
+            return False
+    return True
 
 
 def _run_tests():
