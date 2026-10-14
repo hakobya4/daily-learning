@@ -20,7 +20,28 @@ Run: python3 game_of_life.py
 
 
 def game_of_life(board: list) -> list:
-    raise NotImplementedError
+    if not board:
+        return []
+    width = len(board[0])
+    if any(len(row) != width for row in board):
+        raise ValueError("rows differ in length")
+    height = len(board)
+    result = [[0] * width for _ in range(height)]
+    for r in range(height):
+        for c in range(width):
+            live = 0
+            for dr in (-1, 0, 1):
+                for dc in (-1, 0, 1):
+                    if dr == 0 and dc == 0:
+                        continue
+                    rr, cc = r + dr, c + dc
+                    if 0 <= rr < height and 0 <= cc < width:
+                        live += board[rr][cc]
+            if board[r][c]:
+                result[r][c] = 1 if live in (2, 3) else 0
+            else:
+                result[r][c] = 1 if live == 3 else 0
+    return result
 
 
 def _run_tests():
