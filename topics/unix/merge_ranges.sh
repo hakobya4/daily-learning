@@ -22,5 +22,12 @@
 # Check with:
 #   printf '5-8\n1-3\n2-4\n10-12\n8-9\n' | ./merge_ranges.sh
 
-# TODO: replace this line
-exit 1
+sort -t- -k1,1n | awk -F- '
+NF >= 2 {
+    a = $1 + 0; b = $2 + 0
+    if (!have) { s = a; e = b; have = 1 }
+    else if (a <= e) { if (b > e) e = b }
+    else { print s "-" e; s = a; e = b }
+}
+END { if (have) print s "-" e }
+'
