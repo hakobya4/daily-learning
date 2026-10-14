@@ -19,5 +19,9 @@
 # Check with:
 #   printf 'the quick brown fox\nhi\n\na bb cc\n' | ./longest_word_per_line.sh
 
-# TODO: replace this line
-exit 1
+awk '{
+    best = ""
+    for (i = 1; i <= NF; i++)
+        if (length($i) > length(best)) best = $i
+    print best
+}'
