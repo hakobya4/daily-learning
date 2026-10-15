@@ -24,11 +24,25 @@ Run: python3 excel_column_title.py
 
 
 def column_to_number(title: str) -> int:
-    raise NotImplementedError
+    if not title:
+        raise ValueError("empty title")
+    n = 0
+    for ch in title.upper():
+        if not ("A" <= ch <= "Z"):
+            raise ValueError("invalid character %r" % ch)
+        n = n * 26 + (ord(ch) - 64)
+    return n
 
 
 def number_to_column(n: int) -> str:
-    raise NotImplementedError
+    if n < 1:
+        raise ValueError("n must be >= 1")
+    letters = []
+    while n > 0:
+        n -= 1
+        letters.append(chr(65 + n % 26))
+        n //= 26
+    return "".join(reversed(letters))
 
 
 def _run_tests():
