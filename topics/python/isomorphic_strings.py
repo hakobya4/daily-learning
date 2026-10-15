@@ -22,7 +22,13 @@ Run: python3 isomorphic_strings.py
 
 
 def is_isomorphic(s: str, t: str) -> bool:
-    raise NotImplementedError
+    if len(s) != len(t):
+        return False
+    s2t, t2s = {}, {}
+    for a, b in zip(s, t):
+        if s2t.setdefault(a, b) != b or t2s.setdefault(b, a) != a:
+            return False
+    return True
 
 
 def _run_tests():
