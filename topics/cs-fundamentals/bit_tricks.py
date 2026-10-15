@@ -30,19 +30,34 @@ Run: python3 bit_tricks.py
 
 
 def count_set_bits(n: int) -> int:
-    raise NotImplementedError
+    if n < 0:
+        raise ValueError("n must be non-negative")
+    count = 0
+    while n:
+        n &= n - 1
+        count += 1
+    return count
 
 
 def is_power_of_two(n: int) -> bool:
-    raise NotImplementedError
+    return n > 0 and (n & (n - 1)) == 0
 
 
 def single_number(nums: list) -> int:
-    raise NotImplementedError
+    result = 0
+    for x in nums:
+        result ^= x
+    return result
 
 
 def reverse_bits32(n: int) -> int:
-    raise NotImplementedError
+    if n < 0 or n >= 2**32:
+        raise ValueError("n must satisfy 0 <= n < 2**32")
+    result = 0
+    for _ in range(32):
+        result = (result << 1) | (n & 1)
+        n >>= 1
+    return result
 
 
 def _run_tests():
