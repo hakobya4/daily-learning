@@ -21,9 +21,17 @@ Sort by end time. dp[i] = best profit using the first i jobs. For job i find
 Run: python3 interval_scheduling.py
 """
 
+import bisect
+
 
 def max_profit(jobs: list) -> int:
-    raise NotImplementedError
+    ordered = sorted(jobs, key=lambda j: j[1])
+    ends = [j[1] for j in ordered]
+    dp = [0] * (len(ordered) + 1)
+    for i, (start, _end, profit) in enumerate(ordered, 1):
+        k = bisect.bisect_right(ends, start, 0, i - 1)
+        dp[i] = max(dp[i - 1], profit + dp[k])
+    return dp[-1]
 
 
 def _run_tests():
