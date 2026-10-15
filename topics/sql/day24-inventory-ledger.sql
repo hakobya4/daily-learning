@@ -40,7 +40,31 @@ INSERT INTO stock_moves (id, sku, move_date, qty) VALUES
     (12, 'plum',   '2026-10-06',  -30);
 
 -- Q1:
+SELECT id, sku, move_date, qty,
+       SUM(qty) OVER (PARTITION BY sku ORDER BY move_date, id) AS balance
+FROM stock_moves
+ORDER BY sku, move_date, id;
 
 -- Q2:
+WITH running AS (
+    SELECT id, sku, move_date, qty,
+           SUM(qty) OVER (PARTITION BY sku ORDER BY move_date, id) AS balance
+    FROM stock_moves
+), negative AS (
+    SELECT sku, id, balance,
+           ROW_NUMBER() OVER (PARTITION BY sku ORDER BY move_date, id) AS rn
+    FROM running
+    WHERE balance < 0
+)
+SELECT sku, id, balance
+FROM negative
+WHERE rn = 1
+ORDER BY sku;
 
 -- Q3:
+SELECT sku,
+       SUM(qty) AS final_balance,
+       MAX(CASE WHEN qty > 0 THEN move_date END) AS last_receipt_date
+FROM stock_moves
+GROUP BY sku
+ORDER BY sku;
