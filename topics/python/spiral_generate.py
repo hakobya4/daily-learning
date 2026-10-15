@@ -23,7 +23,21 @@ Run: python3 spiral_generate.py
 
 
 def spiral_generate(n: int) -> list:
-    raise NotImplementedError
+    if n < 0:
+        raise ValueError("n must be non-negative")
+    grid = [[0] * n for _ in range(n)]
+    dirs = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+    r = c = d = 0
+    for k in range(1, n * n + 1):
+        grid[r][c] = k
+        dr, dc = dirs[d]
+        nr, nc = r + dr, c + dc
+        if not (0 <= nr < n and 0 <= nc < n) or grid[nr][nc]:
+            d = (d + 1) % 4
+            dr, dc = dirs[d]
+            nr, nc = r + dr, c + dc
+        r, c = nr, nc
+    return grid
 
 
 def _run_tests():
