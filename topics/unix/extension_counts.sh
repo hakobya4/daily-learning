@@ -23,5 +23,9 @@
 # Check with:
 #   printf 'src/a.PY\nsrc/b.py\nREADME\ndocs/x.tar.gz\n.bashrc\nlib/c.py\n' | ./extension_counts.sh
 
-# TODO: replace this line
-exit 1
+awk -F/ 'NF { name = $NF
+  n = split(name, parts, ".")
+  if (n > 1 && parts[1] != "") ext = tolower(parts[n]); else ext = "(none)"
+  if (ext == "") ext = "(none)"
+  count[ext]++ }
+END { for (e in count) print count[e], e }' | sort -k1,1nr -k2,2
