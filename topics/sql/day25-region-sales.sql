@@ -31,6 +31,26 @@ INSERT INTO sales (region, month, amount) VALUES
     ('west', '2026-01', 200), ('west', '2026-02', 180), ('west', '2026-03', 260),
     ('north', '2026-02', 75), ('north', '2026-03', 75), ('north', '2026-04', 110);
 
--- TODO: write Q1
--- TODO: write Q2
--- TODO: write Q3
+-- Q1: share of region total
+SELECT region, month, amount,
+       SUM(amount) OVER (PARTITION BY region) AS region_total,
+       ROUND(amount * 100.0 / SUM(amount) OVER (PARTITION BY region), 1) AS pct_of_region
+FROM sales
+ORDER BY region, month;
+
+-- Q2: best month per region (earlier month wins ties)
+SELECT region, month, amount
+FROM (
+    SELECT region, month, amount,
+           ROW_NUMBER() OVER (PARTITION BY region ORDER BY amount DESC, month) AS rn
+    FROM sales
+)
+WHERE rn = 1
+ORDER BY region;
+
+-- Q3: month-over-month change
+SELECT region, month, amount,
+       LAG(amount) OVER (PARTITION BY region ORDER BY month) AS prev_amount,
+       amount - LAG(amount) OVER (PARTITION BY region ORDER BY month) AS change
+FROM sales
+ORDER BY region, month;
