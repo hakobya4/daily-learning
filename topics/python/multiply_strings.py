@@ -22,7 +22,20 @@ Run: python3 multiply_strings.py
 
 
 def multiply_strings(a: str, b: str) -> str:
-    raise NotImplementedError
+    if a == "0" or b == "0":
+        return "0"
+    res = [0] * (len(a) + len(b))
+    for i, ca in enumerate(reversed(a)):
+        for j, cb in enumerate(reversed(b)):
+            res[i + j] += (ord(ca) - 48) * (ord(cb) - 48)
+    carry = 0
+    for k in range(len(res)):
+        total = res[k] + carry
+        res[k] = total % 10
+        carry = total // 10
+    while len(res) > 1 and res[-1] == 0:
+        res.pop()
+    return "".join(str(d) for d in reversed(res))
 
 
 def _run_tests():
