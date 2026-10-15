@@ -23,7 +23,21 @@ Run: python3 generate_parentheses.py
 
 
 def generate_parentheses(n: int) -> list:
-    raise NotImplementedError
+    if n < 0:
+        raise ValueError("n must be non-negative")
+    result = []
+
+    def build(cur, opens, closes):
+        if len(cur) == 2 * n:
+            result.append(cur)
+            return
+        if opens < n:
+            build(cur + "(", opens + 1, closes)
+        if closes < opens:
+            build(cur + ")", opens, closes + 1)
+
+    build("", 0, 0)
+    return result
 
 
 def _run_tests():
