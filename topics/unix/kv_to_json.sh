@@ -23,5 +23,27 @@
 # Check with:
 #   printf 'name=Ann\n# c\npath=C:\\tmp\nq=say "hi"\nname=Bob\n' | ./kv_to_json.sh
 
-# TODO: replace this line
-exit 1
+awk '
+/^[[:space:]]*$/ { next }
+/^#/ { next }
+{
+  idx = index($0, "=")
+  if (idx == 0) next
+  key = substr($0, 1, idx - 1)
+  val = substr($0, idx + 1)
+  if (!(key in vals)) order[++n] = key
+  vals[key] = val
+}
+function esc(s) {
+  gsub(/\\/, "\\\\", s)
+  gsub(/"/, "\\\"", s)
+  return s
+}
+END {
+  out = "{"
+  for (i = 1; i <= n; i++) {
+    if (i > 1) out = out ","
+    out = out "\"" esc(order[i]) "\":\"" esc(vals[order[i]]) "\""
+  }
+  print out "}"
+}'
