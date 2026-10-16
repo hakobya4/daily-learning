@@ -21,5 +21,9 @@
 # Check with:
 #   printf 'a 3\nb 5\na 1\nb 9\na 2\n' | ./min_max_by_key.sh
 
-# TODO: replace this line
-echo "not implemented" >&2; exit 1
+awk 'NF >= 2 {
+       v = $2 + 0
+       if (!($1 in min)) { min[$1] = v; max[$1] = v }
+       else { if (v < min[$1]) min[$1] = v; if (v > max[$1]) max[$1] = v }
+     }
+     END { for (k in min) print k, min[k], max[k] }' | LC_ALL=C sort
