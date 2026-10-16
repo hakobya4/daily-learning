@@ -22,5 +22,5 @@
 # Check with:
 #   printf 'a bb cc ddd a\n' | ./word_length_histogram.sh
 
-# TODO: replace this line
-echo "not implemented" >&2; exit 1
+awk '{ for (i = 1; i <= NF; i++) c[length($i)]++ }
+     END { for (l in c) print l, c[l] }' | sort -n
