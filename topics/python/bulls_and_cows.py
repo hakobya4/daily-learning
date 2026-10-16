@@ -21,7 +21,17 @@ Run: python3 bulls_and_cows.py
 
 
 def get_hint(secret: str, guess: str) -> str:
-    raise NotImplementedError
+    bulls = 0
+    s_count = {}
+    g_count = {}
+    for s, g in zip(secret, guess):
+        if s == g:
+            bulls += 1
+        else:
+            s_count[s] = s_count.get(s, 0) + 1
+            g_count[g] = g_count.get(g, 0) + 1
+    cows = sum(min(c, g_count.get(d, 0)) for d, c in s_count.items())
+    return f"{bulls}A{cows}B"
 
 
 def _run_tests():
