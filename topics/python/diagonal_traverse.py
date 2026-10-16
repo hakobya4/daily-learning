@@ -24,7 +24,15 @@ Run: python3 diagonal_traverse.py
 
 
 def diagonal_traverse(matrix: list) -> list:
-    raise NotImplementedError
+    if not matrix or not matrix[0]:
+        return []
+    m, n = len(matrix), len(matrix[0])
+    out = []
+    for d in range(m + n - 1):
+        diag = [matrix[r][d - r] for r in range(max(0, d - n + 1), min(m - 1, d) + 1)]
+        # diag runs top-to-bottom (down-left); even d goes up-right
+        out.extend(reversed(diag) if d % 2 == 0 else diag)
+    return out
 
 
 def _run_tests():
