@@ -26,7 +26,18 @@ Run: python3 kth_smallest_matrix.py
 
 
 def kth_smallest(matrix: list, k: int) -> int:
-    raise NotImplementedError
+    import heapq
+    n = len(matrix)
+    if k < 1 or k > n * n:
+        raise ValueError("k out of range")
+    heap = [(matrix[r][0], r, 0) for r in range(n)]
+    heapq.heapify(heap)
+    val = None
+    for _ in range(k):
+        val, r, c = heapq.heappop(heap)
+        if c + 1 < n:
+            heapq.heappush(heap, (matrix[r][c + 1], r, c + 1))
+    return val
 
 
 def _run_tests():
