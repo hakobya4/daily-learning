@@ -32,8 +32,29 @@ INSERT INTO monthly_revenue (product, month, revenue) VALUES
     ('gadget', '2026-01', 50),  ('gadget', '2026-02', 55),  ('gadget', '2026-03', 60),
     ('gizmo',  '2026-02', 200), ('gizmo',  '2026-03', 150), ('gizmo',  '2026-04', 100);
 
--- Q1: TODO
+-- Q1: month-over-month change
+SELECT product, month, revenue, prev_revenue,
+       ROUND((revenue - prev_revenue) * 100.0 / prev_revenue, 1) AS pct_change
+FROM (
+    SELECT product, month, revenue,
+           LAG(revenue, 1) OVER (PARTITION BY product ORDER BY month) AS prev_revenue
+    FROM monthly_revenue
+)
+ORDER BY product, month;
 
--- Q2: TODO
+-- Q2: running total per product
+SELECT product, month, revenue,
+       SUM(revenue) OVER (PARTITION BY product ORDER BY month) AS running_total
+FROM monthly_revenue
+ORDER BY product, month;
 
--- Q3: TODO
+-- Q3: products with two consecutive drops at least once
+SELECT DISTINCT product
+FROM (
+    SELECT product, revenue,
+           LAG(revenue, 1) OVER (PARTITION BY product ORDER BY month) AS p1,
+           LAG(revenue, 2) OVER (PARTITION BY product ORDER BY month) AS p2
+    FROM monthly_revenue
+)
+WHERE revenue < p1 AND p1 < p2
+ORDER BY product;
