@@ -20,7 +20,18 @@ Run: python3 min_subarray_len.py
 
 
 def min_subarray_len(target: int, nums: list) -> int:
-    raise NotImplementedError
+    best = 0
+    left = 0
+    total = 0
+    for right, x in enumerate(nums):
+        total += x
+        while total >= target:
+            length = right - left + 1
+            if best == 0 or length < best:
+                best = length
+            total -= nums[left]
+            left += 1
+    return best
 
 
 def _run_tests():
