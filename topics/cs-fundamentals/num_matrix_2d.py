@@ -20,10 +20,17 @@ Run: python3 num_matrix_2d.py
 
 class NumMatrix:
     def __init__(self, matrix: list):
-        raise NotImplementedError
+        rows = len(matrix)
+        cols = len(matrix[0]) if rows else 0
+        self.P = [[0] * (cols + 1) for _ in range(rows + 1)]
+        for i in range(rows):
+            for j in range(cols):
+                self.P[i + 1][j + 1] = (matrix[i][j] + self.P[i][j + 1]
+                                        + self.P[i + 1][j] - self.P[i][j])
 
     def sum_region(self, r1: int, c1: int, r2: int, c2: int) -> int:
-        raise NotImplementedError
+        P = self.P
+        return P[r2 + 1][c2 + 1] - P[r1][c2 + 1] - P[r2 + 1][c1] + P[r1][c1]
 
 
 def _run_tests():
