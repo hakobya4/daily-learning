@@ -18,5 +18,4 @@
 # Check with:
 #   printf 'a\n\nb\nc\n' | ./number_nonblank.sh
 
-# TODO: replace this line
-exit 1
+awk '/^[ \t]*$/ { print ""; next } { n++; print n ": " $0 }'
