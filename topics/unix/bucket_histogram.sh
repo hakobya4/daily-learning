@@ -21,5 +21,11 @@
 # Check with:
 #   printf '3\n7\n12\n15\n18\n41\n' | ./bucket_histogram.sh
 
-# TODO: replace this line
-exit 1
+awk '
+/^[ \t]*$/ { next }
+{ b = int($1 / 10); count[b]++; if (b > max) max = b; seen = 1 }
+END {
+    if (!seen) exit
+    for (i = 0; i <= max; i++)
+        if (count[i] > 0) printf "%d-%d %d\n", i * 10, i * 10 + 9, count[i]
+}'
