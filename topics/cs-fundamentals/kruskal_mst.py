@@ -19,7 +19,27 @@ Run: python3 kruskal_mst.py
 
 
 def mst_weight(n: int, edges: list):
-    raise NotImplementedError
+    parent = list(range(n))
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    total = 0
+    used = 0
+    for u, v, w in sorted(edges, key=lambda e: e[2]):
+        if u == v:
+            continue
+        ru, rv = find(u), find(v)
+        if ru != rv:
+            parent[ru] = rv
+            total += w
+            used += 1
+            if used == n - 1:
+                break
+    return total if used == n - 1 else None
 
 
 def _run_tests():
