@@ -21,7 +21,14 @@ Run: python3 h_index.py
 
 
 def h_index(citations: list) -> int:
-    raise NotImplementedError
+    ordered = sorted(citations, reverse=True)
+    h = 0
+    for i, c in enumerate(ordered):
+        if c >= i + 1:
+            h = i + 1
+        else:
+            break
+    return h
 
 
 def _run_tests():
