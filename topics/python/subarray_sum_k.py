@@ -21,7 +21,14 @@ Run: python3 subarray_sum_k.py
 
 
 def count_subarrays(nums: list, k: int) -> int:
-    raise NotImplementedError
+    seen = {0: 1}
+    prefix = 0
+    total = 0
+    for x in nums:
+        prefix += x
+        total += seen.get(prefix - k, 0)
+        seen[prefix] = seen.get(prefix, 0) + 1
+    return total
 
 
 def _run_tests():
