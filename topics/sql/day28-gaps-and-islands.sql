@@ -30,10 +30,38 @@ INSERT INTO attendance (student, day) VALUES
     ('cy',  1), ('cy',  3), ('cy',  5);
 
 -- Q1: islands
--- TODO
+SELECT student, MIN(day) AS start_day, MAX(day) AS end_day, COUNT(*) AS run_length
+FROM (
+    SELECT student, day,
+           day - ROW_NUMBER() OVER (PARTITION BY student ORDER BY day) AS grp
+    FROM attendance
+)
+GROUP BY student, grp
+ORDER BY student, start_day;
 
 -- Q2: longest run per student
--- TODO
+WITH islands AS (
+    SELECT student, MIN(day) AS start_day, COUNT(*) AS run_length
+    FROM (
+        SELECT student, day,
+               day - ROW_NUMBER() OVER (PARTITION BY student ORDER BY day) AS grp
+        FROM attendance
+    )
+    GROUP BY student, grp
+),
+ranked AS (
+    SELECT student, run_length,
+           ROW_NUMBER() OVER (PARTITION BY student ORDER BY run_length DESC, start_day) AS rn
+    FROM islands
+)
+SELECT student, run_length FROM ranked WHERE rn = 1 ORDER BY student;
 
 -- Q3: gaps
--- TODO
+SELECT student, day + 1 AS gap_start, next_day - 1 AS gap_end
+FROM (
+    SELECT student, day,
+           LEAD(day) OVER (PARTITION BY student ORDER BY day) AS next_day
+    FROM attendance
+)
+WHERE next_day - day > 1
+ORDER BY student, gap_start;
