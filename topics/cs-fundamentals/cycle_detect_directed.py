@@ -20,7 +20,21 @@ Run: python3 cycle_detect_directed.py
 
 
 def has_cycle(n: int, edges: list) -> bool:
-    raise NotImplementedError
+    adj = [[] for _ in range(n)]
+    indeg = [0] * n
+    for u, v in edges:
+        adj[u].append(v)
+        indeg[v] += 1
+    stack = [i for i in range(n) if indeg[i] == 0]
+    removed = 0
+    while stack:
+        u = stack.pop()
+        removed += 1
+        for v in adj[u]:
+            indeg[v] -= 1
+            if indeg[v] == 0:
+                stack.append(v)
+    return removed != n
 
 
 def _run_tests():
