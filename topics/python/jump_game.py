@@ -19,7 +19,14 @@ Run: python3 jump_game.py
 
 
 def can_reach_end(nums: list) -> bool:
-    raise NotImplementedError
+    farthest = 0
+    for i, jump in enumerate(nums):
+        if i > farthest:
+            return False
+        farthest = max(farthest, i + jump)
+        if farthest >= len(nums) - 1:
+            return True
+    return True
 
 
 def _run_tests():
