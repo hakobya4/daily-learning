@@ -25,5 +25,4 @@
 #
 #   b a
 
-# TODO: replace this line
-exit 1
+awk '{ if (NF >= 2) { t = $1; $1 = $NF; $NF = t } print }'
