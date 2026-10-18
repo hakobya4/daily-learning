@@ -24,7 +24,21 @@ Run: python3 nth_ugly_number.py
 
 
 def nth_ugly(n: int) -> int:
-    raise NotImplementedError
+    if n < 1:
+        raise ValueError("n must be >= 1")
+    ugly = [1]
+    i2 = i3 = i5 = 0
+    while len(ugly) < n:
+        a, b, c = ugly[i2] * 2, ugly[i3] * 3, ugly[i5] * 5
+        nxt = min(a, b, c)
+        ugly.append(nxt)
+        if nxt == a:
+            i2 += 1
+        if nxt == b:
+            i3 += 1
+        if nxt == c:
+            i5 += 1
+    return ugly[n - 1]
 
 
 def _run_tests():
