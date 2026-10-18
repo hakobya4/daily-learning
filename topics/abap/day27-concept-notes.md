@@ -22,12 +22,14 @@ classic ABAP but has never touched RAP.
 
 ## CONCEPT CHOSEN
 
-TODO
+CDS associations vs. compositions
 
 ## MY EXPLANATION (write this BEFORE looking anything up)
 
-TODO
+In classic ABAP you join tables yourself in every SELECT. In CDS you can instead declare a relationship once with an association (`association [0..1] to I_Customer as _Customer on $projection.CustomerId = _Customer.CustomerId`) and expose it in the select list as `_Customer`. The join is only executed when a consumer actually uses the path (`_Customer.Name`), so it is a lazy, reusable join, and OData can turn exposed associations into navigation properties.
+
+A composition is a stronger kind of association: it says the target is a child that is part of the parent (`composition [0..*] of ZI_Item as _Item`). In RAP this defines the business object tree: root and child entities, with the child's lifecycle (create, delete, lock, draft) owned by the root. A plain association is only a reference to an independent entity, such as a customer. Child entities need `association to parent` back to the root.
 
 ## WHAT I GOT WRONG / LEARNED AFTER CHECKING
 
-TODO
+Associations are not always lazy joins: they are resolved only when used, but exposing them does not cost anything until then. Compositions also require the parent/child behavior definitions to be consistent: the root declares `association _Item { create; }` and the child uses `lock dependent by` and `authorization dependent by` the parent. Cardinality (`[0..1]`, `[1..*]`) matters for how joins and OData navigations behave.
