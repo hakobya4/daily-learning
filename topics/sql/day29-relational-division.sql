@@ -36,11 +36,32 @@ INSERT INTO purchases (customer, product) VALUES
     ('cy',  'pad'), ('cy',  'pen'), ('cy',  'ink'), ('cy', 'pen'),
     ('dee', 'tape');
 
--- TODO Q1
+-- Q1: bought ALL required products
+SELECT customer
+FROM purchases
+WHERE product IN (SELECT product FROM required)
+GROUP BY customer
+HAVING COUNT(DISTINCT product) = (SELECT COUNT(*) FROM required)
+ORDER BY customer;
 
 
--- TODO Q2
+-- Q2: bought ALL required products and nothing else
+SELECT customer
+FROM purchases
+GROUP BY customer
+HAVING COUNT(DISTINCT product) = (SELECT COUNT(*) FROM required)
+   AND COUNT(DISTINCT CASE WHEN product IN (SELECT product FROM required)
+                           THEN product END) = (SELECT COUNT(*) FROM required)
+ORDER BY customer;
 
 
--- TODO Q3
+-- Q3: number of required products missing per customer
+SELECT c.customer,
+       (SELECT COUNT(*) FROM required)
+         - COUNT(DISTINCT CASE WHEN p.product IN (SELECT product FROM required)
+                               THEN p.product END) AS missing
+FROM (SELECT DISTINCT customer FROM purchases) c
+JOIN purchases p ON p.customer = c.customer
+GROUP BY c.customer
+ORDER BY missing, c.customer;
 
