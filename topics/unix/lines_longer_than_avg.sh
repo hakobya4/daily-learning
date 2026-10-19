@@ -20,5 +20,5 @@
 #   bbbbbb
 #   cccc
 
-# TODO: replace this line
-exit 1
+awk '{ line[NR] = $0; total += length($0) }
+END { if (NR == 0) exit; avg = total / NR; for (i = 1; i <= NR; i++) if (length(line[i]) > avg) print line[i] }'
