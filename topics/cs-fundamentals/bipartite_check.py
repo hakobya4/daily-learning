@@ -23,7 +23,28 @@ Run: python3 bipartite_check.py
 
 
 def is_bipartite(n: int, edges: list) -> bool:
-    raise NotImplementedError
+    from collections import deque
+    adj = [[] for _ in range(n)]
+    for u, v in edges:
+        if u == v:
+            return False
+        adj[u].append(v)
+        adj[v].append(u)
+    color = [-1] * n
+    for s in range(n):
+        if color[s] != -1:
+            continue
+        color[s] = 0
+        q = deque([s])
+        while q:
+            u = q.popleft()
+            for v in adj[u]:
+                if color[v] == -1:
+                    color[v] = 1 - color[u]
+                    q.append(v)
+                elif color[v] == color[u]:
+                    return False
+    return True
 
 
 def _run_tests():
