@@ -13,13 +13,25 @@ In a SCRATCH repo (`/tmp/day28-lab`, `git init -b main`, a few commits and a fea
 ## WHAT I RAN
 
 ```bash
-# TODO: paste the commands you actually ran here
+git init -b main /tmp/day28-lab && cd /tmp/day28-lab
+for i in 1 2 3 4; do echo "v$i" > f.txt; git add f.txt; git commit -m "c$i"; done
+git restore --source=HEAD~3 f.txt          # worktree only, HEAD untouched
+git restore --source=HEAD~3 --staged --worktree f.txt
+git checkout HEAD~3 -- f.txt               # same content, but also stages it
+git switch -c feature && echo x > g.txt && git add g.txt && git commit -m g
+git branch --contains HEAD~1
+git branch --no-merged main
+git rm f.txt && git commit -m "delete f"
+git log --diff-filter=D --oneline -- f.txt
+echo wip >> g.txt && git stash
+git stash show -p stash@{0}
+git reflog expire --expire=now --all && git gc --prune=now
 ```
 
 ## MY ANSWERS
 
-1. TODO
-2. TODO
-3. TODO
-4. TODO
-5. TODO
+1. `git restore --source=HEAD~3 file` copies the file's content from that commit into the working tree (add `--staged` to also update the index) and never moves HEAD or the branch. `git checkout HEAD~3 -- file` gives the same content but always writes to both index and working tree; `restore` is the newer, clearer command, whose default target is only the working tree.
+2. `git branch --contains <commit>` lists branches whose history includes the commit; `git branch --no-merged main` lists branches with commits not yet reachable from main.
+3. `git log --diff-filter=D --oneline -- <path>` shows only commits where the file was deleted (D = deleted; A, M, R work similarly).
+4. `git stash show -p` (optionally `stash@{n}`) prints the full patch of the newest stash without applying or dropping it; without `-p` you only get a stat summary.
+5. `reflog expire --expire=now --all` throws away every reflog entry, so commits that are only reachable via the reflog (old HEADs after reset/rebase, dropped stashes' work) become unreachable; `gc --prune=now` then physically deletes those unreachable objects immediately. Together they make accidental loss permanent, with no safety net to recover from.
