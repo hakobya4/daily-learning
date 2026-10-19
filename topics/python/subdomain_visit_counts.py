@@ -26,7 +26,15 @@ Run: python3 subdomain_visit_counts.py
 
 
 def subdomain_visits(cpdomains: list) -> dict:
-    raise NotImplementedError
+    totals = {}
+    for entry in cpdomains:
+        count, domain = entry.split(" ", 1)
+        count = int(count)
+        labels = domain.split(".")
+        for i in range(len(labels)):
+            name = ".".join(labels[i:])
+            totals[name] = totals.get(name, 0) + count
+    return totals
 
 
 def _run_tests():
