@@ -24,12 +24,29 @@ Run: python3 rod_cutting.py
 """
 
 
+def _solve(prices, n):
+    best = [0] * (n + 1)
+    first = [0] * (n + 1)
+    for j in range(1, n + 1):
+        for k in range(1, min(j, len(prices)) + 1):
+            v = prices[k - 1] + best[j - k]
+            if v > best[j]:
+                best[j] = v
+                first[j] = k
+    return best, first
+
+
 def rod_cutting(prices: list, n: int) -> int:
-    raise NotImplementedError
+    return _solve(prices, n)[0][n]
 
 
 def rod_cutting_pieces(prices: list, n: int) -> list:
-    raise NotImplementedError
+    _, first = _solve(prices, n)
+    pieces = []
+    while n > 0:
+        pieces.append(first[n])
+        n -= first[n]
+    return sorted(pieces, reverse=True)
 
 
 def _run_tests():
