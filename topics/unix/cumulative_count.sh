@@ -24,5 +24,4 @@
 #   a	3
 #   b	2
 
-# TODO: replace this line
-exit 1
+awk '{ seen[$1]++; print $1 "\t" seen[$1] }'
