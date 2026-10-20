@@ -22,5 +22,10 @@
 #   Racecar
 #   No lemon, no melon
 
-# TODO: replace this line
-echo "not implemented" >&2; exit 1
+awk '{
+  s = tolower($0); gsub(/[^a-z0-9]/, "", s)
+  if (s == "") next
+  r = ""
+  for (i = length(s); i >= 1; i--) r = r substr(s, i, 1)
+  if (s == r) print $0
+}'
