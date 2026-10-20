@@ -24,7 +24,19 @@ from collections import Counter  # noqa: F401
 
 
 def reorganize(s: str) -> str:
-    raise NotImplementedError
+    heap = [(-c, ch) for ch, c in Counter(s).items()]
+    heapq.heapify(heap)
+    out = []
+    prev = (0, "")
+    while heap:
+        c, ch = heapq.heappop(heap)
+        out.append(ch)
+        if prev[0] < 0:
+            heapq.heappush(heap, prev)
+        prev = (c + 1, ch)
+    if prev[0] < 0:
+        return ""
+    return "".join(out)
 
 
 def _valid(original, result):
@@ -43,7 +55,9 @@ def _run_tests():
     assert reorganize("aa") == ""
     assert _valid("aabbcc", reorganize("aabbcc"))
     assert _valid("aaabbbc", reorganize("aaabbbc"))
-    assert reorganize("aaaabbc") == ""
+    # a?a?a?a is possible: 4 <= (7+1)//2, so "aaaabbc" CAN be reorganized
+    assert _valid("aaaabbc", reorganize("aaaabbc"))
+    assert reorganize("aaaaabbc") == ""
     assert _valid("vvvlo", reorganize("vvvlo"))  # v?v?v is possible
     assert reorganize("vvvvlo") == ""
     print("all tests passed")
