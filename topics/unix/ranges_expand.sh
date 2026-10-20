@@ -25,5 +25,14 @@
 #   5
 #   4 2
 
-# TODO: replace this line
-echo "not implemented" >&2; exit 1
+awk '{
+  out = ""; sep = ""
+  n = split($0, parts, ",")
+  for (p = 1; p <= n; p++) {
+    if (parts[p] == "") continue
+    m = split(parts[p], ab, "-")
+    lo = ab[1] + 0; hi = (m > 1 ? ab[2] : ab[1]) + 0
+    for (k = lo; k <= hi; k++) { out = out sep k; sep = " " }
+  }
+  print out
+}'
