@@ -27,10 +27,21 @@ Run: python3 sparse_table.py
 
 class SparseTable:
     def __init__(self, values):
-        raise NotImplementedError
+        self.n = len(values)
+        self.table = [list(values)]
+        k = 0
+        while (1 << (k + 1)) <= self.n:
+            prev = self.table[k]
+            half = 1 << k
+            self.table.append([min(prev[i], prev[i + half])
+                               for i in range(self.n - (1 << (k + 1)) + 1)])
+            k += 1
 
     def query(self, l, r):
-        raise NotImplementedError
+        if l > r or l < 0 or r >= self.n:
+            raise ValueError("invalid range")
+        k = (r - l + 1).bit_length() - 1
+        return min(self.table[k][l], self.table[k][r - (1 << k) + 1])
 
 
 def _run_tests():
