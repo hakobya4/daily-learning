@@ -23,5 +23,7 @@
 #
 #   The Quick Brown
 
-# TODO: replace this line
-echo "not implemented" >&2; exit 1
+awk '{
+    for (i = 1; i <= NF; i++) $i = toupper(substr($i, 1, 1)) tolower(substr($i, 2))
+    print $0
+}'
