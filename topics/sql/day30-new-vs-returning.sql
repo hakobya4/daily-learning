@@ -32,8 +32,31 @@ INSERT INTO orders (customer, order_date) VALUES
     ('dee','2026-03-09'),
     ('eli','2026-03-15'),('eli','2026-03-30');
 
--- TODO Q1
+-- Q1
+WITH first_order AS (
+    SELECT customer, MIN(order_date) AS first_date FROM orders GROUP BY customer
+),
+monthly AS (
+    SELECT DISTINCT substr(order_date, 1, 7) AS month, customer FROM orders
+)
+SELECT m.month,
+       SUM(CASE WHEN substr(f.first_date, 1, 7) = m.month THEN 1 ELSE 0 END) AS new_customers,
+       SUM(CASE WHEN substr(f.first_date, 1, 7) < m.month THEN 1 ELSE 0 END) AS returning_customers
+FROM monthly m
+JOIN first_order f ON f.customer = m.customer
+GROUP BY m.month
+ORDER BY m.month;
 
-
--- TODO Q2
+-- Q2
+WITH ranked AS (
+    SELECT customer, order_date,
+           ROW_NUMBER() OVER (PARTITION BY customer ORDER BY order_date) AS rn
+    FROM orders
+)
+SELECT c.customer,
+       CAST(julianday(s.order_date) - julianday(f.order_date) AS INTEGER) AS days_to_second
+FROM (SELECT DISTINCT customer FROM orders) c
+JOIN ranked f ON f.customer = c.customer AND f.rn = 1
+LEFT JOIN ranked s ON s.customer = c.customer AND s.rn = 2
+ORDER BY c.customer;
 
