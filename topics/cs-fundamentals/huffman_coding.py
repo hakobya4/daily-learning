@@ -31,15 +31,47 @@ Run: python3 huffman_coding.py
 
 
 def huffman_codes(text: str) -> dict:
-    raise NotImplementedError
+    import heapq
+    from collections import Counter
+    if not text:
+        return {}
+    freq = Counter(text)
+    if len(freq) == 1:
+        return {next(iter(freq)): "0"}
+    heap = [(f, i, ch) for i, (ch, f) in enumerate(sorted(freq.items()))]
+    heapq.heapify(heap)
+    counter = len(heap)
+    while len(heap) > 1:
+        f1, _, t1 = heapq.heappop(heap)
+        f2, _, t2 = heapq.heappop(heap)
+        heapq.heappush(heap, (f1 + f2, counter, (t1, t2)))
+        counter += 1
+    codes = {}
+    stack = [(heap[0][2], "")]
+    while stack:
+        tree, prefix = stack.pop()
+        if isinstance(tree, tuple):
+            stack.append((tree[0], prefix + "0"))
+            stack.append((tree[1], prefix + "1"))
+        else:
+            codes[tree] = prefix
+    return codes
 
 
 def encode(text: str, codes: dict) -> str:
-    raise NotImplementedError
+    return "".join(codes[ch] for ch in text)
 
 
 def decode(bits: str, codes: dict) -> str:
-    raise NotImplementedError
+    inverse = {code: ch for ch, code in codes.items()}
+    out = []
+    cur = ""
+    for b in bits:
+        cur += b
+        if cur in inverse:
+            out.append(inverse[cur])
+            cur = ""
+    return "".join(out)
 
 
 def _run_tests():
