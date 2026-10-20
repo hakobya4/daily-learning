@@ -22,12 +22,18 @@ knows classic ABAP but has never touched RAP.
 
 ## CONCEPT CHOSEN
 
-TODO
+`%control` and `%tky` structures in RAP.
 
 ## MY EXPLANATION (write this BEFORE looking anything up)
 
-TODO
+In classic ABAP you pass a structure and hope the caller filled the right fields. RAP needs to know more: which instance is meant, and which fields the caller actually wants changed. That is what these special components are for.
+
+`%tky` (transactional key) identifies one instance. For a non-draft BO it is just the semantic key, but for a draft-enabled BO it also contains `%is_draft`, so the same business key can address either the active or the draft version. That is why you write `keys = VALUE #( ( %tky = <row>-%tky ) )` in EML instead of listing bare key fields.
+
+`%control` is a structure of flags, one per field, set to `if_abap_behv=>mk-on` or `mk-off`. In an update request it says which fields in the data part were really supplied. Without it, an initial value would be ambiguous: "set to blank" or "not provided". With `%control` the framework only changes fields flagged on, much like a PATCH instead of a PUT. In handler methods it lets you check what the user changed, for example in a determination or validation.
+
+Mnemonic: `%tky` answers "which instance?", `%control` answers "which fields?".
 
 ## WHAT I GOT WRONG / LEARNED AFTER CHECKING
 
-TODO
+`%tky` is a shorthand for `%key` plus `%pid` and `%is_draft` where applicable, so it is the safe default. `%control` is filled automatically by the framework for Fiori requests, but in your own EML `MODIFY` calls you must set it yourself, usually through the `%control-field = if_abap_behv=>mk-on` pattern or `FIELDS ( ... ) WITH` syntax, which generates it for you.
