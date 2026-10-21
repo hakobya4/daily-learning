@@ -22,5 +22,10 @@
 #   a 1 25.0%
 #   b 3 75.0%
 
-# TODO: replace this line
-echo "not implemented" >&2; exit 1
+awk '{
+    name[NR] = $1; val[NR] = $2; total += $2
+}
+END {
+    for (i = 1; i <= NR; i++)
+        printf "%s %s %.1f%%\n", name[i], val[i], (total ? val[i] / total * 100 : 0)
+}'
