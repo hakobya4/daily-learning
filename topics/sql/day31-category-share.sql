@@ -33,10 +33,39 @@ INSERT INTO sales (category, product, amount) VALUES
     ('Games','chess',90),('Games','cards',30),('Games','dice',20);
 
 -- Q1
--- TODO: write the query
+SELECT category,
+       SUM(amount) AS revenue,
+       ROUND(SUM(amount) * 100.0 / (SELECT SUM(amount) FROM sales), 1) AS share_pct
+FROM sales
+GROUP BY category
+ORDER BY revenue DESC;
 
 -- Q2
--- TODO: write the query
+WITH prod AS (
+    SELECT category, product, SUM(amount) AS revenue
+    FROM sales
+    GROUP BY category, product
+), ranked AS (
+    SELECT category, product, revenue,
+           ROW_NUMBER() OVER (PARTITION BY category ORDER BY revenue DESC) AS rn
+    FROM prod
+)
+SELECT category, product, revenue
+FROM ranked
+WHERE rn = 1
+ORDER BY category;
 
 -- Q3
--- TODO: write the query
+WITH prod AS (
+    SELECT category, product, SUM(amount) AS revenue
+    FROM sales
+    GROUP BY category, product
+), withavg AS (
+    SELECT category, product, revenue,
+           AVG(revenue) OVER (PARTITION BY category) AS cat_avg
+    FROM prod
+)
+SELECT category, product, revenue
+FROM withavg
+WHERE revenue > cat_avg
+ORDER BY category, product;
