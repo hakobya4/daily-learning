@@ -21,7 +21,16 @@ Run: python3 word_break.py
 
 
 def word_break(s: str, words: list) -> bool:
-    raise NotImplementedError
+    word_set = set(words)
+    lengths = {len(w) for w in word_set}
+    dp = [False] * (len(s) + 1)
+    dp[0] = True
+    for i in range(1, len(s) + 1):
+        for L in lengths:
+            if L <= i and dp[i - L] and s[i - L:i] in word_set:
+                dp[i] = True
+                break
+    return dp[len(s)]
 
 
 def _run_tests():
