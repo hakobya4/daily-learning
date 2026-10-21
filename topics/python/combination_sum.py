@@ -23,7 +23,23 @@ Run: python3 combination_sum.py
 
 
 def combination_sum(candidates: list, target: int) -> list:
-    raise NotImplementedError
+    cands = sorted(set(candidates))
+    result = []
+
+    def backtrack(start, remaining, path):
+        if remaining == 0:
+            result.append(path[:])
+            return
+        for idx in range(start, len(cands)):
+            c = cands[idx]
+            if c > remaining:
+                break
+            path.append(c)
+            backtrack(idx, remaining - c, path)
+            path.pop()
+
+    backtrack(0, target, [])
+    return result
 
 
 def _run_tests():
