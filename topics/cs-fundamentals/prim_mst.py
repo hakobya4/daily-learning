@@ -23,7 +23,27 @@ import heapq  # noqa: F401  (hint: you will want it)
 
 
 def prim_mst(n: int, edges: list):
-    raise NotImplementedError
+    if n <= 1:
+        return 0
+    adj = [[] for _ in range(n)]
+    for u, v, w in edges:
+        adj[u].append((w, v))
+        adj[v].append((w, u))
+    visited = [False] * n
+    heap = [(0, 0)]
+    total = 0
+    count = 0
+    while heap and count < n:
+        w, u = heapq.heappop(heap)
+        if visited[u]:
+            continue
+        visited[u] = True
+        total += w
+        count += 1
+        for e in adj[u]:
+            if not visited[e[1]]:
+                heapq.heappush(heap, e)
+    return total if count == n else None
 
 
 def _run_tests():
