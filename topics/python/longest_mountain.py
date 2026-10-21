@@ -22,7 +22,22 @@ Run: python3 longest_mountain.py
 
 
 def longest_mountain(arr: list) -> int:
-    raise NotImplementedError
+    n = len(arr)
+    best = 0
+    i = 1
+    while i < n - 1:
+        if arr[i - 1] < arr[i] > arr[i + 1]:
+            lo = i - 1
+            while lo > 0 and arr[lo - 1] < arr[lo]:
+                lo -= 1
+            hi = i + 1
+            while hi < n - 1 and arr[hi] > arr[hi + 1]:
+                hi += 1
+            best = max(best, hi - lo + 1)
+            i = hi
+        else:
+            i += 1
+    return best
 
 
 def _run_tests():
