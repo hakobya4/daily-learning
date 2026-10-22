@@ -24,13 +24,44 @@ Run: python3 lfu_cache.py
 
 class LFUCache:
     def __init__(self, capacity: int):
-        raise NotImplementedError
+        from collections import OrderedDict, defaultdict
+        self.capacity = capacity
+        self.vals = {}          # key -> (value, freq)
+        self.buckets = defaultdict(OrderedDict)  # freq -> keys, oldest first
+        self.min_freq = 0
+
+    def _touch(self, key):
+        value, f = self.vals[key]
+        del self.buckets[f][key]
+        if not self.buckets[f]:
+            del self.buckets[f]
+            if self.min_freq == f:
+                self.min_freq += 1
+        self.buckets[f + 1][key] = None
+        self.vals[key] = (value, f + 1)
 
     def get(self, key: int) -> int:
-        raise NotImplementedError
+        if key not in self.vals:
+            return -1
+        self._touch(key)
+        return self.vals[key][0]
 
     def put(self, key: int, value: int) -> None:
-        raise NotImplementedError
+        if self.capacity <= 0:
+            return
+        if key in self.vals:
+            f = self.vals[key][1]
+            self.vals[key] = (value, f)
+            self._touch(key)
+            return
+        if len(self.vals) >= self.capacity:
+            old, _ = self.buckets[self.min_freq].popitem(last=False)
+            if not self.buckets[self.min_freq]:
+                del self.buckets[self.min_freq]
+            del self.vals[old]
+        self.vals[key] = (value, 1)
+        self.buckets[1][key] = None
+        self.min_freq = 1
 
 
 def _run_tests():
