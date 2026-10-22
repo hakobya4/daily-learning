@@ -26,5 +26,4 @@
 #   9
 #   9
 
-# TODO: replace this line (hint: awk 'NR == 1 || $1 > max { max = $1 } { print max }')
-echo "not implemented" >&2; exit 1
+awk 'NF { if (n++ == 0 || $1 + 0 > max) max = $1 + 0; print max }'
