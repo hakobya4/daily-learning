@@ -23,12 +23,17 @@ who knows classic ABAP but has never touched RAP.
 
 ## CONCEPT CHOSEN
 
-TODO
+RAP `with additional save` (additional save in the save sequence).
 
 ## MY EXPLANATION (write this BEFORE looking anything up)
 
-TODO
+In a managed RAP business object the framework writes the changed data to the database tables for you during the save phase. Sometimes that is not enough: you also want to write a change-log row, call a legacy function module / update task, or send something to another system, but only once the transaction is really going to be committed. That is what `with additional save` is for. You add it to the behavior definition (`with additional save` on the entity, or `save_modified` in the unmanaged variant) and implement the save method `save_modified` in the saver class (`lsc_<bo>` inheriting from `cl_abap_behavior_saver`). The framework still does its own managed persistence, and then it calls your `save_modified` with the `create`, `update` and `delete` parameters containing exactly what changed in this LUW.
+
+The comparison to classic ABAP: it is like putting `CALL FUNCTION ... IN UPDATE TASK` or a `PERFORM ... ON COMMIT` hook that only runs when the final COMMIT WORK happens. Because it runs in the save phase (after the interaction phase and `finalize`/`check_before_save` succeeded), no COMMIT or ROLLBACK is allowed there and no EML modifications either; you only do database/side-effect work. If the interaction phase failed, the saver is never called, so no half-written log entries exist. With `unmanaged save` you replace the framework's persistence entirely; with `with additional save` you only add to it.
 
 ## WHAT I GOT WRONG / LEARNED AFTER CHECKING
 
-TODO
+- The method is called `save_modified` and it receives the changes with the `%control` flags, so for updates you must check which fields were really changed rather than assume the whole row is new.
+- Do not mix it up with `additional save` inside actions: it belongs to the save sequence (`adjust_numbers`, `save`, `cleanup`), not to the interaction phase, so reading with EML there is not allowed.
+- With draft, additional save runs only when the draft is activated (Prepare/Activate), not on every draft save.
+- Use `unmanaged save` when you must replace the persistence; use `with additional save` when you only want extra side effects such as logging or numbering-dependent writes.
