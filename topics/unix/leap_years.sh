@@ -24,5 +24,4 @@
 #   2023 common
 #   2100 common
 
-# TODO: replace this line (hint: awk 'NF { ... }')
-echo "not implemented" >&2; exit 1
+awk 'NF { y = $1; leap = (y % 4 == 0 && y % 100 != 0) || y % 400 == 0; printf "%s %s\n", y, (leap ? "leap" : "common") }'
