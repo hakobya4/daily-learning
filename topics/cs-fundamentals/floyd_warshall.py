@@ -27,11 +27,27 @@ INF = float("inf")
 
 
 def floyd_warshall(n: int, edges: list) -> list:
-    raise NotImplementedError
+    dist = [[INF] * n for _ in range(n)]
+    for i in range(n):
+        dist[i][i] = 0
+    for u, v, w in edges:
+        if w < dist[u][v]:
+            dist[u][v] = w
+    for k in range(n):
+        for i in range(n):
+            if dist[i][k] == INF:
+                continue
+            for j in range(n):
+                if dist[k][j] == INF:
+                    continue
+                if dist[i][k] + dist[k][j] < dist[i][j]:
+                    dist[i][j] = dist[i][k] + dist[k][j]
+    return dist
 
 
 def has_negative_cycle(n: int, edges: list) -> bool:
-    raise NotImplementedError
+    dist = floyd_warshall(n, edges)
+    return any(dist[i][i] < 0 for i in range(n))
 
 
 def _run_tests():
