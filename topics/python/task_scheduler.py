@@ -24,7 +24,13 @@ Run: python3 task_scheduler.py
 
 
 def least_interval(tasks: str, n: int) -> int:
-    raise NotImplementedError
+    if not tasks:
+        return 0
+    from collections import Counter
+    counts = Counter(tasks)
+    m = max(counts.values())
+    k = sum(1 for v in counts.values() if v == m)
+    return max(len(tasks), (m - 1) * (n + 1) + k)
 
 
 def _run_tests():
