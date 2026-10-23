@@ -33,10 +33,42 @@ INSERT INTO logins ("user", day) VALUES
     ('cy','2026-01-04');
 
 -- Q1
--- TODO
+WITH numbered AS (
+    SELECT "user", day,
+           julianday(day) - ROW_NUMBER() OVER (PARTITION BY "user" ORDER BY day) AS grp
+    FROM logins
+)
+SELECT "user", MIN(day) AS start_day, MAX(day) AS end_day, COUNT(*) AS length
+FROM numbered
+GROUP BY "user", grp
+ORDER BY "user", start_day;
 
 -- Q2
--- TODO
+WITH numbered AS (
+    SELECT "user", day,
+           julianday(day) - ROW_NUMBER() OVER (PARTITION BY "user" ORDER BY day) AS grp
+    FROM logins
+), streaks AS (
+    SELECT "user", COUNT(*) AS length
+    FROM numbered
+    GROUP BY "user", grp
+)
+SELECT "user", MAX(length) AS length
+FROM streaks
+GROUP BY "user"
+ORDER BY "user";
 
 -- Q3
--- TODO
+WITH numbered AS (
+    SELECT "user", day,
+           julianday(day) - ROW_NUMBER() OVER (PARTITION BY "user" ORDER BY day) AS grp
+    FROM logins
+)
+SELECT DISTINCT "user"
+FROM (
+    SELECT "user", grp
+    FROM numbered
+    GROUP BY "user", grp
+    HAVING COUNT(*) >= 3
+)
+ORDER BY "user";
