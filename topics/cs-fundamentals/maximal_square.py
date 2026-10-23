@@ -25,7 +25,19 @@ Run: python3 maximal_square.py
 
 
 def maximal_square(matrix: list) -> int:
-    raise NotImplementedError
+    if not matrix:
+        return 0
+    cols = len(matrix[0])
+    prev = [0] * (cols + 1)
+    side = 0
+    for row in matrix:
+        cur = [0] * (cols + 1)
+        for j in range(1, cols + 1):
+            if row[j - 1] == "1":
+                cur[j] = 1 + min(prev[j], cur[j - 1], prev[j - 1])
+                side = max(side, cur[j])
+        prev = cur
+    return side * side
 
 
 def _run_tests():
