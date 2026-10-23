@@ -27,5 +27,11 @@
 #   invalid
 #   invalid
 
-# TODO: replace this line
-exit 1
+while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    if [[ $line =~ ^(0[xX])?([0-9a-fA-F]+)$ ]]; then
+        printf '%d\n' "0x${BASH_REMATCH[2]}"
+    else
+        echo invalid
+    fi
+done
