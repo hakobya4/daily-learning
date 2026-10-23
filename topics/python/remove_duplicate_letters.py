@@ -24,7 +24,16 @@ Run: python3 remove_duplicate_letters.py
 
 
 def remove_duplicate_letters(s: str) -> str:
-    raise NotImplementedError
+    last = {c: i for i, c in enumerate(s)}
+    stack, seen = [], set()
+    for i, c in enumerate(s):
+        if c in seen:
+            continue
+        while stack and stack[-1] > c and last[stack[-1]] > i:
+            seen.discard(stack.pop())
+        stack.append(c)
+        seen.add(c)
+    return "".join(stack)
 
 
 def _run_tests():
