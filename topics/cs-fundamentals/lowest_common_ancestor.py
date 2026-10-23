@@ -27,7 +27,24 @@ Run: python3 lowest_common_ancestor.py
 
 
 def lca(tree, a, b):
-    raise NotImplementedError
+    def walk(node):
+        # returns (found_a, found_b, answer)
+        if node is None:
+            return False, False, None
+        val, left, right = node
+        la, lb, lans = walk(left)
+        if lans is not None:
+            return True, True, lans
+        ra, rb, rans = walk(right)
+        if rans is not None:
+            return True, True, rans
+        fa = la or ra or val == a
+        fb = lb or rb or val == b
+        if fa and fb:
+            return True, True, val
+        return fa, fb, None
+
+    return walk(tree)[2]
 
 
 def _run_tests():
