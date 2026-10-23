@@ -22,7 +22,12 @@ Run: python3 max_product_subarray.py
 
 
 def max_product(nums: list) -> int:
-    raise NotImplementedError
+    best = cur_max = cur_min = nums[0]
+    for x in nums[1:]:
+        cands = (x, x * cur_max, x * cur_min)
+        cur_max, cur_min = max(cands), min(cands)
+        best = max(best, cur_max)
+    return best
 
 
 def _run_tests():
