@@ -28,7 +28,21 @@ KEYPAD = {
 
 
 def letter_combinations(digits: str) -> list:
-    raise NotImplementedError
+    if not digits:
+        return []
+    result = []
+
+    def backtrack(i, path):
+        if i == len(digits):
+            result.append("".join(path))
+            return
+        for ch in KEYPAD[digits[i]]:
+            path.append(ch)
+            backtrack(i + 1, path)
+            path.pop()
+
+    backtrack(0, [])
+    return result
 
 
 def _run_tests():
