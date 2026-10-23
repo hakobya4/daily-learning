@@ -21,5 +21,5 @@
 # Expected:
 #   c
 
-# TODO: replace this line
-exit 1
+awk '{ lines[NR] = $0; count[$0]++ }
+     END { for (i = 1; i <= NR; i++) if (count[lines[i]] == 1) { print lines[i]; exit } }'
