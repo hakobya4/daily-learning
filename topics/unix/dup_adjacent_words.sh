@@ -28,5 +28,4 @@
 #   3: the
 #   3: the
 
-# TODO: replace this line
-exit 1
+awk '{ for (i = 2; i <= NF; i++) if (tolower($i) == tolower($(i-1))) print NR ": " tolower($i) }'
