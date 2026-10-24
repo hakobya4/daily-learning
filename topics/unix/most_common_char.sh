@@ -21,5 +21,5 @@
 # Expected:
 #   l 3
 
-# TODO: replace this line
-exit 1
+tr -d '[:space:]' | fold -w1 | LC_ALL=C sort | LC_ALL=C uniq -c |
+    LC_ALL=C sort -k1,1nr -k2,2 | head -n1 | awk '{ print $2, $1 }'
