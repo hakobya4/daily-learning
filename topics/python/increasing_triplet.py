@@ -23,7 +23,15 @@ Run: python3 increasing_triplet.py
 
 
 def increasing_triplet(nums: list) -> bool:
-    raise NotImplementedError
+    first = second = float("inf")
+    for n in nums:
+        if n <= first:
+            first = n
+        elif n <= second:
+            second = n
+        else:
+            return True
+    return False
 
 
 def _run_tests():
