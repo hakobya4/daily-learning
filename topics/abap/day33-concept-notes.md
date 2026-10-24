@@ -24,12 +24,16 @@ never touched RAP.
 
 ## CONCEPT CHOSEN
 
-TODO
+The RAP `%cid` / `%cid_ref` mechanism for chaining creates in one EML call.
 
 ## MY EXPLANATION (write this BEFORE looking anything up)
 
-TODO
+When you create a new instance with EML (`MODIFY ENTITIES OF ... CREATE`), the real key does not exist yet: with managed late numbering it is only assigned during the save sequence. So how do you refer to the new instance in the same call, for example to create a child item under a header you are creating right now? `%cid` is the answer. It is a "content ID", a temporary label you choose yourself (a string like `'H1'`) that is only valid inside that one MODIFY call. You put it in the CREATE entry for the header (`%cid = 'H1'`), and in the child's `CREATE BY \_Items` you refer to the parent with `%cid_ref = 'H1'`. RAP resolves it internally.
+
+Afterwards the `MAPPED` response table tells you which `%cid` ended up as which real key (`%tky`), and `FAILED` / `REPORTED` use the same identification, so you can tell which of your entries went wrong. Think of it like a local variable name for an object that has no primary key yet, similar to a temporary document number in classic ABAP before the number range is drawn. Each `%cid` must be unique within the call. `%cid_ref` can also refer to an instance created earlier in the same call by an action or another create.
 
 ## WHAT I GOT WRONG / LEARNED AFTER CHECKING
 
-TODO
+- The `%cid` only lives for the duration of the single EML statement (or the same chained batch); it is not a key and must not be stored.
+- The real key is only final after the save sequence with late numbering; the key in `MAPPED` after the MODIFY may still be a temporary (`%pid`-based) one, so read the final key after COMMIT ENTITIES using the mapped result.
+- A `%cid` must be unique per call, and for a create-by-association the parent is identified either by its real key (existing instance) or by `%cid_ref` (instance created in the same call), not both.
