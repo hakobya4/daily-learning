@@ -1,26 +1,33 @@
 #!/usr/bin/env bash
 #
-# Day 27, Task 6 -- Unix/shell: make an uppercase acronym from each line.
+# Day 34, Task 5 -- Unix/shell: acronym of every line.
 #
 # THE PROBLEM
 # ------------
-# For every line on stdin print the uppercase first letters of its
-# whitespace-separated words. Blank lines produce blank lines.
+# stdin is lines of words separated by whitespace. For every line print the
+# acronym: the first letter of each word, upper-cased, with no separators.
+# A blank line prints a blank line.
 #
-#   input:  portable network graphics
-#   output: PNG
+# Input:
+#   portable network graphics
+#   say what you mean
 #
-# HOW TO WORK THROUGH THIS
-# -------------------------
-# awk: loop i from 1 to NF, append toupper(substr($i, 1, 1)) to a string,
-# print it (even if empty) at the end of each record.
+#   a
+# Output:
+#   PNG
+#   SWYM
+#
+#   A
+#
+# HINT: awk, loop i from 1..NF and append toupper(substr($i,1,1)) to a string.
 #
 # Check with:
-#   printf 'portable network graphics\nas soon as possible\n\nhello\n' | ./acronym_lines.sh
+#   printf 'portable network graphics\nsay what you mean\n\na\n' | ./acronym_lines.sh
 # Expected:
 #   PNG
-#   ASAP
+#   SWYM
 #
-#   H
+#   A
 
-awk '{ a = ""; for (i = 1; i <= NF; i++) a = a toupper(substr($i, 1, 1)); print a }'
+# TODO: replace this line
+exit 1
