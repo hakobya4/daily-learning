@@ -35,10 +35,33 @@ INSERT INTO orders VALUES
   ('dee','2026-01-01'),('dee','2026-02-01');
 
 -- Q1:
--- TODO: write your query here
+SELECT customer, order_date,
+       CAST(julianday(order_date) - julianday(
+         LAG(order_date) OVER (PARTITION BY customer ORDER BY order_date)) AS INTEGER) AS days_since_prev
+FROM orders
+ORDER BY customer, order_date;
 
 -- Q2:
--- TODO: write your query here
+WITH gaps AS (
+  SELECT customer,
+         julianday(order_date) - julianday(
+           LAG(order_date) OVER (PARTITION BY customer ORDER BY order_date)) AS gap
+  FROM orders
+)
+SELECT customer, ROUND(AVG(gap), 1) AS avg_gap
+FROM gaps
+WHERE gap IS NOT NULL
+GROUP BY customer
+ORDER BY customer;
 
 -- Q3:
--- TODO: write your query here
+WITH gaps AS (
+  SELECT customer,
+         julianday(order_date) - julianday(
+           LAG(order_date) OVER (PARTITION BY customer ORDER BY order_date)) AS gap
+  FROM orders
+)
+SELECT DISTINCT customer
+FROM gaps
+WHERE gap > 30
+ORDER BY customer;
