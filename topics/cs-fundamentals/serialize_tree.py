@@ -29,11 +29,33 @@ Run: python3 serialize_tree.py
 
 
 def serialize(tree) -> str:
-    raise NotImplementedError
+    out = []
+    stack = [tree]
+    while stack:
+        node = stack.pop()
+        if node is None:
+            out.append("#")
+        else:
+            out.append(str(node[0]))
+            stack.append(node[2])
+            stack.append(node[1])
+    return ",".join(out)
 
 
 def deserialize(s: str):
-    raise NotImplementedError
+    import sys
+    sys.setrecursionlimit(max(sys.getrecursionlimit(), 10000))
+    tokens = iter(s.split(","))
+
+    def build():
+        tok = next(tokens)
+        if tok == "#":
+            return None
+        left = build()
+        right = build()
+        return (int(tok), left, right)
+
+    return build()
 
 
 def _run_tests():
