@@ -21,7 +21,20 @@ Run: python3 search_matrix.py
 
 
 def search_matrix(matrix: list, target: int) -> bool:
-    raise NotImplementedError
+    if not matrix or not matrix[0]:
+        return False
+    m, n = len(matrix), len(matrix[0])
+    lo, hi = 0, m * n - 1
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        v = matrix[mid // n][mid % n]
+        if v == target:
+            return True
+        if v < target:
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return False
 
 
 def _run_tests():
