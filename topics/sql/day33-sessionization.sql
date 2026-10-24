@@ -42,10 +42,49 @@ INSERT INTO events ("user", ts) VALUES
     ('cy','2026-02-03 12:00:00');
 
 -- Q1 --
--- TODO: write the query
+WITH flagged AS (
+    SELECT "user", ts,
+           CASE WHEN LAG(ts) OVER (PARTITION BY "user" ORDER BY ts) IS NULL
+                  OR (julianday(ts) - julianday(LAG(ts) OVER (PARTITION BY "user" ORDER BY ts))) * 1440 > 30
+                THEN 1 ELSE 0 END AS new_session
+    FROM events
+), numbered AS (
+    SELECT "user", ts,
+           SUM(new_session) OVER (PARTITION BY "user" ORDER BY ts) AS session_no
+    FROM flagged
+)
+SELECT "user", session_no, MIN(ts) AS start_ts, MAX(ts) AS end_ts, COUNT(*) AS event_count
+FROM numbered
+GROUP BY "user", session_no
+ORDER BY "user", session_no;
 
 -- Q2 --
--- TODO: write the query
+WITH flagged AS (
+    SELECT "user", ts,
+           CASE WHEN LAG(ts) OVER (PARTITION BY "user" ORDER BY ts) IS NULL
+                  OR (julianday(ts) - julianday(LAG(ts) OVER (PARTITION BY "user" ORDER BY ts))) * 1440 > 30
+                THEN 1 ELSE 0 END AS new_session
+    FROM events
+), numbered AS (
+    SELECT "user", ts,
+           SUM(new_session) OVER (PARTITION BY "user" ORDER BY ts) AS session_no
+    FROM flagged
+), sessions AS (
+    SELECT "user", session_no,
+           CAST(ROUND((julianday(MAX(ts)) - julianday(MIN(ts))) * 1440) AS INTEGER) AS minutes
+    FROM numbered
+    GROUP BY "user", session_no
+)
+SELECT "user", MAX(minutes) AS minutes
+FROM sessions
+GROUP BY "user"
+ORDER BY "user";
 
 -- Q3 --
--- TODO: write the query
+WITH flagged AS (
+    SELECT CASE WHEN LAG(ts) OVER (PARTITION BY "user" ORDER BY ts) IS NULL
+                  OR (julianday(ts) - julianday(LAG(ts) OVER (PARTITION BY "user" ORDER BY ts))) * 1440 > 30
+                THEN 1 ELSE 0 END AS new_session
+    FROM events
+)
+SELECT SUM(new_session) AS sessions FROM flagged;
