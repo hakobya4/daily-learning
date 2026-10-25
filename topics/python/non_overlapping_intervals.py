@@ -22,7 +22,16 @@ Run: python3 non_overlapping_intervals.py
 
 
 def erase_overlap_intervals(intervals: list) -> int:
-    raise NotImplementedError
+    if not intervals:
+        return 0
+    removed = 0
+    last_end = None
+    for start, end in sorted(intervals, key=lambda iv: iv[1]):
+        if last_end is None or start >= last_end:
+            last_end = end
+        else:
+            removed += 1
+    return removed
 
 
 def _run_tests():
