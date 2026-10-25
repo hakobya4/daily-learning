@@ -23,7 +23,24 @@ Run: python3 word_search.py
 
 
 def exist(board: list, word: str) -> bool:
-    raise NotImplementedError
+    if not word:
+        return True
+    rows = len(board)
+    cols = len(board[0]) if rows else 0
+
+    def dfs(r, c, k):
+        if k == len(word):
+            return True
+        if r < 0 or c < 0 or r >= rows or c >= cols or board[r][c] != word[k]:
+            return False
+        saved = board[r][c]
+        board[r][c] = "#"
+        found = (dfs(r + 1, c, k + 1) or dfs(r - 1, c, k + 1)
+                 or dfs(r, c + 1, k + 1) or dfs(r, c - 1, k + 1))
+        board[r][c] = saved
+        return found
+
+    return any(dfs(r, c, 0) for r in range(rows) for c in range(cols))
 
 
 def _run_tests():
