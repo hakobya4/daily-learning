@@ -27,7 +27,21 @@ Run: python3 exclusive_time.py
 
 
 def exclusive_time(n: int, logs: list) -> list:
-    raise NotImplementedError
+    res = [0] * n
+    stack = []
+    prev = 0
+    for log in logs:
+        fid, kind, ts = log.split(":")
+        fid, ts = int(fid), int(ts)
+        if kind == "start":
+            if stack:
+                res[stack[-1]] += ts - prev
+            stack.append(fid)
+            prev = ts
+        else:
+            res[stack.pop()] += ts - prev + 1
+            prev = ts + 1
+    return res
 
 
 def _run_tests():
