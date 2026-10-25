@@ -29,5 +29,4 @@
 #
 #   A
 
-# TODO: replace this line
-exit 1
+awk '{ s = ""; for (i = 1; i <= NF; i++) s = s toupper(substr($i, 1, 1)); print s }'
