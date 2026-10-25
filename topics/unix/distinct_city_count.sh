@@ -24,5 +24,4 @@
 # Expected:
 #   2
 
-# TODO: replace this line
-exit 1
+awk -F, 'NR > 1 && !seen[$2]++ { n++ } END { print n + 0 }'
