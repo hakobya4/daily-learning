@@ -31,10 +31,39 @@ INSERT INTO purchases VALUES
   ('ann','2026-03-05',90),('cy','2026-03-09',90);
 
 -- Q1:
--- TODO: write your query here
+SELECT strftime('%Y-%m', purchase_date) AS month, customer, SUM(amount) AS total
+FROM purchases
+GROUP BY month, customer
+ORDER BY month, customer;
 
 -- Q2:
--- TODO: write your query here
+WITH monthly AS (
+  SELECT strftime('%Y-%m', purchase_date) AS month, customer, SUM(amount) AS total
+  FROM purchases
+  GROUP BY month, customer
+), ranked AS (
+  SELECT month, customer, total,
+         ROW_NUMBER() OVER (PARTITION BY month ORDER BY total DESC, customer) AS rn
+  FROM monthly
+)
+SELECT month, customer, total
+FROM ranked
+WHERE rn = 1
+ORDER BY month;
 
 -- Q3:
--- TODO: write your query here
+WITH monthly AS (
+  SELECT strftime('%Y-%m', purchase_date) AS month, customer, SUM(amount) AS total
+  FROM purchases
+  GROUP BY month, customer
+), ranked AS (
+  SELECT month, customer, total,
+         ROW_NUMBER() OVER (PARTITION BY month ORDER BY total DESC, customer) AS rn
+  FROM monthly
+)
+SELECT customer, COUNT(*) AS months_on_top
+FROM ranked
+WHERE rn = 1
+GROUP BY customer
+HAVING COUNT(*) >= 2
+ORDER BY customer;
