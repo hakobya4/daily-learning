@@ -22,7 +22,14 @@ Run: python3 find_peak_element.py
 
 
 def find_peak_element(nums: list) -> int:
-    raise NotImplementedError
+    lo, hi = 0, len(nums) - 1
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if nums[mid] < nums[mid + 1]:
+            lo = mid + 1
+        else:
+            hi = mid
+    return lo
 
 
 def _is_peak(nums, i):
