@@ -27,5 +27,4 @@
 #   name,team,score
 #   bob,blue,12
 
-# TODO: replace this line
-exit 1
+awk -F, 'NR==1{print;next} NR==2||$3+0>m+0{m=$3;r=$0} END{if(r!="")print r}'
