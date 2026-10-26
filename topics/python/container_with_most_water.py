@@ -21,7 +21,15 @@ Run: python3 container_with_most_water.py
 
 
 def max_area(heights: list[int]) -> int:
-    raise NotImplementedError
+    l, r = 0, len(heights) - 1
+    best = 0
+    while l < r:
+        best = max(best, min(heights[l], heights[r]) * (r - l))
+        if heights[l] < heights[r]:
+            l += 1
+        else:
+            r -= 1
+    return best
 
 
 def _run_tests():
