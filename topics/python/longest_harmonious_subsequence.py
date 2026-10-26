@@ -21,7 +21,13 @@ Run: python3 longest_harmonious_subsequence.py
 
 
 def find_lhs(nums: list[int]) -> int:
-    raise NotImplementedError
+    from collections import Counter
+    count = Counter(nums)
+    best = 0
+    for v, c in count.items():
+        if v + 1 in count:
+            best = max(best, c + count[v + 1])
+    return best
 
 
 def _run_tests():
