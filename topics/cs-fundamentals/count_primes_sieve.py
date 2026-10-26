@@ -23,12 +23,24 @@ Run: python3 count_primes_sieve.py
 """
 
 
+def _sieve(n: int) -> bytearray:
+    is_prime = bytearray([1]) * max(n, 0)
+    for i in range(min(2, len(is_prime))):
+        is_prime[i] = 0
+    p = 2
+    while p * p < n:
+        if is_prime[p]:
+            is_prime[p * p::p] = bytearray(len(range(p * p, n, p)))
+        p += 1
+    return is_prime
+
+
 def primes_below(n: int) -> list:
-    raise NotImplementedError
+    return [i for i, v in enumerate(_sieve(n)) if v]
 
 
 def count_primes(n: int) -> int:
-    raise NotImplementedError
+    return sum(_sieve(n))
 
 
 def _run_tests():
