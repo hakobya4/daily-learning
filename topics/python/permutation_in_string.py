@@ -22,7 +22,20 @@ Run: python3 permutation_in_string.py
 
 
 def check_inclusion(s1: str, s2: str) -> bool:
-    raise NotImplementedError
+    k = len(s1)
+    if k > len(s2):
+        return False
+    need = [0] * 26
+    win = [0] * 26
+    for ch in s1:
+        need[ord(ch) - 97] += 1
+    for i, ch in enumerate(s2):
+        win[ord(ch) - 97] += 1
+        if i >= k:
+            win[ord(s2[i - k]) - 97] -= 1
+        if i >= k - 1 and win == need:
+            return True
+    return k == 0
 
 
 def _run_tests():
