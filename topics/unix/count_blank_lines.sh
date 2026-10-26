@@ -29,5 +29,4 @@
 #   blank=2
 #   nonblank=2
 
-# TODO: replace this line
-exit 1
+awk '/^[ \t]*$/{b++;next}{n++} END{print "blank=" b+0; print "nonblank=" n+0}'
