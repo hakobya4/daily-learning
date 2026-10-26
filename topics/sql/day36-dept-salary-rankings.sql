@@ -29,10 +29,23 @@ INSERT INTO employees VALUES
   (5,'eve',2,50),(6,'fay',2,40),(7,'gus',2,60),
   (8,'hal',3,55);
 
--- TODO: Q1
+-- Q1
+SELECT dept, salary FROM (
+  SELECT d.name AS dept, e.salary AS salary,
+         DENSE_RANK() OVER (PARTITION BY e.dept_id ORDER BY e.salary DESC) AS rk
+  FROM employees e JOIN departments d ON d.id = e.dept_id
+) WHERE rk = 2 GROUP BY dept, salary ORDER BY dept;
 
 
--- TODO: Q2
+-- Q2
+SELECT name, dept, salary FROM (
+  SELECT e.name AS name, d.name AS dept, e.salary AS salary,
+         AVG(e.salary) OVER (PARTITION BY e.dept_id) AS avg_sal
+  FROM employees e JOIN departments d ON d.id = e.dept_id
+) WHERE salary > avg_sal ORDER BY dept, name;
 
 
--- TODO: Q3
+-- Q3
+SELECT d.name AS dept FROM departments d
+LEFT JOIN employees e ON e.dept_id = d.id
+WHERE e.id IS NULL ORDER BY dept;
