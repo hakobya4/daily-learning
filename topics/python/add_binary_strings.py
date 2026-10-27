@@ -22,7 +22,20 @@ Run: python3 add_binary_strings.py
 
 
 def add_binary(a: str, b: str) -> str:
-    raise NotImplementedError
+    i, j = len(a) - 1, len(b) - 1
+    carry = 0
+    out = []
+    while i >= 0 or j >= 0 or carry:
+        total = carry
+        if i >= 0:
+            total += ord(a[i]) - 48
+            i -= 1
+        if j >= 0:
+            total += ord(b[j]) - 48
+            j -= 1
+        out.append(chr(48 + total % 2))
+        carry = total // 2
+    return "".join(reversed(out))
 
 
 def _run_tests():
