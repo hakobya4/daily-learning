@@ -29,10 +29,32 @@ INSERT INTO order_items VALUES
   (5,'tea');
 
 -- Q1
-
+SELECT a.product AS a, b.product AS b, COUNT(*) AS pair_count
+FROM order_items a
+JOIN order_items b ON a.order_id = b.order_id AND a.product < b.product
+GROUP BY a.product, b.product
+ORDER BY pair_count DESC, a, b;
 
 -- Q2
-
+SELECT a.product AS a, b.product AS b, COUNT(*) AS pair_count
+FROM order_items a
+JOIN order_items b ON a.order_id = b.order_id AND a.product < b.product
+GROUP BY a.product, b.product
+HAVING COUNT(*) >= 2
+ORDER BY pair_count DESC, a, b;
 
 -- Q3
+SELECT DISTINCT product
+FROM order_items o
+WHERE NOT EXISTS (
+  SELECT 1 FROM order_items x
+  WHERE x.order_id = o.order_id AND x.product <> o.product
+)
+AND NOT EXISTS (
+  SELECT 1 FROM order_items y
+  WHERE y.product = o.product
+    AND EXISTS (SELECT 1 FROM order_items z
+                WHERE z.order_id = y.order_id AND z.product <> y.product)
+)
+ORDER BY product;
 
