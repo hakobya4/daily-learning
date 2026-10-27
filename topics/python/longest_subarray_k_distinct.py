@@ -22,7 +22,21 @@ Run: python3 longest_subarray_k_distinct.py
 
 
 def longest_k_distinct(s: str, k: int) -> int:
-    raise NotImplementedError
+    if k <= 0:
+        return 0
+    counts = {}
+    left = 0
+    best = 0
+    for right, ch in enumerate(s):
+        counts[ch] = counts.get(ch, 0) + 1
+        while len(counts) > k:
+            lc = s[left]
+            counts[lc] -= 1
+            if counts[lc] == 0:
+                del counts[lc]
+            left += 1
+        best = max(best, right - left + 1)
+    return best
 
 
 def _run_tests():
