@@ -22,7 +22,21 @@ Run: python3 valid_palindrome_ii.py
 
 
 def valid_palindrome(s: str) -> bool:
-    raise NotImplementedError
+    def is_pal(l: int, r: int) -> bool:
+        while l < r:
+            if s[l] != s[r]:
+                return False
+            l += 1
+            r -= 1
+        return True
+
+    l, r = 0, len(s) - 1
+    while l < r:
+        if s[l] != s[r]:
+            return is_pal(l + 1, r) or is_pal(l, r - 1)
+        l += 1
+        r -= 1
+    return True
 
 
 def _run_tests():
