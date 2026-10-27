@@ -27,5 +27,4 @@
 # Expected:
 #   blue 2
 
-# TODO: replace this line
-exit 1
+tail -n +2 | cut -d, -f2 | sort | uniq -c | sort -k1,1nr -k2,2 | head -1 | awk '{print $2, $1}'
