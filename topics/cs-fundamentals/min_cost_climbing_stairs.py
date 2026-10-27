@@ -22,7 +22,12 @@ Run: python3 min_cost_climbing_stairs.py
 
 
 def min_cost(cost: list[int]) -> int:
-    raise NotImplementedError
+    if len(cost) < 2:
+        return 0
+    prev2, prev1 = cost[0], cost[1]
+    for i in range(2, len(cost)):
+        prev2, prev1 = prev1, cost[i] + min(prev1, prev2)
+    return min(prev1, prev2)
 
 
 def _run_tests():
