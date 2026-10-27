@@ -27,5 +27,4 @@
 #   a b
 #   (empty line)
 
-# TODO: replace this line
-exit 1
+sed -E 's/[ \t]+/ /g; s/^ //; s/ $//'
