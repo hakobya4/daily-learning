@@ -30,15 +30,24 @@ class Node:
 
 
 def sorted_array_to_bst(nums: list[int]) -> Optional[Node]:
-    raise NotImplementedError
+    if not nums:
+        return None
+    mid = (len(nums) - 1) // 2
+    return Node(val=nums[mid],
+                left=sorted_array_to_bst(nums[:mid]),
+                right=sorted_array_to_bst(nums[mid + 1:]))
 
 
 def inorder(root: Optional[Node]) -> list[int]:
-    raise NotImplementedError
+    if root is None:
+        return []
+    return inorder(root.left) + [root.val] + inorder(root.right)
 
 
 def height(root: Optional[Node]) -> int:
-    raise NotImplementedError
+    if root is None:
+        return 0
+    return 1 + max(height(root.left), height(root.right))
 
 
 def _is_balanced(root: Optional[Node]) -> bool:
