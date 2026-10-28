@@ -26,5 +26,4 @@
 #   paris,ann,1
 #   rome,bob,2
 
-# TODO: replace this line
-exit 1
+awk -F, -v OFS=, '{ t=$1; $1=$NF; $NF=t; print }'
