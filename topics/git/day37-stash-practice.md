@@ -13,13 +13,25 @@ In a SCRATCH repo (`/tmp/day37-lab`, `git init -b main`): make one commit with t
 ## WHAT I RAN
 
 ```bash
-# (fill in the exact commands you ran)
+mkdir /tmp/day37-lab && cd /tmp/day37-lab && git init -b main
+echo one > a.txt && echo one > b.txt && git add . && git commit -m "init"
+echo two >> a.txt && echo two >> b.txt && echo new > c.txt
+git stash                      # saves tracked changes only; c.txt stays
+git stash list
+git stash push -u -m "with untracked"   # -u includes untracked, -a also ignored
+git stash push -m "only a" -- a.txt     # stash a single file
+git stash push -p                       # choose hunks interactively
+git stash show -p stash@{1}
+git stash apply                # keep stash
+git stash pop                  # apply + drop
+git stash branch fix-branch stash@{0}   # new branch from stash
+git stash drop stash@{0}; git stash clear
 ```
 
 ## MY ANSWERS
 
-1. TODO
-2. TODO
-3. TODO
-4. TODO
-5. TODO
+1. `git stash` saves modified and staged tracked files (index + working tree changes) and resets the tree to HEAD. It does not save untracked or ignored files. `-u` / `--include-untracked` adds untracked files; `-a` / `--all` adds ignored files too.
+2. Use a pathspec: `git stash push -- a.txt` stashes only that file. `git stash push -p` lets you pick individual hunks interactively. `--keep-index` leaves staged changes in place.
+3. `apply` re-applies the stash and keeps it in the stash list; `pop` applies and then drops it. If `pop` hits a conflict, the changes are left conflicted in the working tree and the stash is NOT dropped, so you resolve the conflict and drop it manually.
+4. `git stash list` lists stashes; `git stash show -p stash@{1}` shows the diff of that stash; `git stash branch <name> [stash@{n}]` creates a new branch from the commit the stash was made on, applies the stash and drops it.
+5. Switch to the other branch and run `git stash apply stash@{n}` (or `pop`); conflicts are possible if the branches diverged. `git stash drop [stash@{n}]` deletes one stash; `git stash clear` deletes all of them.
