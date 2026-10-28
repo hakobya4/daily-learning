@@ -23,7 +23,14 @@ Run: python3 find_all_duplicates.py
 
 
 def find_duplicates(nums: list) -> list:
-    raise NotImplementedError
+    res = []
+    for x in nums:
+        idx = abs(x) - 1
+        if nums[idx] < 0:
+            res.append(abs(x))
+        else:
+            nums[idx] = -nums[idx]
+    return sorted(res)
 
 
 def _run_tests():
