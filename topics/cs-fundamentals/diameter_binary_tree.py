@@ -33,7 +33,19 @@ class TreeNode:
 
 
 def diameter(root) -> int:
-    raise NotImplementedError
+    best = 0
+
+    def height(node):
+        nonlocal best
+        if node is None:
+            return 0
+        lh = height(node.left)
+        rh = height(node.right)
+        best = max(best, lh + rh)
+        return 1 + max(lh, rh)
+
+    height(root)
+    return best
 
 
 def _run_tests():
