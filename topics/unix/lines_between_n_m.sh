@@ -24,5 +24,4 @@
 #   3:c
 #   4:d
 
-# TODO: replace this line
-exit 1
+awk -v n="$1" -v m="$2" 'NR>=n && NR<=m {print NR ":" $0}'
