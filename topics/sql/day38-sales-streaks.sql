@@ -26,10 +26,24 @@ INSERT INTO sales VALUES
   ('2026-01-05',40),('2026-01-06',5),('2026-01-09',30);
 
 -- Q1
--- TODO
+SELECT day, amount, SUM(amount) OVER (ORDER BY day) AS running_total
+FROM sales
+ORDER BY day;
 
 -- Q2
--- TODO
+SELECT day, amount, prev_amount
+FROM (
+  SELECT day, amount, LAG(amount) OVER (ORDER BY day) AS prev_amount
+  FROM sales
+)
+WHERE prev_amount IS NOT NULL AND amount > prev_amount
+ORDER BY day;
 
 -- Q3
--- TODO
+SELECT MIN(day) AS streak_start, MAX(day) AS streak_end, COUNT(*) AS days
+FROM (
+  SELECT day, julianday(day) - ROW_NUMBER() OVER (ORDER BY day) AS grp
+  FROM sales
+)
+GROUP BY grp
+ORDER BY streak_start;
