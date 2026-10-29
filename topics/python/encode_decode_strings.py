@@ -22,11 +22,18 @@ Run: python3 encode_decode_strings.py
 
 
 def encode(strs: list) -> str:
-    raise NotImplementedError
+    return "".join(f"{len(x)}:{x}" for x in strs)
 
 
 def decode(s: str) -> list:
-    raise NotImplementedError
+    out = []
+    i = 0
+    while i < len(s):
+        j = s.index(":", i)
+        n = int(s[i:j])
+        out.append(s[j + 1:j + 1 + n])
+        i = j + 1 + n
+    return out
 
 
 def _run_tests():
