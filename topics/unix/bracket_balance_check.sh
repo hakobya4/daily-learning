@@ -30,5 +30,20 @@
 #   3:BAD
 #   4:OK
 
-# TODO: replace this line
-exit 1
+awk '
+{
+  top = 0; ok = 1
+  n = length($0)
+  for (i = 1; i <= n && ok; i++) {
+    c = substr($0, i, 1)
+    if (c == "(" || c == "[" || c == "{") {
+      stack[++top] = c
+    } else if (c == ")" || c == "]" || c == "}") {
+      if (top == 0) { ok = 0; break }
+      o = stack[top--]
+      if (!((o == "(" && c == ")") || (o == "[" && c == "]") || (o == "{" && c == "}"))) ok = 0
+    }
+  }
+  if (top != 0) ok = 0
+  print NR ":" (ok ? "OK" : "BAD")
+}'
