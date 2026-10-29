@@ -23,7 +23,13 @@ Run: python3 max_chunks_to_sorted.py
 
 
 def max_chunks_to_sorted(arr: list) -> int:
-    raise NotImplementedError
+    count = 0
+    running_max = -1
+    for i, v in enumerate(arr):
+        running_max = max(running_max, v)
+        if running_max == i:
+            count += 1
+    return count
 
 
 def _run_tests():
