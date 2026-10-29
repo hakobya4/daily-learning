@@ -23,5 +23,4 @@
 #   c
 #   b
 
-# TODO: replace this line
-exit 1
+tac | awk '!seen[$0]++' | tac
