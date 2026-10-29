@@ -45,7 +45,24 @@ def to_list(head):
 
 
 def reverse_k_group(head, k: int):
-    raise NotImplementedError
+    dummy = ListNode(0, head)
+    group_prev = dummy
+    while True:
+        # check that k nodes exist
+        kth = group_prev
+        for _ in range(k):
+            kth = kth.next
+            if kth is None:
+                return dummy.next
+        group_next = kth.next
+        prev, cur = group_next, group_prev.next
+        group_tail = cur
+        for _ in range(k):
+            nxt = cur.next
+            cur.next = prev
+            prev, cur = cur, nxt
+        group_prev.next = prev
+        group_prev = group_tail
 
 
 def _run_tests():
