@@ -20,12 +20,25 @@ smallest, yield it, then push the next item of that same iterator.
 
 Run: python3 merge_log_streams.py
 """
+import heapq
 import itertools
 import types
 
 
 def merge_streams(*streams):
-    raise NotImplementedError
+    heap = []
+    for idx, stream in enumerate(streams):
+        it = iter(stream)
+        first = next(it, None)
+        if first is not None:
+            heap.append((first[0], idx, first[1], it))
+    heapq.heapify(heap)
+    while heap:
+        ts, idx, msg, it = heapq.heappop(heap)
+        yield (ts, msg)
+        nxt = next(it, None)
+        if nxt is not None:
+            heapq.heappush(heap, (nxt[0], idx, nxt[1], it))
 
 
 def _run_tests():
