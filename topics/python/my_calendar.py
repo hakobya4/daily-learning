@@ -26,10 +26,18 @@ import bisect
 
 class MyCalendar:
     def __init__(self):
-        raise NotImplementedError
+        self.starts = []
+        self.ends = []
 
     def book(self, start: int, end: int) -> bool:
-        raise NotImplementedError
+        i = bisect.bisect_left(self.starts, start)
+        if i > 0 and self.ends[i - 1] > start:
+            return False
+        if i < len(self.starts) and self.starts[i] < end:
+            return False
+        self.starts.insert(i, start)
+        self.ends.insert(i, end)
+        return True
 
 
 def _run_tests():
