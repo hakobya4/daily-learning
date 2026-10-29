@@ -24,11 +24,18 @@ Run: python3 house_robber.py
 
 
 def rob_line(nums: list) -> int:
-    raise NotImplementedError
+    prev, cur = 0, 0
+    for x in nums:
+        prev, cur = cur, max(cur, prev + x)
+    return cur
 
 
 def rob_circle(nums: list) -> int:
-    raise NotImplementedError
+    if not nums:
+        return 0
+    if len(nums) == 1:
+        return nums[0]
+    return max(rob_line(nums[1:]), rob_line(nums[:-1]))
 
 
 def _run_tests():
