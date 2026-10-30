@@ -22,7 +22,24 @@ Run: python3 shortest_unsorted_subarray.py
 
 
 def shortest_unsorted(nums: list) -> int:
-    raise NotImplementedError
+    n = len(nums)
+    end = -1
+    run_max = float("-inf")
+    for i in range(n):
+        if nums[i] < run_max:
+            end = i
+        else:
+            run_max = nums[i]
+    if end == -1:
+        return 0
+    start = 0
+    run_min = float("inf")
+    for i in range(n - 1, -1, -1):
+        if nums[i] > run_min:
+            start = i
+        else:
+            run_min = nums[i]
+    return end - start + 1
 
 
 def _run_tests():
