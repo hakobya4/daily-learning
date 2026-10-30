@@ -22,7 +22,27 @@ Run: python3 accounts_merge.py
 
 
 def accounts_merge(accounts: list) -> list:
-    raise NotImplementedError
+    parent = list(range(len(accounts)))
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    owner = {}
+    for i, acc in enumerate(accounts):
+        for email in acc[1:]:
+            if email in owner:
+                ra, rb = find(owner[email]), find(i)
+                if ra != rb:
+                    parent[rb] = ra
+            else:
+                owner[email] = i
+    groups = {}
+    for email, i in owner.items():
+        groups.setdefault(find(i), set()).add(email)
+    return [[accounts[r][0]] + sorted(emails) for r, emails in groups.items()]
 
 
 def _norm(result):
