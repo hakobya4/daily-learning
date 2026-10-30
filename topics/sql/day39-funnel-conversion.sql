@@ -29,7 +29,22 @@ INSERT INTO events VALUES
   (6,'visit',1),(6,'purchase',2);
 
 -- Q1
+SELECT step, COUNT(DISTINCT user_id) AS users
+FROM events
+GROUP BY step
+ORDER BY users DESC, step;
 
 -- Q2
+SELECT DISTINCT user_id
+FROM events e
+WHERE step = 'cart'
+  AND NOT EXISTS (SELECT 1 FROM events p WHERE p.user_id = e.user_id AND p.step = 'purchase')
+ORDER BY user_id;
 
 -- Q3
+SELECT user_id
+FROM events
+GROUP BY user_id
+HAVING MIN(CASE WHEN step = 'visit' THEN ts END) < MIN(CASE WHEN step = 'cart' THEN ts END)
+   AND MIN(CASE WHEN step = 'cart' THEN ts END) < MIN(CASE WHEN step = 'purchase' THEN ts END)
+ORDER BY user_id;
