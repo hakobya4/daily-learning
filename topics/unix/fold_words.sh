@@ -26,5 +26,12 @@
 #   extraordinarily
 #   d
 
-# TODO: replace this line
-exit 1
+awk -v w="$1" '
+  {
+    for (i = 1; i <= NF; i++) {
+      if (line == "") line = $i
+      else if (length(line) + 1 + length($i) <= w) line = line " " $i
+      else { print line; line = $i }
+    }
+  }
+  END { if (line != "") print line }'
