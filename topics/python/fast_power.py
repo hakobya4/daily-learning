@@ -24,11 +24,28 @@ Run: python3 fast_power.py
 
 
 def my_pow(x: float, n: int) -> float:
-    raise NotImplementedError
+    if n < 0:
+        x, n = 1 / x, -n
+    result = 1.0
+    while n:
+        if n & 1:
+            result *= x
+        x *= x
+        n >>= 1
+    return result
 
 
 def pow_mod(base: int, exp: int, mod: int) -> int:
-    raise NotImplementedError
+    if mod == 1:
+        return 0
+    result = 1
+    base %= mod
+    while exp:
+        if exp & 1:
+            result = result * base % mod
+        base = base * base % mod
+        exp >>= 1
+    return result
 
 
 def _run_tests():
