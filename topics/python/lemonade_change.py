@@ -21,7 +21,24 @@ Run: python3 lemonade_change.py
 
 
 def can_give_change(bills: list) -> bool:
-    raise NotImplementedError
+    fives = tens = 0
+    for b in bills:
+        if b == 5:
+            fives += 1
+        elif b == 10:
+            if fives == 0:
+                return False
+            fives -= 1
+            tens += 1
+        else:  # 20: prefer 10 + 5, else 5 + 5 + 5
+            if tens and fives:
+                tens -= 1
+                fives -= 1
+            elif fives >= 3:
+                fives -= 3
+            else:
+                return False
+    return True
 
 
 def _run_tests():
