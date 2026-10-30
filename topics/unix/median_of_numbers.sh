@@ -18,5 +18,10 @@
 #   printf -- '-5\n10\n' | ./median_of_numbers.sh      # Expected: 2.5
 #   printf '7\n' | ./median_of_numbers.sh              # Expected: 7
 
-# TODO: replace this line
-exit 1
+sort -g | awk '
+  { a[NR] = $1 }
+  END {
+    if (NR == 0) exit 0
+    if (NR % 2) printf "%g\n", a[(NR + 1) / 2]
+    else printf "%g\n", (a[NR / 2] + a[NR / 2 + 1]) / 2
+  }'
