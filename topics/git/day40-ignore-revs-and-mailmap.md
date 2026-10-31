@@ -14,13 +14,24 @@ formatting change (e.g. re-indenting a file) on top of a commit with real logic.
 ## WHAT I RAN
 
 ```bash
-# TODO: paste the commands you actually ran
+mkdir -p /tmp/day40-lab && cd /tmp/day40-lab && git init -q
+printf 'def f(a,b):\n  return a+b\n' > m.py && git add . && git commit -qm "logic"
+printf 'def f(a, b):\n    return a + b\n' > m.py && git commit -qam "reformat"
+git rev-parse HEAD > .git-blame-ignore-revs
+git blame --ignore-revs-file .git-blame-ignore-revs m.py
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+git log -S"return" --oneline          # commits where the count of "return" changed
+git log -G"return\s+a" --oneline      # commits whose diff lines match the regex
+git rm -q m.py && git commit -qm "delete m.py"
+git log --diff-filter=D --name-only --oneline
+git log --diff-filter=D --oneline -- m.py
+git log main..feature ; git log main...feature
 ```
 
 ## MY ANSWERS
 
-1. TODO
-2. TODO
-3. TODO
-4. TODO
-5. TODO
+1. `git blame --ignore-rev <sha>` or `--ignore-revs-file <file>`; the conventional file is `.git-blame-ignore-revs` (one full commit hash per line, `#` comments allowed). To make git use it automatically: `git config blame.ignoreRevsFile .git-blame-ignore-revs` (set per repo, since the file is committed but the config is not). Lines the ignored commit touched are attributed to the previous commit that changed them. GitHub's blame view reads `.git-blame-ignore-revs` by default.
+2. `.mailmap` maps alternate names/emails of the same person to one canonical identity, without rewriting history. One line: `Narek <narek@new.com> <nk@old.com>` (canonical name and email first, then the old email to match). `git shortlog` honours it by default; `git log` needs `--use-mailmap` (or `log.mailmap=true`); `git blame` uses it for the displayed author.
+3. `-S<string>` (pickaxe) finds commits where the number of occurrences of the string changed (added or removed). `-G<regex>` finds commits whose diff has an added or removed line matching the regex. They differ when a line containing the string moves or is edited without changing the occurrence count: `-S` skips it, `-G` shows it. `-S` with `--pickaxe-regex` treats the argument as a regex, but still counts occurrences.
+4. It lists only commits that deleted files (filters `A`dded, `D`eleted, `M`odified, `R`enamed...), and `--name-only` prints the deleted paths. To find who deleted `foo.txt`: `git log --diff-filter=D --oneline -- foo.txt` (the `--` separator is needed because the file no longer exists in the work tree).
+5. `A..B` = commits reachable from B but not from A (what B has that A lacks), asymmetric. `A...B` = symmetric difference: commits reachable from either A or B but not from both (add `--left-right` to see which side each came from). For `git diff`, `A...B` instead means diff from the merge base of A and B to B.
