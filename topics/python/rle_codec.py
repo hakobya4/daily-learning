@@ -13,11 +13,27 @@ Run: python3 rle_codec.py
 
 
 def rle_encode(s: str) -> str:
-    raise NotImplementedError
+    out = []
+    i = 0
+    while i < len(s):
+        j = i
+        while j < len(s) and s[j] == s[i]:
+            j += 1
+        out.append(f"{j - i}{s[i]}")
+        i = j
+    return "".join(out)
 
 
 def rle_decode(t: str) -> str:
-    raise NotImplementedError
+    out = []
+    count = ""
+    for ch in t:
+        if ch.isdigit():
+            count += ch
+        else:
+            out.append(ch * int(count))
+            count = ""
+    return "".join(out)
 
 
 def _run_tests():
