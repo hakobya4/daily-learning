@@ -21,5 +21,6 @@
 #   d e f 2
 #   a b 10
 
-# TODO: replace this line
-exit 1
+awk 'NF { printf "%s\t%d\t%s\n", $NF, NR, $0 }' \
+  | sort -g -s -t "$(printf '\t')" -k1,1 \
+  | cut -f3-
