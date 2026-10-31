@@ -19,5 +19,4 @@
 #   3:0
 #   4:4
 
-# TODO: replace this line
-exit 1
+awk '{ copy = $0; n = gsub(/[aeiouAEIOU]/, "&", copy); print NR ":" n }'
