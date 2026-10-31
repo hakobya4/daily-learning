@@ -18,11 +18,26 @@ Run: python3 running_anagram_index.py
 
 
 def find_anagrams(s: str, p: str) -> list:
-    raise NotImplementedError
+    k = len(p)
+    if k == 0 or k > len(s):
+        return []
+    need = [0] * 26
+    window = [0] * 26
+    for ch in p:
+        need[ord(ch) - 97] += 1
+    result = []
+    for i, ch in enumerate(s):
+        window[ord(ch) - 97] += 1
+        if i >= k:
+            window[ord(s[i - k]) - 97] -= 1
+        if i >= k - 1 and window == need:
+            result.append(i - k + 1)
+    return result
 
 
 def is_anagram(a: str, b: str) -> bool:
-    raise NotImplementedError
+    from collections import Counter
+    return Counter(a) == Counter(b)
 
 
 def _run_tests():
