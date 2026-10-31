@@ -21,7 +21,9 @@ import heapq
 
 
 def k_closest(points: list, k: int) -> list:
-    raise NotImplementedError
+    if k <= 0:
+        return []
+    return heapq.nsmallest(k, points, key=lambda p: (p[0] * p[0] + p[1] * p[1], p[0], p[1]))
 
 
 def _run_tests():
