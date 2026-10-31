@@ -27,7 +27,18 @@ INSERT INTO emp VALUES
   (6,'Fay','ops',80),(7,'Gus','ops',60),(8,'Hal','ops',60),(9,'Ivy','ops',40);
 
 -- Q1
+WITH ranked AS (
+  SELECT dept, salary, DENSE_RANK() OVER (PARTITION BY dept ORDER BY salary DESC) AS rnk
+  FROM emp
+)
+SELECT DISTINCT dept, salary FROM ranked WHERE rnk = 2 ORDER BY dept;
 
 -- Q2
+SELECT name FROM (
+  SELECT name, salary, AVG(salary) OVER (PARTITION BY dept) AS avg_sal FROM emp
+) WHERE salary > avg_sal ORDER BY name;
 
 -- Q3
+SELECT name, ROUND(100.0 * salary / SUM(salary) OVER (PARTITION BY dept), 1) AS pct
+FROM emp
+ORDER BY dept, salary DESC, name;
