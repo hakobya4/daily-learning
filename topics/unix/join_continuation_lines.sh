@@ -18,5 +18,9 @@
 #   cc -o app main.c util.c
 #   echo done
 
-# TODO: replace this line
-exit 1
+awk '{
+  if (cont) { sub(/^[ \t]+/, ""); buf = buf " " }
+  if ($0 ~ /\\$/) { sub(/\\$/, ""); buf = buf $0; cont = 1 }
+  else { print buf $0; buf = ""; cont = 0 }
+}
+END { if (cont) print buf }'
