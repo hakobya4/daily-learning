@@ -25,7 +25,19 @@ INSERT INTO sales VALUES
   (4,'bo',1,7),(5,'bo',2,0),(6,'bo',4,20);
 
 -- Q1
+SELECT rep, day, SUM(amount) OVER (PARTITION BY rep ORDER BY day) AS running
+FROM sales
+ORDER BY rep, day;
 
 -- Q2
+SELECT rep, day, amount - LAG(amount) OVER (PARTITION BY rep ORDER BY day) AS delta
+FROM sales
+ORDER BY rep, day;
 
 -- Q3
+SELECT rep, day, amount FROM (
+  SELECT rep, day, amount,
+         ROW_NUMBER() OVER (PARTITION BY rep ORDER BY amount DESC, day) AS rn
+  FROM sales
+) WHERE rn = 1
+ORDER BY rep;
