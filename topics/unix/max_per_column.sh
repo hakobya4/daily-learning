@@ -17,5 +17,14 @@
 # Expected:
 #   4 9 8 7
 
-# TODO: replace this line
-exit 1
+awk '{
+  for (i = 1; i <= NF; i++)
+    if (!(i in max) || $i + 0 > max[i] + 0) max[i] = $i
+  if (NF > w) w = NF
+}
+END {
+  if (NR == 0) exit
+  line = ""
+  for (i = 1; i <= w; i++) line = line (i > 1 ? " " : "") max[i]
+  print line
+}'
