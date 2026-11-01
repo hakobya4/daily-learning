@@ -19,11 +19,24 @@ Run: python3 next_greater_element.py
 
 
 def next_greater(nums: list) -> list:
-    raise NotImplementedError
+    out = [-1] * len(nums)
+    stack = []
+    for i, x in enumerate(nums):
+        while stack and nums[stack[-1]] < x:
+            out[stack.pop()] = x
+        stack.append(i)
+    return out
 
 
 def days_until_warmer(temps: list) -> list:
-    raise NotImplementedError
+    out = [0] * len(temps)
+    stack = []
+    for i, t in enumerate(temps):
+        while stack and temps[stack[-1]] < t:
+            j = stack.pop()
+            out[j] = i - j
+        stack.append(i)
+    return out
 
 
 def _run_tests():
