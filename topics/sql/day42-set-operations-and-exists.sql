@@ -25,7 +25,31 @@ INSERT INTO courses  VALUES (1,'SQL'),(2,'Python'),(3,'Unix');
 INSERT INTO enrolled VALUES (1,1),(1,2),(2,1),(3,2),(3,3);
 
 -- Q1
+SELECT s.name
+FROM students s
+WHERE NOT EXISTS (SELECT 1 FROM enrolled e WHERE e.student_id = s.id)
+ORDER BY s.name;
 
 -- Q2
+SELECT name FROM (
+  SELECT s.name FROM students s
+  JOIN enrolled e ON e.student_id = s.id
+  JOIN courses c ON c.id = e.course_id WHERE c.title = 'SQL'
+  INTERSECT
+  SELECT s.name FROM students s
+  JOIN enrolled e ON e.student_id = s.id
+  JOIN courses c ON c.id = e.course_id WHERE c.title = 'Python'
+)
+ORDER BY name;
 
 -- Q3
+SELECT name FROM (
+  SELECT s.name FROM students s
+  JOIN enrolled e ON e.student_id = s.id
+  JOIN courses c ON c.id = e.course_id WHERE c.title = 'SQL'
+  EXCEPT
+  SELECT s.name FROM students s
+  JOIN enrolled e ON e.student_id = s.id
+  JOIN courses c ON c.id = e.course_id WHERE c.title = 'Python'
+)
+ORDER BY name;
