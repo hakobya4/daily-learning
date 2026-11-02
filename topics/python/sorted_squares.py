@@ -16,11 +16,32 @@ Run: python3 sorted_squares.py
 
 
 def sorted_squares(nums):
-    raise NotImplementedError
+    n = len(nums)
+    res = [0] * n
+    lo, hi = 0, n - 1
+    for pos in range(n - 1, -1, -1):
+        if abs(nums[lo]) > abs(nums[hi]):
+            res[pos] = nums[lo] ** 2
+            lo += 1
+        else:
+            res[pos] = nums[hi] ** 2
+            hi -= 1
+    return res
 
 
 def pair_with_sum(nums, target):
-    raise NotImplementedError
+    # Moving both pointers inward finds the pair with the smallest i first:
+    # any pair (i, j) is only skipped when i or j can't be part of a solution.
+    lo, hi = 0, len(nums) - 1
+    while lo < hi:
+        total = nums[lo] + nums[hi]
+        if total == target:
+            return (lo, hi)
+        if total < target:
+            lo += 1
+        else:
+            hi -= 1
+    return None
 
 
 def _run_tests():
