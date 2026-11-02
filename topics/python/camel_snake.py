@@ -17,11 +17,22 @@ Run: python3 camel_snake.py
 
 
 def to_snake(s: str) -> str:
-    raise NotImplementedError
+    out = []
+    for i, ch in enumerate(s):
+        if ch.isupper() and i > 0:
+            prev = s[i - 1]
+            nxt = s[i + 1] if i + 1 < len(s) else ""
+            if prev.islower() or prev.isdigit() or (prev.isupper() and nxt.islower()):
+                out.append("_")
+        out.append(ch.lower())
+    return "".join(out)
 
 
 def to_camel(s: str) -> str:
-    raise NotImplementedError
+    parts = [p for p in s.split("_") if p]
+    if not parts:
+        return ""
+    return parts[0] + "".join(p[0].upper() + p[1:] for p in parts[1:])
 
 
 def _run_tests():
