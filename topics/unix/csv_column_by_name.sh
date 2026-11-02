@@ -19,5 +19,12 @@
 #   bo
 #   printf 'id,name\n1,x\n' | ./csv_column_by_name.sh zip   -> exit code 2
 
-# TODO: replace this line
-exit 1
+awk -F, -v col="$1" '
+NR == 1 {
+    for (i = 1; i <= NF; i++) if ($i == col) idx = i
+    if (!idx) { printf "no such column: %s\n", col > "/dev/stderr"; bad = 1; exit 2 }
+    next
+}
+{ print $idx }
+END { if (bad) exit 2 }
+'
