@@ -15,7 +15,16 @@ Run: python3 cheapest_flights.py
 
 
 def cheapest_price(n, flights, src, dst, k):
-    raise NotImplementedError
+    inf = float("inf")
+    dist = [inf] * n
+    dist[src] = 0
+    for _ in range(k + 1):
+        nxt = dist[:]
+        for u, v, w in flights:
+            if dist[u] != inf and dist[u] + w < nxt[v]:
+                nxt[v] = dist[u] + w
+        dist = nxt
+    return -1 if dist[dst] == inf else dist[dst]
 
 
 def _run_tests():
