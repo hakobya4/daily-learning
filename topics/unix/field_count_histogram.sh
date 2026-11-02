@@ -18,5 +18,4 @@
 #   2 2
 #   3 1
 
-# TODO: replace this line
-exit 1
+awk '{ c[NF]++ } END { for (k in c) print k, c[k] }' | sort -n
