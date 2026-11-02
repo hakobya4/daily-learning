@@ -19,23 +19,36 @@ Run: python3 sparse_vector.py
 
 class SparseVector:
     def __init__(self, values):
-        raise NotImplementedError
+        self._n = len(values)
+        self._data = {i: v for i, v in enumerate(values) if v != 0}
 
     def __len__(self):
-        raise NotImplementedError
+        return self._n
 
     @property
     def nnz(self):
-        raise NotImplementedError
+        return len(self._data)
 
     def dot(self, other):
-        raise NotImplementedError
+        small, big = (self, other) if self.nnz <= other.nnz else (other, self)
+        return sum(v * big._data.get(i, 0) for i, v in small._data.items())
 
     def add(self, other):
-        raise NotImplementedError
+        if len(self) != len(other):
+            raise ValueError("length mismatch")
+        res = SparseVector([])
+        res._n = self._n
+        merged = dict(self._data)
+        for i, v in other._data.items():
+            merged[i] = merged.get(i, 0) + v
+        res._data = {i: v for i, v in merged.items() if v != 0}
+        return res
 
     def to_list(self):
-        raise NotImplementedError
+        out = [0] * self._n
+        for i, v in self._data.items():
+            out[i] = v
+        return out
 
 
 def _run_tests():
