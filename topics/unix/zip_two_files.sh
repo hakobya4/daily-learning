@@ -21,5 +21,8 @@
 #   b:2
 #   ./zip_two_files.sh /tmp/f1 /nonexistent   -> exit code 1
 
-# TODO: replace this line
-exit 1
+if [ $# -ne 2 ] || [ ! -r "$1" ] || [ ! -r "$2" ]; then
+  echo "usage: $0 FILE1 FILE2 (both must be readable)" >&2
+  exit 1
+fi
+awk -v f2="$2" '{ if ((getline l2 < f2) <= 0) exit; print $0 ":" l2 }' "$1"
