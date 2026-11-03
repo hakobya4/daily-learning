@@ -16,7 +16,39 @@ Run: python3 max_flow_edmonds_karp.py
 
 
 def max_flow(n, edges, s, t):
-    raise NotImplementedError
+    from collections import deque, defaultdict
+    if s == t:
+        return 0
+    cap = defaultdict(int)
+    adj = [set() for _ in range(n)]
+    for u, v, c in edges:
+        cap[(u, v)] += c
+        adj[u].add(v)
+        adj[v].add(u)
+    flow = 0
+    while True:
+        parent = {s: None}
+        q = deque([s])
+        while q and t not in parent:
+            u = q.popleft()
+            for v in adj[u]:
+                if v not in parent and cap[(u, v)] > 0:
+                    parent[v] = u
+                    q.append(v)
+        if t not in parent:
+            return flow
+        b = float("inf")
+        v = t
+        while parent[v] is not None:
+            b = min(b, cap[(parent[v], v)])
+            v = parent[v]
+        v = t
+        while parent[v] is not None:
+            u = parent[v]
+            cap[(u, v)] -= b
+            cap[(v, u)] += b
+            v = u
+        flow += b
 
 
 def _run_tests():
