@@ -25,10 +25,21 @@ INSERT INTO employees VALUES
  (4,'dee','ops',40),(5,'eli','ops',70),(6,'fay','hr',60),(7,'gus','eng',90);
 
 -- Q1
--- TODO
+SELECT name FROM employees e
+WHERE salary > (SELECT AVG(salary) FROM employees WHERE dept = e.dept)
+ORDER BY name;
 
 -- Q2
--- TODO
+SELECT dept, name, salary FROM (
+  SELECT dept, name, salary,
+         DENSE_RANK() OVER (PARTITION BY dept ORDER BY salary DESC) AS rnk
+  FROM employees
+) WHERE rnk = 2
+ORDER BY dept, name;
 
 -- Q3
--- TODO
+SELECT dept, MAX(salary) - MIN(salary) AS spread
+FROM employees
+GROUP BY dept
+HAVING COUNT(*) >= 2
+ORDER BY spread DESC, dept;
