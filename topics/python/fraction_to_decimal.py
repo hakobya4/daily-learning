@@ -17,7 +17,25 @@ Run: python3 fraction_to_decimal.py
 
 
 def fraction_to_decimal(numerator, denominator):
-    raise NotImplementedError
+    if numerator == 0:
+        return "0"
+    sign = "-" if (numerator < 0) != (denominator < 0) else ""
+    n, d = abs(numerator), abs(denominator)
+    result = sign + str(n // d)
+    rem = n % d
+    if rem == 0:
+        return result
+    digits = []
+    seen = {}
+    while rem and rem not in seen:
+        seen[rem] = len(digits)
+        rem *= 10
+        digits.append(str(rem // d))
+        rem %= d
+    if rem == 0:
+        return result + "." + "".join(digits)
+    i = seen[rem]
+    return result + "." + "".join(digits[:i]) + "(" + "".join(digits[i:]) + ")"
 
 
 def _run_tests():
