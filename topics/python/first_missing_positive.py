@@ -15,7 +15,15 @@ Run: python3 first_missing_positive.py
 
 
 def first_missing_positive(nums):
-    raise NotImplementedError
+    n = len(nums)
+    for i in range(n):
+        while 1 <= nums[i] <= n and nums[nums[i] - 1] != nums[i]:
+            j = nums[i] - 1
+            nums[i], nums[j] = nums[j], nums[i]
+    for i in range(n):
+        if nums[i] != i + 1:
+            return i + 1
+    return n + 1
 
 
 def _run_tests():
