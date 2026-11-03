@@ -16,7 +16,50 @@ Run: python3 tarjan_scc.py
 
 
 def scc(n, edges):
-    raise NotImplementedError
+    adj = [[] for _ in range(n)]
+    for u, v in edges:
+        adj[u].append(v)
+    index = [-1] * n
+    low = [0] * n
+    on = [False] * n
+    stack = []
+    counter = 0
+    comps = []
+    for root in range(n):
+        if index[root] != -1:
+            continue
+        index[root] = low[root] = counter
+        counter += 1
+        stack.append(root)
+        on[root] = True
+        work = [(root, 0)]
+        while work:
+            v, i = work.pop()
+            if i < len(adj[v]):
+                work.append((v, i + 1))
+                w = adj[v][i]
+                if index[w] == -1:
+                    index[w] = low[w] = counter
+                    counter += 1
+                    stack.append(w)
+                    on[w] = True
+                    work.append((w, 0))
+                elif on[w]:
+                    low[v] = min(low[v], index[w])
+            else:
+                if low[v] == index[v]:
+                    comp = []
+                    while True:
+                        w = stack.pop()
+                        on[w] = False
+                        comp.append(w)
+                        if w == v:
+                            break
+                    comps.append(sorted(comp))
+                if work:
+                    p = work[-1][0]
+                    low[p] = min(low[p], low[v])
+    return sorted(comps)
 
 
 def _run_tests():
