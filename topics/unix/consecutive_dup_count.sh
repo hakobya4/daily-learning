@@ -21,5 +21,9 @@
 #   3 a
 #   printf '' | ./consecutive_dup_count.sh   -> prints nothing
 
-# TODO: replace this line
-exit 1
+awk '
+NR == 1 { prev = $0; c = 1; next }
+$0 == prev { c++; next }
+{ print c " " prev; prev = $0; c = 1 }
+END { if (NR > 0) print c " " prev }
+'
