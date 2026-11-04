@@ -17,13 +17,25 @@ first) and work through the questions.
 ## WHAT I RAN
 
 ```bash
-# TODO: paste your commands and their output here
+cd /tmp/day44-lab && git init srv && cd srv
+git config uploadpack.allowFilter true
+mkdir app docs assets; echo 1 > app/a.txt; echo 1 > docs/d.md; echo 1 > assets/x.png
+git add . && git commit -m c1
+echo 2 >> app/a.txt; echo 2 >> docs/d.md; git commit -am c2
+cd .. && git clone --filter=blob:none --no-checkout file:///tmp/day44-lab/srv cl
+cd cl
+git rev-list --objects --missing=print --all   # blobs listed with a leading "?"
+git sparse-checkout set --cone app
+git checkout master                            # fetches only app/ blobs now
+ls                                             # -> app
+git sparse-checkout list                       # -> app
+git sparse-checkout disable                    # back to full checkout
 ```
 
 ## MY ANSWERS
 
-1. TODO
-2. TODO
-3. TODO
-4. TODO
-5. TODO
+1. `--filter=blob:none` downloads all commits and trees but no file contents (blobs). Blobs are fetched lazily from the promisor remote when something needs them: a checkout, `git diff`, `git show`, `git blame`, etc. Batches are requested on demand.
+2. Only the files at the repo root plus the `app/` directory appear in the working tree; `docs/` and `assets/` are absent. Cone mode takes plain directory names and includes everything under them (plus files directly in their parents), and is fast. Non-cone mode takes full gitignore-style patterns (globs, negations) and is slower and more error-prone.
+3. `git sparse-checkout list` shows the active patterns/directories (stored in `.git/info/sparse-checkout`). `git sparse-checkout disable` restores the full working tree (missing blobs are then fetched).
+4. `git rev-list --objects --missing=print --all` lists all reachable objects and prints the ones absent locally with a `?` prefix, i.e. the not-yet-downloaded blobs of a partial clone.
+5. `--depth 1` (shallow) truncates history: you get only the latest commit (and its full tree and blobs), but no older commits. `--filter=blob:none` (partial) keeps the full commit history and trees but omits blob contents until needed. Shallow cannot do log/blame over history; partial can, but needs the remote online to fetch blobs.
