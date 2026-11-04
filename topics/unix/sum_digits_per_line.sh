@@ -20,5 +20,8 @@
 #   18
 #   7
 
-# TODO: replace this line
-exit 1
+if [ $# -ne 1 ] || [ ! -r "$1" ] || [ -d "$1" ]; then
+  echo "usage: $0 FILE (readable)" >&2
+  exit 1
+fi
+awk '{ s = 0; n = split($0, ch, ""); for (i = 1; i <= n; i++) if (ch[i] ~ /[0-9]/) s += ch[i]; print s }' "$1"
