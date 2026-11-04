@@ -15,7 +15,24 @@ Run: python3 minimum_domino_rotations.py
 
 
 def min_domino_rotations(tops, bottoms):
-    raise NotImplementedError
+    n = len(tops)
+    best = -1
+    for c in {tops[0], bottoms[0]}:
+        up = down = 0
+        ok = True
+        for t, b in zip(tops, bottoms):
+            if t != c and b != c:
+                ok = False
+                break
+            if t != c:
+                up += 1
+            if b != c:
+                down += 1
+        if ok:
+            cur = min(up, down)
+            if best == -1 or cur < best:
+                best = cur
+    return best
 
 
 def _run_tests():
