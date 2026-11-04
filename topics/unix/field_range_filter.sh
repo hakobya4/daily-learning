@@ -18,5 +18,8 @@
 #   a 5
 #   b 10
 
-# TODO: replace this line
-exit 1
+if [ $# -ne 3 ] || [ ! -r "$1" ] || [ -d "$1" ]; then
+  echo "usage: $0 FILE LO HI" >&2
+  exit 1
+fi
+awk -v lo="$2" -v hi="$3" '$2 ~ /^-?[0-9]+$/ && $2+0 >= lo+0 && $2+0 <= hi+0' "$1"
