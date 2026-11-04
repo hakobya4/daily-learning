@@ -15,7 +15,15 @@ Run: python3 egg_drop.py
 
 
 def egg_drop(eggs, floors):
-    raise NotImplementedError
+    if floors <= 0:
+        return 0
+    f = [0] * (eggs + 1)
+    t = 0
+    while f[eggs] < floors:
+        t += 1
+        for e in range(eggs, 0, -1):
+            f[e] = f[e - 1] + f[e] + 1
+    return t
 
 
 def _run_tests():
