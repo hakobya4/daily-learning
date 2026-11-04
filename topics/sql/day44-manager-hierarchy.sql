@@ -24,10 +24,22 @@ INSERT INTO employees VALUES
  (5,'dee',2,120),(6,'eli',4,100),(7,'fay',3,160);
 
 -- Q1
--- TODO: write the query
+SELECT e.name FROM employees e JOIN employees m ON e.manager_id = m.id
+WHERE e.salary > m.salary ORDER BY e.name;
 
 -- Q2
--- TODO: write the query
+WITH RECURSIVE h(id, name, depth) AS (
+  SELECT id, name, 0 FROM employees WHERE manager_id IS NULL
+  UNION ALL
+  SELECT e.id, e.name, h.depth + 1 FROM employees e JOIN h ON e.manager_id = h.id
+)
+SELECT name, depth FROM h ORDER BY depth, name;
 
 -- Q3
--- TODO: write the query
+WITH RECURSIVE r(root, id) AS (
+  SELECT id, id FROM employees
+  UNION ALL
+  SELECT r.root, e.id FROM employees e JOIN r ON e.manager_id = r.id
+)
+SELECT m.name, COUNT(*) - 1 AS reports FROM r JOIN employees m ON m.id = r.root
+GROUP BY r.root HAVING COUNT(*) - 1 >= 1 ORDER BY reports DESC, m.name;
