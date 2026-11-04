@@ -14,7 +14,16 @@ Run: python3 simplify_path.py
 
 
 def simplify_path(path):
-    raise NotImplementedError
+    stack = []
+    for part in path.split("/"):
+        if part in ("", "."):
+            continue
+        if part == "..":
+            if stack:
+                stack.pop()
+        else:
+            stack.append(part)
+    return "/" + "/".join(stack)
 
 
 def _run_tests():
