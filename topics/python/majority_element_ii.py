@@ -14,7 +14,26 @@ Run: python3 majority_element_ii.py
 
 
 def majority_elements(nums):
-    raise NotImplementedError
+    c1 = c2 = None
+    n1 = n2 = 0
+    for x in nums:
+        if x == c1:
+            n1 += 1
+        elif x == c2:
+            n2 += 1
+        elif n1 == 0:
+            c1, n1 = x, 1
+        elif n2 == 0:
+            c2, n2 = x, 1
+        else:
+            n1 -= 1
+            n2 -= 1
+    limit = len(nums) // 3
+    result = []
+    for c in (c1, c2):
+        if c is not None and c not in result and nums.count(c) > limit:
+            result.append(c)
+    return sorted(result)
 
 
 def _run_tests():
