@@ -13,7 +13,14 @@ Run: python3 subarray_sum_equals_k.py
 
 
 def subarray_sum(nums, k):
-    raise NotImplementedError
+    seen = {0: 1}
+    prefix = 0
+    count = 0
+    for x in nums:
+        prefix += x
+        count += seen.get(prefix - k, 0)
+        seen[prefix] = seen.get(prefix, 0) + 1
+    return count
 
 
 def _run_tests():
