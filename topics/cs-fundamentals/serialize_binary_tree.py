@@ -19,11 +19,41 @@ class Node:
 
 
 def serialize(root):
-    raise NotImplementedError
+    out = []
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        if node is None:
+            out.append("#")
+        else:
+            out.append(str(node.val))
+            stack.append(node.right)
+            stack.append(node.left)
+    return ",".join(out)
 
 
 def deserialize(s):
-    raise NotImplementedError
+    tokens = s.split(",")
+    if not tokens or tokens[0] == "#":
+        return None
+    root = Node(int(tokens[0]))
+    # stack of (node, next child slot to fill: 0=left, 1=right)
+    stack = [[root, 0]]
+    for tok in tokens[1:]:
+        while stack and stack[-1][1] == 2:
+            stack.pop()
+        if not stack:
+            break
+        top = stack[-1]
+        child = None if tok == "#" else Node(int(tok))
+        if top[1] == 0:
+            top[0].left = child
+        else:
+            top[0].right = child
+        top[1] += 1
+        if child is not None:
+            stack.append([child, 0])
+    return root
 
 
 def same(a, b):
