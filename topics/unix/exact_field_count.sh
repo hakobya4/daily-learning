@@ -23,5 +23,4 @@ if [ $# -ne 2 ] || [ ! -r "$1" ] || [ -d "$1" ] || ! [[ "$2" =~ ^[0-9]+$ ]]; the
   echo "usage: $0 FILE N" >&2
   exit 1
 fi
-# TODO: replace this line
-exit 1
+awk -v n="$2" 'NF==n { print NR ":" $0; k++ } END { print "total: " k+0 }' "$1"
