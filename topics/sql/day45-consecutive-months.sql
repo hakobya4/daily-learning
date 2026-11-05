@@ -29,10 +29,33 @@ INSERT INTO orders VALUES
  (7,'bob','2026-04',30),(8,'cy','2026-05',500);
 
 -- Q1
--- TODO: write your query here
+WITH m AS (
+  SELECT DISTINCT customer, order_month,
+         CAST(substr(order_month,1,4) AS INTEGER)*12 + CAST(substr(order_month,6,2) AS INTEGER) AS idx
+  FROM orders
+),
+g AS (
+  SELECT customer, idx - ROW_NUMBER() OVER (PARTITION BY customer ORDER BY idx) AS grp
+  FROM m
+)
+SELECT DISTINCT customer FROM g GROUP BY customer, grp HAVING COUNT(*) >= 3
+ORDER BY customer;
 
 -- Q2
--- TODO: write your query here
+SELECT customer, order_month, amount,
+       SUM(amount) OVER (PARTITION BY customer ORDER BY order_month, id
+                         ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_total
+FROM orders
+ORDER BY customer, order_month, id;
 
 -- Q3
--- TODO: write your query here
+WITH r AS (
+  SELECT customer, amount,
+         ROW_NUMBER() OVER (PARTITION BY customer ORDER BY order_month, id) AS rn_asc,
+         ROW_NUMBER() OVER (PARTITION BY customer ORDER BY order_month DESC, id DESC) AS rn_desc
+  FROM orders
+)
+SELECT customer,
+       MAX(CASE WHEN rn_asc = 1 THEN amount END) AS first_amount,
+       MAX(CASE WHEN rn_desc = 1 THEN amount END) AS last_amount
+FROM r GROUP BY customer ORDER BY customer;
