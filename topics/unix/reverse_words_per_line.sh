@@ -23,5 +23,4 @@ if [ $# -ne 1 ] || [ ! -r "$1" ] || [ -d "$1" ]; then
   echo "usage: $0 FILE" >&2
   exit 1
 fi
-# TODO: replace this line
-exit 1
+awk '{ s=""; for (i=NF; i>=1; i--) s = s (s=="" ? "" : " ") $i; print s }' "$1"
