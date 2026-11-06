@@ -17,5 +17,8 @@
 # Expected:
 #   7
 
-# TODO: replace this line
-exit 1
+if [ $# -ne 1 ] || [ ! -r "$1" ] || [ -d "$1" ]; then
+  echo "usage: $0 FILE" >&2
+  exit 1
+fi
+awk 'NF { print $1 + 0 }' "$1" | sort -n -u | awk '{ a[NR] = $0 } END { if (NR < 2) print "none"; else print a[NR-1] }'
