@@ -17,5 +17,20 @@
 # Expected:
 #   fl
 
-# TODO: replace this line
-exit 1
+if [ $# -ne 1 ] || [ ! -r "$1" ] || [ -d "$1" ]; then
+  echo "usage: $0 FILE" >&2
+  exit 1
+fi
+p=""
+first=1
+while IFS= read -r line || [ -n "$line" ]; do
+  if [ $first -eq 1 ]; then
+    p=$line
+    first=0
+    continue
+  fi
+  while [[ $line != "$p"* ]]; do
+    p=${p%?}
+  done
+done < "$1"
+printf '%s\n' "$p"
