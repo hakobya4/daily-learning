@@ -14,7 +14,16 @@ Run: python3 find_missing_ranges.py
 
 
 def missing_ranges(nums, lo, hi):
-    raise NotImplementedError
+    def fmt(a, b):
+        return str(a) if a == b else f"{a}->{b}"
+
+    result = []
+    prev = lo - 1
+    for x in list(nums) + [hi + 1]:
+        if x - prev >= 2:
+            result.append(fmt(prev + 1, x - 1))
+        prev = x
+    return result
 
 
 def _run_tests():
