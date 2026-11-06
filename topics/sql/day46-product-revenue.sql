@@ -30,7 +30,37 @@ INSERT INTO order_items VALUES
  (1,1,2,100),(1,2,1,200),(2,1,1,100),(2,3,1,500),(3,4,2,200),(3,7,3,100);
 
 -- Q1
+SELECT p.name
+FROM products p
+LEFT JOIN order_items oi ON oi.product_id = p.id
+WHERE oi.product_id IS NULL
+ORDER BY p.name;
 
 -- Q2
+WITH rev AS (
+  SELECT p.category, p.name, SUM(oi.qty * oi.unit_price) AS revenue
+  FROM products p
+  JOIN order_items oi ON oi.product_id = p.id
+  GROUP BY p.id, p.category, p.name
+),
+ranked AS (
+  SELECT category, name, revenue,
+         ROW_NUMBER() OVER (PARTITION BY category ORDER BY revenue DESC, name) AS rn
+  FROM rev
+)
+SELECT category, name, revenue
+FROM ranked
+WHERE rn <= 2
+ORDER BY category, revenue DESC, name;
 
 -- Q3
+WITH cat AS (
+  SELECT p.category, SUM(oi.qty * oi.unit_price) AS revenue
+  FROM products p
+  JOIN order_items oi ON oi.product_id = p.id
+  GROUP BY p.category
+)
+SELECT category, revenue,
+       ROUND(revenue * 100.0 / SUM(revenue) OVER (), 1) AS pct
+FROM cat
+ORDER BY revenue DESC;
