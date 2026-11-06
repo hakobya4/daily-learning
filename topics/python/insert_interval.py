@@ -15,7 +15,21 @@ Run: python3 insert_interval.py
 
 
 def insert_interval(intervals, new):
-    raise NotImplementedError
+    result = []
+    start, end = new
+    i, n = 0, len(intervals)
+    while i < n and intervals[i][1] < start:
+        result.append(list(intervals[i]))
+        i += 1
+    while i < n and intervals[i][0] <= end:
+        start = min(start, intervals[i][0])
+        end = max(end, intervals[i][1])
+        i += 1
+    result.append([start, end])
+    while i < n:
+        result.append(list(intervals[i]))
+        i += 1
+    return result
 
 
 def _run_tests():
