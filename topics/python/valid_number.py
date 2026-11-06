@@ -14,7 +14,31 @@ Run: python3 valid_number.py
 
 
 def is_number(s):
-    raise NotImplementedError
+    i, n = 0, len(s)
+    if i < n and s[i] in "+-":
+        i += 1
+    digits = 0
+    while i < n and s[i].isdigit() and s[i] in "0123456789":
+        i += 1
+        digits += 1
+    if i < n and s[i] == ".":
+        i += 1
+        while i < n and s[i] in "0123456789":
+            i += 1
+            digits += 1
+    if digits == 0:
+        return False
+    if i < n and s[i] in "eE":
+        i += 1
+        if i < n and s[i] in "+-":
+            i += 1
+        exp = 0
+        while i < n and s[i] in "0123456789":
+            i += 1
+            exp += 1
+        if exp == 0:
+            return False
+    return i == n
 
 
 def _run_tests():
