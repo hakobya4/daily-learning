@@ -23,5 +23,7 @@ if [ $# -ne 1 ] || [ ! -r "$1" ] || [ -d "$1" ]; then
   echo "usage: $0 FILE" >&2
   exit 1
 fi
-# TODO: replace this line (not implemented)
-exit 1
+awk -F, 'BEGIN { OFS = "," }
+  NF == 0 { next }
+  NR == 1 { print $0, "total"; next }
+  { s = 0; for (i = 1; i <= NF; i++) s += $i; print $0, s }' "$1"
