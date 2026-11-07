@@ -15,16 +15,24 @@ Hint: per key keep two parallel lists (timestamps, values) and use bisect_right.
 Run: python3 time_based_kv_store.py
 """
 
+import bisect
+
 
 class TimeMap:
     def __init__(self):
-        raise NotImplementedError
+        self._times = {}
+        self._values = {}
 
     def set(self, key, value, timestamp):
-        raise NotImplementedError
+        self._times.setdefault(key, []).append(timestamp)
+        self._values.setdefault(key, []).append(value)
 
     def get(self, key, timestamp):
-        raise NotImplementedError
+        times = self._times.get(key)
+        if not times:
+            return ""
+        i = bisect.bisect_right(times, timestamp)
+        return self._values[key][i - 1] if i else ""
 
 
 def _run_tests():
