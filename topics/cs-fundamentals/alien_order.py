@@ -16,7 +16,35 @@ Run: python3 alien_order.py
 
 
 def alien_order(words):
-    raise NotImplementedError
+    from collections import deque
+
+    letters = []
+    for w in words:
+        for ch in w:
+            if ch not in letters:
+                letters.append(ch)
+    edges = {ch: set() for ch in letters}
+    indeg = {ch: 0 for ch in letters}
+    for a, b in zip(words, words[1:]):
+        for x, y in zip(a, b):
+            if x != y:
+                if y not in edges[x]:
+                    edges[x].add(y)
+                    indeg[y] += 1
+                break
+        else:
+            if len(a) > len(b):
+                return ""
+    queue = deque(ch for ch in letters if indeg[ch] == 0)
+    out = []
+    while queue:
+        ch = queue.popleft()
+        out.append(ch)
+        for nb in sorted(edges[ch], key=letters.index):
+            indeg[nb] -= 1
+            if indeg[nb] == 0:
+                queue.append(nb)
+    return "".join(out) if len(out) == len(letters) else ""
 
 
 def _is_valid(words, order):
