@@ -20,5 +20,5 @@ if [ $# -ne 1 ] || [ ! -r "$1" ] || [ -d "$1" ]; then
   echo "usage: $0 FILE" >&2
   exit 1
 fi
-# TODO: replace this line (not implemented)
-exit 1
+awk '{ l = length($0); if (NR == 1 || l < mn) mn = l; if (NR == 1 || l > mx) mx = l; sum += l }
+  END { if (NR == 0) print "none"; else printf "min=%d max=%d avg=%.2f\n", mn, mx, sum / NR }' "$1"
