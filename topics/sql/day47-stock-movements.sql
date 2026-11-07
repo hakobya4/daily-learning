@@ -32,13 +32,37 @@ INSERT INTO movements VALUES
  (3,'2026-01-03',-1),(3,'2026-01-04',7);
 
 -- Q1
--- TODO
+SELECT i.name, m.day,
+       SUM(m.delta) OVER (PARTITION BY m.item_id ORDER BY m.day) AS balance
+FROM movements m JOIN items i ON i.id = m.item_id
+ORDER BY i.name, m.day;
 
 -- Q2
--- TODO
+SELECT name, day, delta FROM (
+  SELECT i.name, m.day, m.delta,
+         ROW_NUMBER() OVER (PARTITION BY m.item_id ORDER BY m.day DESC) AS rn
+  FROM movements m JOIN items i ON i.id = m.item_id
+) WHERE rn = 1
+ORDER BY name;
 
 -- Q3
--- TODO
+WITH run AS (
+  SELECT item_id,
+         SUM(delta) OVER (PARTITION BY item_id ORDER BY day) AS balance
+  FROM movements
+)
+SELECT DISTINCT i.name
+FROM run JOIN items i ON i.id = run.item_id
+WHERE run.balance < 0
+ORDER BY i.name;
 
 -- Q4
--- TODO
+WITH run AS (
+  SELECT item_id, day,
+         SUM(delta) OVER (PARTITION BY item_id ORDER BY day) AS balance
+  FROM movements
+)
+SELECT i.name,
+       (SELECT MIN(r.day) FROM run r WHERE r.item_id = i.id AND r.balance < 0) AS first_negative_day
+FROM items i
+ORDER BY i.name;
