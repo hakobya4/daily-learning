@@ -16,7 +16,18 @@ Run: python3 score_of_parentheses.py
 
 
 def score(s):
-    raise NotImplementedError
+    total = 0
+    depth = 0
+    prev = ""
+    for ch in s:
+        if ch == "(":
+            depth += 1
+        else:
+            depth -= 1
+            if prev == "(":
+                total += 1 << depth
+        prev = ch
+    return total
 
 
 def _run_tests():
