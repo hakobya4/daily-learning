@@ -12,12 +12,20 @@ In a SCRATCH area (`/tmp/day47-lab`) create a repo and work through the question
 ## WHAT I RAN
 
 ```bash
-# TODO: paste the commands you actually ran
+cd /tmp/day47-lab && git init
+for i in 1 2 3; do echo $i > f; git add f; git commit -m "c$i"; done
+D=$(git rev-parse HEAD)            # remember the commit that will be dropped
+git reset --hard HEAD~1            # drop it from the branch
+git reflog                         # still lists $D as HEAD@{1}
+git fsck --unreachable --no-reflogs   # reports: unreachable commit $D
+git reflog expire --expire=now --all
+git gc --prune=now
+git cat-file -t $D                 # fatal: Not a valid object name -> gone
 ```
 
 ## MY ANSWERS
 
-1. TODO
-2. TODO
-3. TODO
-4. TODO
+1. No, it is not gone. `reset --hard` only moves the branch pointer; the commit object stays in the object database and the reflog (`git reflog`, `HEAD@{1}`) still points at it, so it stays reachable through the reflog. `git fsck --unreachable --no-reflogs` (or `--lost-found`) lists it once reflogs are ignored.
+2. After the reflog is expired nothing references the commit, and `gc --prune=now` deletes the unreachable object for good (`git cat-file -t` fails). A plain `git gc` keeps unreachable objects younger than `gc.pruneExpire` (default 2 weeks) as a safety net against races with concurrent commands and to allow recovery; reflog entries also expire by default (90 days reachable, 30 days unreachable).
+3. `git gc` is the housekeeping wrapper: it packs refs, repacks loose objects, expires reflogs and prunes old unreachable objects. `git prune` only deletes unreachable loose objects (older than the expiry). `git repack -ad` packs all reachable objects into one pack (`-a` all, `-d` delete redundant packs) but does not expire reflogs. A packfile stores objects delta-compressed against each other in one file with an index, so the repo is far smaller, faster to transfer and read, and uses far fewer inodes than thousands of loose zlib files.
+4. `git fsck` prints `dangling blob <sha>` for an unreferenced file content (e.g. a staged-then-reset file) and `dangling commit <sha>` for a commit nothing points to. Recover a dangling commit by hash: inspect with `git show <sha>`, then `git branch rescued <sha>` (or `git cherry-pick <sha>` / `git merge <sha>`). A dangling blob is recovered with `git cat-file -p <sha> > file`. This only works before prune removes the object.
