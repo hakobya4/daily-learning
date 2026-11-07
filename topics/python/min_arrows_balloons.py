@@ -15,7 +15,15 @@ Run: python3 min_arrows_balloons.py
 
 
 def min_arrows(balloons):
-    raise NotImplementedError
+    if not balloons:
+        return 0
+    arrows = 0
+    reach = None
+    for start, end in sorted(balloons, key=lambda b: b[1]):
+        if reach is None or start > reach:
+            arrows += 1
+            reach = end
+    return arrows
 
 
 def _run_tests():
