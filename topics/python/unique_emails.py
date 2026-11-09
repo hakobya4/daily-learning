@@ -16,7 +16,12 @@ Run: python3 unique_emails.py
 
 
 def num_unique_emails(emails):
-    raise NotImplementedError
+    seen = set()
+    for email in emails:
+        local, _, domain = email.partition("@")
+        local = local.split("+", 1)[0].replace(".", "")
+        seen.add((local, domain.lower()))
+    return len(seen)
 
 
 def _run_tests():
