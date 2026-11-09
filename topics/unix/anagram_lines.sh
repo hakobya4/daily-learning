@@ -27,5 +27,13 @@ if [ $# -ne 1 ] || [ ! -r "$1" ] || [ -d "$1" ]; then
   exit 1
 fi
 
-# TODO: replace this line
-exit 1
+awk 'NF {
+  n = split($1, c, "")
+  for (i = 2; i <= n; i++) { v = c[i]; j = i - 1; while (j >= 1 && c[j] > v) { c[j+1] = c[j]; j-- } c[j+1] = v }
+  key = ""; for (i = 1; i <= n; i++) key = key c[i]
+  if (!(($1 SUBSEP key) in seen)) { seen[$1, key] = 1; words[key] = words[key] " " $1; cnt[key]++ }
+}
+END { for (k in cnt) if (cnt[k] > 1) print words[k] }' "$1" |
+while read -r line; do
+  printf '%s\n' "$(printf '%s\n' $line | LC_ALL=C sort | paste -sd' ' -)"
+done | LC_ALL=C sort
