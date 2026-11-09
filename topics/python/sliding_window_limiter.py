@@ -16,10 +16,20 @@ Run: python3 sliding_window_limiter.py
 
 class SlidingWindowLimiter:
     def __init__(self, limit, window):
-        raise NotImplementedError
+        from collections import deque
+        self.limit = limit
+        self.window = window
+        self._deque = deque
+        self.log = {}
 
     def allow(self, key, ts):
-        raise NotImplementedError
+        q = self.log.setdefault(key, self._deque())
+        while q and q[0] <= ts - self.window:
+            q.popleft()
+        if len(q) < self.limit:
+            q.append(ts)
+            return True
+        return False
 
 
 def _run_tests():
