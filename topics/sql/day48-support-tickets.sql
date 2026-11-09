@@ -36,9 +36,37 @@ INSERT INTO tickets VALUES
  (7,2,'2026-02-05',NULL,'low');
 
 -- Q1
+SELECT a.name, COUNT(t.id) AS open_tickets
+FROM agents a
+LEFT JOIN tickets t ON t.agent_id = a.id AND t.closed IS NULL
+GROUP BY a.id, a.name
+ORDER BY a.name;
 
 -- Q2
+SELECT a.name, ROUND(AVG(julianday(t.closed) - julianday(t.opened)), 2) AS avg_days
+FROM agents a
+JOIN tickets t ON t.agent_id = a.id AND t.closed IS NOT NULL
+GROUP BY a.id, a.name
+ORDER BY avg_days DESC;
 
 -- Q3
+SELECT name, id, days FROM (
+  SELECT a.name, t.id,
+         CAST(julianday(t.closed) - julianday(t.opened) AS INTEGER) AS days,
+         ROW_NUMBER() OVER (PARTITION BY a.id
+                            ORDER BY julianday(t.closed) - julianday(t.opened) DESC, t.id) AS rn
+  FROM agents a
+  JOIN tickets t ON t.agent_id = a.id AND t.closed IS NOT NULL
+)
+WHERE rn = 1
+ORDER BY name;
 
 -- Q4
+SELECT a.name
+FROM agents a
+WHERE NOT EXISTS (
+  SELECT 1 FROM tickets t
+  WHERE t.agent_id = a.id AND t.priority = 'high'
+    AND (t.closed IS NULL OR julianday(t.closed) - julianday(t.opened) > 2)
+)
+ORDER BY a.name;
