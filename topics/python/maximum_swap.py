@@ -14,7 +14,15 @@ Run: python3 maximum_swap.py
 
 
 def maximum_swap(num):
-    raise NotImplementedError
+    digits = list(str(num))
+    last = {int(d): i for i, d in enumerate(digits)}
+    for i, d in enumerate(digits):
+        for bigger in range(9, int(d), -1):
+            j = last.get(bigger, -1)
+            if j > i:
+                digits[i], digits[j] = digits[j], digits[i]
+                return int("".join(digits))
+    return num
 
 
 def _run_tests():
