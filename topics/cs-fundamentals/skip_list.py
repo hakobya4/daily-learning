@@ -15,17 +15,55 @@ Run: python3 skip_list.py
 
 
 class Skiplist:
+    MAX_LEVEL = 16
+
+    class _Node:
+        __slots__ = ("val", "next")
+
+        def __init__(self, val, height):
+            self.val = val
+            self.next = [None] * height
+
     def __init__(self):
-        raise NotImplementedError
+        import random
+        self._rand = random.random
+        self.head = Skiplist._Node(None, self.MAX_LEVEL)
+
+    def _random_height(self):
+        h = 1
+        while h < self.MAX_LEVEL and self._rand() < 0.5:
+            h += 1
+        return h
+
+    def _find_preds(self, num):
+        preds = [None] * self.MAX_LEVEL
+        cur = self.head
+        for lvl in range(self.MAX_LEVEL - 1, -1, -1):
+            while cur.next[lvl] is not None and cur.next[lvl].val < num:
+                cur = cur.next[lvl]
+            preds[lvl] = cur
+        return preds
 
     def add(self, num):
-        raise NotImplementedError
+        preds = self._find_preds(num)
+        node = Skiplist._Node(num, self._random_height())
+        for lvl in range(len(node.next)):
+            node.next[lvl] = preds[lvl].next[lvl]
+            preds[lvl].next[lvl] = node
 
     def search(self, num):
-        raise NotImplementedError
+        cand = self._find_preds(num)[0].next[0]
+        return cand is not None and cand.val == num
 
     def erase(self, num):
-        raise NotImplementedError
+        preds = self._find_preds(num)
+        target = preds[0].next[0]
+        if target is None or target.val != num:
+            return False
+        for lvl in range(len(target.next)):
+            if preds[lvl].next[lvl] is target:
+                preds[lvl].next[lvl] = target.next[lvl]
+        return True
 
 
 def _run_tests():
