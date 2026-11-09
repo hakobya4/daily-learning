@@ -15,10 +15,21 @@ Run: python3 kth_ancestor_binary_lifting.py
 
 class TreeAncestor:
     def __init__(self, n, parent):
-        raise NotImplementedError
+        self.LOG = max(1, n.bit_length())
+        self.up = [list(parent)]
+        for j in range(1, self.LOG):
+            prev = self.up[j - 1]
+            self.up.append([-1 if prev[v] == -1 else prev[prev[v]] for v in range(n)])
 
     def get_kth_ancestor(self, node, k):
-        raise NotImplementedError
+        if k >= (1 << self.LOG):
+            return -1
+        for j in range(self.LOG):
+            if k >> j & 1:
+                node = self.up[j][node]
+                if node == -1:
+                    return -1
+        return node
 
 
 def _run_tests():
