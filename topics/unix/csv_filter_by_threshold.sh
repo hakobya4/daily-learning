@@ -25,5 +25,13 @@ if [ $# -ne 3 ] || [ ! -r "$1" ] || [ -d "$1" ]; then
   exit 1
 fi
 
-# TODO: replace this line
-exit 1
+awk -F, -v col="$2" -v t="$3" '
+  NR == 1 {
+    for (i = 1; i <= NF; i++) if ($i == col) idx = i
+    if (!idx) exit 2
+    print; next
+  }
+  $idx + 0 > t + 0
+' "$1"
+rc=$?
+[ $rc -eq 0 ] || { [ $rc -eq 2 ] && echo "no such column: $2" >&2; exit 1; }
