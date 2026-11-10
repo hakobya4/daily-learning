@@ -14,7 +14,13 @@ Run: python3 plus_one_digits.py
 
 
 def plus_one(digits):
-    raise NotImplementedError
+    result = list(digits)
+    for i in range(len(result) - 1, -1, -1):
+        if result[i] < 9:
+            result[i] += 1
+            return result
+        result[i] = 0
+    return [1] + result
 
 
 def _run_tests():
