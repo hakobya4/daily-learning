@@ -21,5 +21,9 @@ if [ $# -ne 2 ] || ! [[ "$1" =~ ^[1-9][0-9]*$ ]] || [ ! -r "$2" ] || [ -d "$2" ]
   exit 1
 fi
 
-# TODO: replace this line
-exit 1
+total=$(awk 'END { print NR }' "$2")
+if [ "$total" -lt "$1" ]; then
+  echo "file has fewer than $1 lines" >&2
+  exit 1
+fi
+tail -n "$1" "$2" | head -n 1
