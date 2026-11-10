@@ -31,9 +31,28 @@ INSERT INTO employees VALUES
  (8,'hal','hr',65,7);
 
 -- Q1
+SELECT dept, name FROM (
+  SELECT dept, name, RANK() OVER (PARTITION BY dept ORDER BY salary DESC) AS rnk
+  FROM employees
+) WHERE rnk = 1
+ORDER BY dept, name;
 
 -- Q2
+SELECT e.name, m.name AS manager
+FROM employees e JOIN employees m ON e.manager_id = m.id
+WHERE e.salary > m.salary
+ORDER BY e.name;
 
 -- Q3
+SELECT dept, ROUND(AVG(salary), 2) AS avg_salary
+FROM employees
+GROUP BY dept
+HAVING AVG(salary) > (SELECT AVG(salary) FROM employees)
+ORDER BY dept;
 
 -- Q4
+SELECT m.name, COUNT(*) AS reports
+FROM employees e JOIN employees m ON e.manager_id = m.id
+GROUP BY m.id, m.name
+HAVING COUNT(*) >= 2
+ORDER BY m.name;
