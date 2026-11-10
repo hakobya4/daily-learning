@@ -21,5 +21,16 @@ if [ $# -ne 1 ] || [ ! -r "$1" ] || [ -d "$1" ]; then
   exit 1
 fi
 
-# TODO: replace this line
-exit 1
+if [ ! -s "$1" ]; then
+  echo
+  exit 0
+fi
+rev "$1" | awk '
+  NR == 1 { p = $0; next }
+  {
+    n = (length(p) < length($0)) ? length(p) : length($0)
+    i = 1
+    while (i <= n && substr(p, i, 1) == substr($0, i, 1)) i++
+    p = substr(p, 1, i - 1)
+  }
+  END { print p }' | rev
