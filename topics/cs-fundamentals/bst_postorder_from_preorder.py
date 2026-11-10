@@ -15,7 +15,22 @@ Run: python3 bst_postorder_from_preorder.py
 
 
 def bst_postorder_from_preorder(pre):
-    raise NotImplementedError
+    out = []
+
+    def build(lo, hi):
+        # emit postorder of pre[lo:hi]
+        if lo >= hi:
+            return
+        root = pre[lo]
+        split = lo + 1
+        while split < hi and pre[split] < root:
+            split += 1
+        build(lo + 1, split)
+        build(split, hi)
+        out.append(root)
+
+    build(0, len(pre))
+    return out
 
 
 def _run_tests():
