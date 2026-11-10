@@ -14,7 +14,8 @@ Run: python3 ransom_note.py
 
 
 def can_construct(note, magazine):
-    raise NotImplementedError
+    from collections import Counter
+    return not (Counter(note) - Counter(magazine))
 
 
 def _run_tests():
