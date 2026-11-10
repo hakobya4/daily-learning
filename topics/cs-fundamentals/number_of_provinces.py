@@ -14,7 +14,22 @@ Run: python3 number_of_provinces.py
 
 
 def count_provinces(is_connected):
-    raise NotImplementedError
+    n = len(is_connected)
+    seen = [False] * n
+    count = 0
+    for start in range(n):
+        if seen[start]:
+            continue
+        count += 1
+        stack = [start]
+        seen[start] = True
+        while stack:
+            u = stack.pop()
+            for v in range(n):
+                if is_connected[u][v] and not seen[v]:
+                    seen[v] = True
+                    stack.append(v)
+    return count
 
 
 def _run_tests():
