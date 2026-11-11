@@ -20,5 +20,17 @@
 #   7
 #   11
 
-# TODO: replace this line
-exit 1
+if [ "$#" -ne 1 ] || ! [[ "$1" =~ ^[0-9]+$ ]] || [ "$((10#$1))" -lt 1 ]; then
+    echo "usage: $0 N   (N must be a positive integer)" >&2
+    exit 1
+fi
+
+awk -v n="$((10#$1))" 'BEGIN {
+    found = 0
+    for (c = 2; found < n; c++) {
+        is_prime = 1
+        for (i = 1; i <= found && primes[i] * primes[i] <= c; i++)
+            if (c % primes[i] == 0) { is_prime = 0; break }
+        if (is_prime) { primes[++found] = c; print c }
+    }
+}'
