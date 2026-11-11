@@ -15,7 +15,17 @@ Run: python3 koko_eating_bananas.py
 
 
 def min_eating_speed(piles, h):
-    raise NotImplementedError
+    def hours(k):
+        return sum((p + k - 1) // k for p in piles)
+
+    lo, hi = 1, max(piles)
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if hours(mid) <= h:
+            hi = mid
+        else:
+            lo = mid + 1
+    return lo
 
 
 def _run_tests():
