@@ -14,7 +14,14 @@ Run: python3 subset_xor_total.py
 
 
 def subset_xor_total(nums):
-    raise NotImplementedError
+    # Every bit set in the OR of all numbers is set in exactly half of the 2**n subsets'
+    # XOR totals, so the sum is OR * 2**(n-1). Empty input -> 0.
+    if not nums:
+        return 0
+    acc = 0
+    for x in nums:
+        acc |= x
+    return acc << (len(nums) - 1)
 
 
 def _run_tests():
