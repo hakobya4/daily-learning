@@ -18,7 +18,12 @@ Run: python3 reorder_log_files.py
 
 
 def reorder_logs(logs):
-    raise NotImplementedError
+    def key(log):
+        ident, content = log.split(" ", 1)
+        if content.split(" ", 1)[0].isdigit():
+            return (1,)  # digit-logs share one key; stable sort keeps their order
+        return (0, content, ident)
+    return sorted(logs, key=key)
 
 
 def _run_tests():
