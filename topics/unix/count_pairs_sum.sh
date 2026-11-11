@@ -18,5 +18,23 @@
 # Expected:
 #   2
 
-# TODO: replace this line
-exit 1
+if [ "$#" -ne 2 ]; then
+    echo "usage: $0 K FILE" >&2
+    exit 1
+fi
+k=$1
+file=$2
+if ! [[ "$k" =~ ^-?[0-9]+$ ]]; then
+    echo "error: K must be an integer: $k" >&2
+    exit 1
+fi
+if [ ! -f "$file" ] || [ ! -r "$file" ]; then
+    echo "error: cannot read file: $file" >&2
+    exit 1
+fi
+
+awk -v k="$k" '
+    /^[[:space:]]*$/ { next }
+    { x = $1 + 0; count += seen[k - x]; seen[x]++ }
+    END { print count + 0 }
+' "$file"
