@@ -14,7 +14,12 @@ Run: python3 min_left_rotations.py
 
 
 def min_left_rotations(a, b):
-    raise NotImplementedError
+    # b is a rotation of a iff len matches and b occurs in a + a; the first index is k.
+    if len(a) != len(b):
+        return -1
+    if not a:
+        return 0
+    return (a + a).find(b)
 
 
 def _run_tests():
