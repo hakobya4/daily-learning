@@ -38,13 +38,31 @@ INSERT INTO returns VALUES
  (8,'2026-03-12',10);
 
 -- Q1
--- TODO
+SELECT o.customer, COUNT(DISTINCT o.id) AS returned_orders
+FROM orders o JOIN returns r ON r.order_id = o.id
+GROUP BY o.customer
+ORDER BY returned_orders DESC, o.customer;
 
 -- Q2
--- TODO
+SELECT o.id
+FROM orders o
+WHERE NOT EXISTS (SELECT 1 FROM returns r WHERE r.order_id = o.id)
+ORDER BY o.id;
 
 -- Q3
--- TODO
+SELECT o.customer, SUM(o.amount) - COALESCE(SUM(r.refund), 0) AS net
+FROM orders o
+LEFT JOIN (SELECT order_id, SUM(refund) AS refund FROM returns GROUP BY order_id) r
+  ON r.order_id = o.id
+GROUP BY o.customer
+ORDER BY net DESC, o.customer;
 
 -- Q4
--- TODO
+SELECT substr(o.order_date, 1, 7) AS month,
+       SUM(o.amount) AS gross,
+       SUM(o.amount) - COALESCE(SUM(r.refund), 0) AS net
+FROM orders o
+LEFT JOIN (SELECT order_id, SUM(refund) AS refund FROM returns GROUP BY order_id) r
+  ON r.order_id = o.id
+GROUP BY month
+ORDER BY month;
