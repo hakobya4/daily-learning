@@ -15,7 +15,26 @@ Run: python3 min_cost_connect_points.py
 
 
 def min_cost_connect_points(points):
-    raise NotImplementedError
+    # Prim's algorithm, O(n^2), using a best-known-distance array (dense graph).
+    n = len(points)
+    if n <= 1:
+        return 0
+    inf = float("inf")
+    best = [inf] * n
+    in_tree = [False] * n
+    best[0] = 0
+    total = 0
+    for _ in range(n):
+        u = min((i for i in range(n) if not in_tree[i]), key=best.__getitem__)
+        in_tree[u] = True
+        total += best[u]
+        ux, uy = points[u]
+        for v in range(n):
+            if not in_tree[v]:
+                d = abs(ux - points[v][0]) + abs(uy - points[v][1])
+                if d < best[v]:
+                    best[v] = d
+    return total
 
 
 def _run_tests():
