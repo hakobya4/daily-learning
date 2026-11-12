@@ -30,5 +30,11 @@ if [ "$#" -ne 2 ] || [ ! -f "$1" ] || [ ! -r "$1" ] || ! [[ "$2" =~ ^[0-9]+$ ]];
     exit 1
 fi
 
-# TODO: replace this line
-exit 1
+awk -v k="$2" '
+    { line[NR] = $0 }
+    END {
+        if (NR == 0) exit 0
+        s = k % NR
+        for (i = 1; i <= NR; i++) print line[(i + s - 1) % NR + 1]
+    }
+' "$1"
