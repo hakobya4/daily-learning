@@ -16,7 +16,18 @@ Run: python3 longest_turbulent_subarray.py
 
 
 def max_turbulence_size(arr):
-    raise NotImplementedError
+    if not arr:
+        return 0
+    best = up = down = 1  # longest turbulent run ending here with an up / down last step
+    for i in range(1, len(arr)):
+        if arr[i] > arr[i - 1]:
+            up, down = down + 1, 1
+        elif arr[i] < arr[i - 1]:
+            up, down = 1, up + 1
+        else:
+            up = down = 1
+        best = max(best, up, down)
+    return best
 
 
 def _run_tests():
