@@ -17,7 +17,19 @@ Run: python3 interleaving_string.py
 
 
 def is_interleave(s1, s2, s3):
-    raise NotImplementedError
+    if len(s1) + len(s2) != len(s3):
+        return False
+    # dp[j]: s3[:i+j] is an interleaving of s1[:i] and s2[:j] (one row, reused per i)
+    dp = [False] * (len(s2) + 1)
+    for i in range(len(s1) + 1):
+        for j in range(len(s2) + 1):
+            if i == 0 and j == 0:
+                dp[j] = True
+            else:
+                from_s1 = i > 0 and dp[j] and s1[i - 1] == s3[i + j - 1]
+                from_s2 = j > 0 and dp[j - 1] and s2[j - 1] == s3[i + j - 1]
+                dp[j] = from_s1 or from_s2
+    return dp[len(s2)]
 
 
 def _run_tests():
