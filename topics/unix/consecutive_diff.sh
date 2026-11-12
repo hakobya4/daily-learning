@@ -27,5 +27,12 @@ if [ "$#" -ne 1 ] || [ ! -f "$1" ] || [ ! -r "$1" ]; then
     exit 1
 fi
 
-# TODO: replace this line
-exit 1
+awk '
+    /^[[:space:]]*$/ { next }
+    {
+        cur = $1 + 0
+        if (have) printf "%d -> %d: %d\n", prev, cur, cur - prev
+        prev = cur
+        have = 1
+    }
+' "$1"
