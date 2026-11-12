@@ -16,7 +16,15 @@ Run: python3 count_binary_substrings.py
 
 
 def count_binary_substrings(s):
-    raise NotImplementedError
+    total = 0
+    prev_run, cur_run = 0, 1 if s else 0
+    for i in range(1, len(s)):
+        if s[i] == s[i - 1]:
+            cur_run += 1
+        else:
+            total += min(prev_run, cur_run)
+            prev_run, cur_run = cur_run, 1
+    return total + min(prev_run, cur_run)
 
 
 def _run_tests():
