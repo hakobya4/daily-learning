@@ -17,7 +17,21 @@ Run: python3 asteroid_collision.py
 
 
 def asteroid_collision(asteroids):
-    raise NotImplementedError
+    stack = []
+    for a in asteroids:
+        alive = True
+        while alive and a < 0 and stack and stack[-1] > 0:
+            top = stack[-1]
+            if top < -a:
+                stack.pop()
+            elif top == -a:
+                stack.pop()
+                alive = False
+            else:
+                alive = False
+        if alive:
+            stack.append(a)
+    return stack
 
 
 def _run_tests():
