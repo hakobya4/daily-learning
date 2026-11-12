@@ -46,13 +46,75 @@ INSERT INTO page_views VALUES
  ('dan','2026-05-01 12:00','home');
 
 -- Q1
--- TODO: your query here
+SELECT user_id, ts,
+       CAST(ROUND((julianday(ts) - julianday(LAG(ts) OVER (PARTITION BY user_id ORDER BY ts))) * 1440) AS INTEGER) AS gap_min
+FROM page_views
+ORDER BY user_id, ts;
 
 -- Q2
--- TODO: your query here
+WITH gaps AS (
+    SELECT user_id, ts,
+           CAST(ROUND((julianday(ts) - julianday(LAG(ts) OVER (PARTITION BY user_id ORDER BY ts))) * 1440) AS INTEGER) AS gap_min
+    FROM page_views
+), flagged AS (
+    SELECT user_id, ts,
+           SUM(CASE WHEN gap_min IS NULL OR gap_min > 30 THEN 1 ELSE 0 END)
+               OVER (PARTITION BY user_id ORDER BY ts ROWS UNBOUNDED PRECEDING) AS session_id
+    FROM gaps
+), sessions AS (
+    SELECT user_id, session_id,
+           MIN(ts) AS session_start,
+           COUNT(*) AS views,
+           CAST(ROUND((julianday(MAX(ts)) - julianday(MIN(ts))) * 1440) AS INTEGER) AS duration_min
+    FROM flagged
+    GROUP BY user_id, session_id
+)
+SELECT user_id, COUNT(*) AS sessions
+FROM sessions
+GROUP BY user_id
+ORDER BY user_id;
 
 -- Q3
--- TODO: your query here
+WITH gaps AS (
+    SELECT user_id, ts,
+           CAST(ROUND((julianday(ts) - julianday(LAG(ts) OVER (PARTITION BY user_id ORDER BY ts))) * 1440) AS INTEGER) AS gap_min
+    FROM page_views
+), flagged AS (
+    SELECT user_id, ts,
+           SUM(CASE WHEN gap_min IS NULL OR gap_min > 30 THEN 1 ELSE 0 END)
+               OVER (PARTITION BY user_id ORDER BY ts ROWS UNBOUNDED PRECEDING) AS session_id
+    FROM gaps
+), sessions AS (
+    SELECT user_id, session_id,
+           MIN(ts) AS session_start,
+           COUNT(*) AS views,
+           CAST(ROUND((julianday(MAX(ts)) - julianday(MIN(ts))) * 1440) AS INTEGER) AS duration_min
+    FROM flagged
+    GROUP BY user_id, session_id
+)
+SELECT user_id, session_start, views, duration_min
+FROM sessions
+ORDER BY user_id, session_start;
 
 -- Q4
--- TODO: your query here
+WITH gaps AS (
+    SELECT user_id, ts,
+           CAST(ROUND((julianday(ts) - julianday(LAG(ts) OVER (PARTITION BY user_id ORDER BY ts))) * 1440) AS INTEGER) AS gap_min
+    FROM page_views
+), flagged AS (
+    SELECT user_id, ts,
+           SUM(CASE WHEN gap_min IS NULL OR gap_min > 30 THEN 1 ELSE 0 END)
+               OVER (PARTITION BY user_id ORDER BY ts ROWS UNBOUNDED PRECEDING) AS session_id
+    FROM gaps
+), sessions AS (
+    SELECT user_id, session_id,
+           MIN(ts) AS session_start,
+           COUNT(*) AS views,
+           CAST(ROUND((julianday(MAX(ts)) - julianday(MIN(ts))) * 1440) AS INTEGER) AS duration_min
+    FROM flagged
+    GROUP BY user_id, session_id
+)
+SELECT user_id, MAX(duration_min) AS longest_min
+FROM sessions
+GROUP BY user_id
+ORDER BY longest_min DESC, user_id;
