@@ -17,18 +17,41 @@ Run: python3 snapshot_array.py
 """
 
 
+import bisect
+
+
 class SnapshotArray:
     def __init__(self, length):
-        raise NotImplementedError
+        self._length = length
+        self._snap_id = 0
+        # Per index: parallel lists of snap ids and values, starting at (0, 0).
+        self._ids = [[0] for _ in range(length)]
+        self._vals = [[0] for _ in range(length)]
+
+    def _check_index(self, index):
+        if not 0 <= index < self._length:
+            raise IndexError("index %r out of range 0..%d" % (index, self._length - 1))
 
     def set(self, index, val):
-        raise NotImplementedError
+        self._check_index(index)
+        ids, vals = self._ids[index], self._vals[index]
+        if ids[-1] == self._snap_id:
+            vals[-1] = val
+        else:
+            ids.append(self._snap_id)
+            vals.append(val)
 
     def snap(self):
-        raise NotImplementedError
+        self._snap_id += 1
+        return self._snap_id - 1
 
     def get(self, index, snap_id):
-        raise NotImplementedError
+        self._check_index(index)
+        if not 0 <= snap_id < self._snap_id:
+            raise ValueError("snap_id %r has not been taken yet" % (snap_id,))
+        ids = self._ids[index]
+        pos = bisect.bisect_right(ids, snap_id) - 1
+        return self._vals[index][pos]
 
 
 def _run_tests():
