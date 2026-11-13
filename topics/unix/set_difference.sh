@@ -35,5 +35,7 @@ if [ "$#" -ne 2 ] || [ ! -f "$1" ] || [ ! -r "$1" ] || [ ! -f "$2" ] || [ ! -r "
     exit 1
 fi
 
-# TODO: replace this line
-exit 1
+awk -v bfile="$2" '
+    FILENAME == bfile { inb[$0] = 1; next }
+    !($0 in inb) && !($0 in seen) { seen[$0] = 1; print }
+' "$2" "$1"
