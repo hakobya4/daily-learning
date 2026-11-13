@@ -18,7 +18,34 @@ Run: python3 eventual_safe_states.py
 
 
 def eventual_safe_nodes(graph):
-    raise NotImplementedError
+    # Three-colour DFS: 0 = white (unvisited), 1 = grey (on stack / unsafe), 2 = black (safe).
+    n = len(graph)
+    color = [0] * n
+
+    def is_safe(start):
+        if color[start]:
+            return color[start] == 2
+        color[start] = 1
+        stack = [(start, iter(graph[start]))]
+        while stack:
+            node, it = stack[-1]
+            advanced = False
+            for nxt in it:
+                if color[nxt] == 0:
+                    color[nxt] = 1
+                    stack.append((nxt, iter(graph[nxt])))
+                    advanced = True
+                    break
+                if color[nxt] == 1:
+                    # Reached a node on the stack (cycle) or a known-unsafe node:
+                    # everything on the current stack stays grey = unsafe.
+                    return False
+            if not advanced:
+                color[node] = 2
+                stack.pop()
+        return True
+
+    return [i for i in range(n) if is_safe(i)]
 
 
 def _run_tests():
