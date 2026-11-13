@@ -51,13 +51,49 @@ INSERT INTO leaf_cost VALUES
  ('tube',12),('bolt',1),('spoke',2),('rim',20),('cushion',15),('axle',5),('bearing',3);
 
 -- Q1
--- TODO: your query here
+WITH RECURSIVE x(depth, parent, part, qty) AS (
+    SELECT 1, parent, child, qty FROM bom WHERE parent = 'bike'
+    UNION ALL
+    SELECT x.depth + 1, b.parent, b.child, x.qty * b.qty
+    FROM x JOIN bom b ON b.parent = x.part
+)
+SELECT depth, parent, part, qty AS qty_per_bike
+FROM x
+ORDER BY depth, parent, part;
 
 -- Q2
--- TODO: your query here
+WITH RECURSIVE x(part, qty) AS (
+    SELECT child, qty FROM bom WHERE parent = 'bike'
+    UNION ALL
+    SELECT b.child, x.qty * b.qty
+    FROM x JOIN bom b ON b.parent = x.part
+)
+SELECT part, SUM(qty) AS total_qty
+FROM x
+WHERE NOT EXISTS (SELECT 1 FROM bom WHERE bom.parent = x.part)
+GROUP BY part
+ORDER BY part;
 
 -- Q3
--- TODO: your query here
+WITH RECURSIVE x(part, qty) AS (
+    SELECT child, qty FROM bom WHERE parent = 'bike'
+    UNION ALL
+    SELECT b.child, x.qty * b.qty
+    FROM x JOIN bom b ON b.parent = x.part
+)
+SELECT SUM(x.qty * c.unit_cost) AS bike_cost
+FROM x JOIN leaf_cost c ON c.part = x.part
+WHERE NOT EXISTS (SELECT 1 FROM bom WHERE bom.parent = x.part);
 
 -- Q4
--- TODO: your query here
+WITH RECURSIVE x(assembly, part) AS (
+    SELECT child, child FROM bom WHERE parent = 'bike'
+    UNION ALL
+    SELECT x.assembly, b.child
+    FROM x JOIN bom b ON b.parent = x.part
+)
+SELECT assembly, COUNT(DISTINCT part) AS distinct_leaves
+FROM x
+WHERE NOT EXISTS (SELECT 1 FROM bom WHERE bom.parent = x.part)
+GROUP BY assembly
+ORDER BY assembly;
