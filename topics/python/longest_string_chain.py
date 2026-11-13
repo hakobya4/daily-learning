@@ -18,7 +18,17 @@ Run: python3 longest_string_chain.py
 
 
 def longest_str_chain(words):
-    raise NotImplementedError
+    best = {}
+    longest = 0
+    for w in sorted(set(words), key=len):
+        cur = 1
+        for i in range(len(w)):
+            prev = w[:i] + w[i + 1:]
+            if prev in best:
+                cur = max(cur, best[prev] + 1)
+        best[w] = cur
+        longest = max(longest, cur)
+    return longest
 
 
 def _run_tests():
