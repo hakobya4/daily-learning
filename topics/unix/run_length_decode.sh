@@ -38,5 +38,19 @@ if [ "$#" -ne 1 ] || [ ! -f "$1" ] || [ ! -r "$1" ]; then
     exit 1
 fi
 
-# TODO: replace this line
-exit 1
+awk '
+{
+    out = ""
+    for (i = 1; i <= NF; i++) {
+        tok = $i
+        ch = substr(tok, length(tok))
+        n = substr(tok, 1, length(tok) - 1)
+        if (n !~ /^[1-9][0-9]*$/) {
+            printf "bad token: %s (line %d)\n", tok, NR > "/dev/stderr"
+            exit 2
+        }
+        for (j = 0; j < n + 0; j++) out = out ch
+    }
+    print out
+}
+' "$1"
