@@ -22,7 +22,27 @@ Run: python3 minimum_height_trees.py
 
 
 def find_min_height_trees(n, edges):
-    raise NotImplementedError
+    if n < 1 or len(edges) != n - 1:
+        raise ValueError("expected a tree with n >= 1 nodes and n - 1 edges")
+    if n == 1:
+        return [0]
+    adj = [[] for _ in range(n)]
+    for a, b in edges:
+        adj[a].append(b)
+        adj[b].append(a)
+    degree = [len(nb) for nb in adj]
+    leaves = [i for i in range(n) if degree[i] == 1]
+    remaining = n
+    while remaining > 2:
+        remaining -= len(leaves)
+        nxt = []
+        for leaf in leaves:
+            for v in adj[leaf]:
+                degree[v] -= 1
+                if degree[v] == 1:
+                    nxt.append(v)
+        leaves = nxt
+    return sorted(leaves)
 
 
 def _height_from(n, edges, root):
