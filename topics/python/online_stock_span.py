@@ -23,10 +23,16 @@ Run: python3 online_stock_span.py
 
 class StockSpanner:
     def __init__(self):
-        raise NotImplementedError
+        self._stack = []  # (price, span), strictly decreasing prices
 
     def next(self, price):
-        raise NotImplementedError
+        if price < 0:
+            raise ValueError("price must be non-negative")
+        span = 1
+        while self._stack and self._stack[-1][0] <= price:
+            span += self._stack.pop()[1]
+        self._stack.append((price, span))
+        return span
 
 
 def _spans(prices):
