@@ -48,5 +48,34 @@ if [ "$#" -ne 1 ] || [ ! -f "$1" ] || [ ! -r "$1" ]; then
     exit 1
 fi
 
-# TODO: replace this line
-exit 1
+awk '
+function trim(s) {
+    sub(/^[ \t]+/, "", s)
+    sub(/[ \t\r]+$/, "", s)
+    return s
+}
+{
+    line = trim($0)
+    if (line == "" || substr(line, 1, 1) == ";" || substr(line, 1, 1) == "#")
+        next
+    if (line ~ /^\[.*\]$/) {
+        section = trim(substr(line, 2, length(line) - 2))
+        next
+    }
+    eq = index(line, "=")
+    if (eq == 0) {
+        print "line " NR ": malformed" > "/dev/stderr"
+        exit 2
+    }
+    key = trim(substr(line, 1, eq - 1))
+    val = trim(substr(line, eq + 1))
+    if (key == "") {
+        print "line " NR ": malformed" > "/dev/stderr"
+        exit 2
+    }
+    if (section == "")
+        print key "=" val
+    else
+        print section "." key "=" val
+}
+' "$1"
