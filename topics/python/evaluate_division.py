@@ -30,7 +30,40 @@ Run: python3 evaluate_division.py
 
 
 def calc_equation(equations, values, queries):
-    raise NotImplementedError
+    if len(equations) != len(values):
+        raise ValueError("equations and values must have the same length")
+    parent = {}
+    weight = {}  # weight[x] = x / parent[x]
+
+    def find(x):
+        if parent[x] == x:
+            return x, 1.0
+        root, w = find(parent[x])
+        parent[x] = root
+        weight[x] *= w
+        return root, weight[x]
+
+    for (a, b), v in zip(equations, values):
+        for x in (a, b):
+            if x not in parent:
+                parent[x] = x
+                weight[x] = 1.0
+        ra, wa = find(a)   # a = wa * ra
+        rb, wb = find(b)   # b = wb * rb
+        if ra != rb:
+            # a / b = v  =>  ra / rb = v * wb / wa
+            parent[ra] = rb
+            weight[ra] = v * wb / wa
+
+    out = []
+    for x, y in queries:
+        if x not in parent or y not in parent:
+            out.append(-1.0)
+            continue
+        rx, wx = find(x)
+        ry, wy = find(y)
+        out.append(wx / wy if rx == ry else -1.0)
+    return out
 
 
 def _close(got, want):
