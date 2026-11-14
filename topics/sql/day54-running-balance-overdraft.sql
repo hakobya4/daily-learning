@@ -59,13 +59,70 @@ INSERT INTO txn VALUES
  (14,'C', '2026-11-09',   90);
 
 -- Q1
--- TODO: your query here
+SELECT t.account, t.txn_date, t.amount,
+       a.opening_balance
+         + SUM(t.amount) OVER (PARTITION BY t.account ORDER BY t.txn_date, t.id) AS balance
+FROM txn t
+JOIN accounts a ON a.account = t.account
+ORDER BY t.account, t.txn_date, t.id;
 
 -- Q2
--- TODO: your query here
+WITH bal AS (
+  SELECT t.id, t.account, t.txn_date, a.opening_balance,
+         a.opening_balance
+           + SUM(t.amount) OVER (PARTITION BY t.account ORDER BY t.txn_date, t.id) AS balance
+  FROM txn t
+  JOIN accounts a ON a.account = t.account
+)
+SELECT account, MIN(txn_date) AS first_overdraft
+FROM bal
+WHERE balance < 0
+GROUP BY account
+ORDER BY account;
 
 -- Q3
--- TODO: your query here
+WITH bal AS (
+  SELECT t.id, t.account, t.txn_date, a.opening_balance,
+         a.opening_balance
+           + SUM(t.amount) OVER (PARTITION BY t.account ORDER BY t.txn_date, t.id) AS balance
+  FROM txn t
+  JOIN accounts a ON a.account = t.account
+),
+peaks AS (
+  SELECT account, balance,
+         MAX(opening_balance,
+             MAX(balance) OVER (PARTITION BY account ORDER BY txn_date, id
+                                ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)) AS peak_so_far
+  FROM bal
+)
+SELECT a.account, COALESCE(MAX(p.peak_so_far - p.balance), 0) AS max_drawdown
+FROM accounts a
+LEFT JOIN peaks p ON p.account = a.account
+GROUP BY a.account
+ORDER BY a.account;
 
 -- Q4
--- TODO: your query here
+WITH bal AS (
+  SELECT t.id, t.account, t.txn_date, a.opening_balance,
+         a.opening_balance
+           + SUM(t.amount) OVER (PARTITION BY t.account ORDER BY t.txn_date, t.id) AS balance
+  FROM txn t
+  JOIN accounts a ON a.account = t.account
+),
+flagged AS (
+  SELECT account, balance < 0 AS neg,
+         ROW_NUMBER() OVER (PARTITION BY account ORDER BY txn_date, id)
+           - ROW_NUMBER() OVER (PARTITION BY account, balance < 0 ORDER BY txn_date, id) AS grp
+  FROM bal
+),
+runs AS (
+  SELECT account, COUNT(*) AS run_len
+  FROM flagged
+  WHERE neg
+  GROUP BY account, grp
+)
+SELECT a.account, COALESCE(MAX(r.run_len), 0) AS longest_negative_streak
+FROM accounts a
+LEFT JOIN runs r ON r.account = a.account
+GROUP BY a.account
+ORDER BY a.account;
