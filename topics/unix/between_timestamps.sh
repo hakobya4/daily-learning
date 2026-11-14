@@ -40,5 +40,23 @@ if [ "$#" -ne 3 ] || [ ! -f "$3" ] || [ ! -r "$3" ]; then
     exit 1
 fi
 
-# TODO: replace this line
-exit 1
+ts_re='^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$'
+if ! [[ $1 =~ $ts_re ]] || ! [[ $2 =~ $ts_re ]] || [[ $1 > $2 ]]; then
+    echo "usage: $0 START END FILE  (YYYY-MM-DDTHH:MM:SS, START <= END)" >&2
+    exit 1
+fi
+
+awk -v start="$1" -v end="$2" '
+BEGIN { skipped = 0 }
+{
+    ts = substr($0, 1, 19) ""
+    rest = substr($0, 20, 1)
+    if (ts !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/ || (rest != " " && rest != "")) {
+        skipped++
+        next
+    }
+    if (ts >= start "" && ts <= end "")
+        print
+}
+END { print "skipped " skipped > "/dev/stderr" }
+' "$3"
