@@ -28,7 +28,23 @@ Run: python3 burst_balloons.py
 
 
 def max_coins(nums):
-    raise NotImplementedError
+    if any(v < 0 for v in nums):
+        raise ValueError("balloon values must be non-negative")
+    vals = [1] + list(nums) + [1]
+    m = len(vals)
+    dp = [[0] * m for _ in range(m)]
+    for length in range(2, m):
+        for i in range(0, m - length):
+            j = i + length
+            vi_vj = vals[i] * vals[j]
+            row_i = dp[i]
+            best = 0
+            for k in range(i + 1, j):
+                cand = row_i[k] + vi_vj * vals[k] + dp[k][j]
+                if cand > best:
+                    best = cand
+            row_i[j] = best
+    return dp[0][m - 1]
 
 
 def _brute(nums):
