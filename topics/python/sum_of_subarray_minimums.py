@@ -25,7 +25,25 @@ MOD = 1_000_000_007
 
 
 def sum_subarray_mins(arr):
-    raise NotImplementedError
+    n = len(arr)
+    left = [0] * n   # distance to previous strictly smaller element
+    right = [0] * n  # distance to next smaller-or-equal element
+    stack = []
+    for i in range(n):
+        while stack and arr[stack[-1]] >= arr[i]:
+            stack.pop()
+        left[i] = i - stack[-1] if stack else i + 1
+        stack.append(i)
+    stack = []
+    for i in range(n - 1, -1, -1):
+        while stack and arr[stack[-1]] > arr[i]:
+            stack.pop()
+        right[i] = stack[-1] - i if stack else n - i
+        stack.append(i)
+    total = 0
+    for i in range(n):
+        total += arr[i] * left[i] * right[i]
+    return total % MOD
 
 
 def _brute(arr):
