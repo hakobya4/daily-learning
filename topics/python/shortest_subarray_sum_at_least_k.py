@@ -28,8 +28,26 @@ Run: python3 shortest_subarray_sum_at_least_k.py
 """
 
 
+from collections import deque
+
+
 def shortest_subarray(nums, k):
-    raise NotImplementedError
+    if k <= 0:
+        raise ValueError("k must be positive")
+    prefix = [0]
+    for x in nums:
+        prefix.append(prefix[-1] + x)
+    best = -1
+    dq = deque()                      # indices with strictly increasing prefix values
+    for j, pj in enumerate(prefix):
+        while dq and pj - prefix[dq[0]] >= k:
+            length = j - dq.popleft()
+            if best == -1 or length < best:
+                best = length
+        while dq and pj <= prefix[dq[-1]]:
+            dq.pop()
+        dq.append(j)
+    return best
 
 
 def _brute(nums, k):
