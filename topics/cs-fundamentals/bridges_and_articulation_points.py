@@ -34,7 +34,63 @@ Run: python3 bridges_and_articulation_points.py
 
 
 def bridges_and_cut_vertices(n, edges):
-    raise NotImplementedError
+    adj = [[] for _ in range(n)]
+    for eid, (u, v) in enumerate(edges):
+        if not (0 <= u < n and 0 <= v < n):
+            raise ValueError(f"edge {(u, v)} has an endpoint outside 0..{n - 1}")
+        if u == v:
+            raise ValueError(f"self-loop {(u, v)} is not allowed")
+        adj[u].append((v, eid))
+        adj[v].append((u, eid))
+
+    disc = [-1] * n
+    low = [0] * n
+    parent = [-1] * n
+    parent_edge = [-1] * n
+    it = [0] * n                      # next adjacency index to look at, per vertex
+    bridges, points = set(), set()
+    timer = 0
+
+    for root in range(n):
+        if disc[root] != -1:
+            continue
+        disc[root] = low[root] = timer
+        timer += 1
+        root_children = 0
+        stack = [root]
+        while stack:
+            u = stack[-1]
+            if it[u] < len(adj[u]):
+                v, eid = adj[u][it[u]]
+                it[u] += 1
+                if eid == parent_edge[u]:     # skip only the edge we arrived by
+                    continue
+                if disc[v] == -1:             # tree edge
+                    parent[v] = u
+                    parent_edge[v] = eid
+                    disc[v] = low[v] = timer
+                    timer += 1
+                    stack.append(v)
+                else:                         # back edge (or parallel edge to parent)
+                    if disc[v] < low[u]:
+                        low[u] = disc[v]
+            else:                             # u finished: report to its parent
+                stack.pop()
+                p = parent[u]
+                if p == -1:
+                    continue
+                if low[u] < low[p]:
+                    low[p] = low[u]
+                if low[u] > disc[p]:
+                    bridges.add((min(p, u), max(p, u)))
+                if p == root:
+                    root_children += 1
+                elif low[u] >= disc[p]:
+                    points.add(p)
+        if root_children >= 2:
+            points.add(root)
+
+    return sorted(bridges), sorted(points)
 
 
 def _brute(n, edges):
