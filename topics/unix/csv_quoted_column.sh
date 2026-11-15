@@ -48,6 +48,48 @@
 #   ./csv_quoted_column.sh 1 /tmp/d55bad.csv; echo "exit=$?"
 # Expected stdout: a  then  exit=2   (stderr: line 2: unterminated quote)
 
-# TODO: replace this line
-echo "not implemented" >&2
-exit 1
+usage() {
+    echo "usage: $0 N FILE   (N = 1-based column number)" >&2
+    exit 1
+}
+
+[ "$#" -eq 2 ] || usage
+case "$1" in
+    ''|*[!0-9]*|0*) usage ;;          # must be a positive integer without leading zeros
+esac
+[ -f "$2" ] && [ -r "$2" ] || usage
+
+# Character-by-character state machine: commas inside quotes do not split fields,
+# and "" inside a quoted field is one literal quote.
+awk -v n="$1" '
+{
+    line = $0
+    len = length(line)
+    inq = 0; field = 1; val = ""
+    for (i = 1; i <= len; i++) {
+        c = substr(line, i, 1)
+        if (inq) {
+            if (c == "\"") {
+                if (substr(line, i + 1, 1) == "\"") {   # escaped quote
+                    if (field == n) val = val "\""
+                    i++
+                } else {
+                    inq = 0                             # closing quote
+                }
+            } else if (field == n) {
+                val = val c
+            }
+        } else if (c == "\"") {
+            inq = 1
+        } else if (c == ",") {
+            field++
+        } else if (field == n) {
+            val = val c
+        }
+    }
+    if (inq) {
+        printf "line %d: unterminated quote\n", NR > "/dev/stderr"
+        exit 2
+    }
+    print val
+}' "$2"
