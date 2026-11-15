@@ -32,15 +32,41 @@ Run: python3 z_algorithm.py
 
 
 def z_array(s):
-    raise NotImplementedError
+    n = len(s)
+    if n == 0:
+        return []
+    z = [0] * n
+    z[0] = n
+    l = r = 0                         # rightmost Z-box [l, r) matching a prefix
+    for i in range(1, n):
+        k = min(r - i, z[i - l]) if i < r else 0
+        while i + k < n and s[k] == s[i + k]:
+            k += 1
+        z[i] = k
+        if i + k > r:
+            l, r = i, i + k
+    return z
+
+
+_SENTINEL = object()                  # equal to no character, so any input is allowed
 
 
 def find_all(text, pattern):
-    raise NotImplementedError
+    if len(pattern) == 0:
+        raise ValueError("pattern must be non-empty")
+    m = len(pattern)
+    combined = list(pattern) + [_SENTINEL] + list(text)
+    z = z_array(combined)
+    return [i - m - 1 for i in range(m + 1, len(combined)) if z[i] >= m]
 
 
 def smallest_period(s):
-    raise NotImplementedError
+    n = len(s)
+    z = z_array(s)
+    for i in range(1, n):
+        if i + z[i] == n:
+            return i
+    return n
 
 
 def _naive_z(s):
