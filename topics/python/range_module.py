@@ -35,21 +35,59 @@ Run: python3 range_module.py
 """
 
 
+import bisect
+
+
 class RangeModule:
+    """Tracked set stored as ONE flat sorted list of boundaries [l0, r0, l1, r1, ...].
+
+    An even index is the start of a tracked interval, an odd index its (exclusive) end,
+    so "is position x inside?" is just the parity of bisect(boundaries, x).
+    """
+
     def __init__(self):
-        raise NotImplementedError
+        self._b = []
+
+    @staticmethod
+    def _check(left, right):
+        if not isinstance(left, int) or not isinstance(right, int) or left >= right:
+            raise ValueError(f"need integers left < right, got [{left!r}, {right!r})")
 
     def add_range(self, left, right):
-        raise NotImplementedError
+        self._check(left, right)
+        b = self._b
+        # bisect_left / bisect_right make touching intervals merge ([1,3) + [3,5) -> [1,5)).
+        i = bisect.bisect_left(b, left)
+        j = bisect.bisect_right(b, right)
+        patch = []
+        if i % 2 == 0:          # left falls in a gap -> it becomes a new start
+            patch.append(left)
+        if j % 2 == 0:          # right falls in a gap -> it becomes a new end
+            patch.append(right)
+        b[i:j] = patch
 
     def remove_range(self, left, right):
-        raise NotImplementedError
+        self._check(left, right)
+        b = self._b
+        i = bisect.bisect_left(b, left)
+        j = bisect.bisect_right(b, right)
+        patch = []
+        if i % 2 == 1:          # left cuts through a tracked interval -> new end there
+            patch.append(left)
+        if j % 2 == 1:          # right cuts through a tracked interval -> new start there
+            patch.append(right)
+        b[i:j] = patch
 
     def query_range(self, left, right):
-        raise NotImplementedError
+        self._check(left, right)
+        b = self._b
+        i = bisect.bisect_right(b, left)
+        j = bisect.bisect_left(b, right)
+        # Covered iff left is inside an interval and no boundary lies in (left, right).
+        return i == j and i % 2 == 1
 
     def intervals(self):
-        raise NotImplementedError
+        return list(zip(self._b[0::2], self._b[1::2]))
 
 
 def _run_tests():
