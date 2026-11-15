@@ -33,7 +33,33 @@ Run: python3 expression_add_operators.py
 
 
 def add_operators(num, target):
-    raise NotImplementedError
+    if not isinstance(num, str) or any(c not in "0123456789" for c in num):
+        raise ValueError(f"num must contain only digits 0-9, got {num!r}")
+    n = len(num)
+    out = []
+
+    def dfs(pos, expr, value, last):
+        if pos == n:
+            if value == target:
+                out.append(expr)
+            return
+        for end in range(pos + 1, n + 1):
+            s = num[pos:end]
+            if len(s) > 1 and s[0] == "0":    # no leading-zero operands
+                break
+            x = int(s)
+            dfs(end, expr + "+" + s, value + x, x)
+            dfs(end, expr + "-" + s, value - x, -x)
+            # undo the last operand, then apply the multiplication to it
+            dfs(end, expr + "*" + s, value - last + last * x, last * x)
+
+    for end in range(1, n + 1):
+        first = num[:end]
+        if len(first) > 1 and first[0] == "0":
+            break
+        x = int(first)
+        dfs(end, first, x, x)
+    return sorted(out)
 
 
 def _evaluate(expr):
