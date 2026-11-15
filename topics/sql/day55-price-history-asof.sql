@@ -69,14 +69,70 @@ INSERT INTO orders VALUES
  (8, 'plum',  '2026-11-15', 1),
  (9, 'apple', '2026-11-24', 2);
 
--- Q1
--- TODO: your query here
+-- Q1: turn the history into [valid_from, valid_to) ranges, then LEFT JOIN each order
+--     to the range that contains its date (no match -> NULL price and total).
+WITH ranges AS (
+  SELECT product, valid_from, price,
+         LEAD(valid_from) OVER (PARTITION BY product ORDER BY valid_from) AS valid_to
+  FROM price_history
+)
+SELECT o.id, o.product, o.order_date,
+       r.price         AS unit_price,
+       r.price * o.qty AS line_total
+FROM orders o
+LEFT JOIN ranges r
+  ON  r.product = o.product
+  AND o.order_date >= r.valid_from
+  AND (r.valid_to IS NULL OR o.order_date < r.valid_to)
+ORDER BY o.id;
 
--- Q2
--- TODO: your query here
+-- Q2: same as-of join, summed per product; every product from either table appears.
+WITH ranges AS (
+  SELECT product, valid_from, price,
+         LEAD(valid_from) OVER (PARTITION BY product ORDER BY valid_from) AS valid_to
+  FROM price_history
+),
+priced AS (
+  SELECT o.product, r.price * o.qty AS line_total
+  FROM orders o
+  JOIN ranges r
+    ON  r.product = o.product
+    AND o.order_date >= r.valid_from
+    AND (r.valid_to IS NULL OR o.order_date < r.valid_to)
+),
+products AS (
+  SELECT product FROM price_history
+  UNION
+  SELECT product FROM orders
+)
+SELECT p.product, COALESCE(SUM(pr.line_total), 0) AS revenue
+FROM products p
+LEFT JOIN priced pr ON pr.product = p.product
+GROUP BY p.product
+ORDER BY revenue DESC, p.product;
 
--- Q3
--- TODO: your query here
+-- Q3: compare each price with the previous one for the same product.
+WITH changes AS (
+  SELECT product, valid_from, price AS new_price,
+         LAG(price) OVER (PARTITION BY product ORDER BY valid_from) AS old_price
+  FROM price_history
+)
+SELECT product, valid_from, old_price, new_price,
+       ROUND(100.0 * (new_price - old_price) / old_price, 1) AS pct_increase
+FROM changes
+WHERE old_price IS NOT NULL
+  AND 10 * new_price > 11 * old_price          -- "more than 10%", in integer arithmetic
+ORDER BY product, valid_from;
 
--- Q4
--- TODO: your query here
+-- Q4: days each price was in effect; the open-ended price runs through 2026-11-30
+--     (so it ends at 2026-12-01 exclusive). A price starting after that date gets 0.
+WITH ranges AS (
+  SELECT product, valid_from, price,
+         COALESCE(LEAD(valid_from) OVER (PARTITION BY product ORDER BY valid_from),
+                  DATE('2026-11-30', '+1 day')) AS valid_to
+  FROM price_history
+)
+SELECT product, valid_from, price,
+       MAX(0, CAST(JULIANDAY(valid_to) - JULIANDAY(valid_from) AS INTEGER)) AS days_in_effect
+FROM ranges
+ORDER BY product, valid_from;
