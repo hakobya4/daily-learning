@@ -45,6 +45,32 @@ if [ "$#" -ne 1 ] || [ ! -f "$1" ] || [ ! -r "$1" ]; then
     exit 1
 fi
 
-# TODO: replace this line
-echo "not implemented" >&2
-exit 1
+skipfile=$(mktemp) || exit 1
+trap 'rm -f "$skipfile"' EXIT
+
+# 1) validate and keep "METHOD PATH LATENCY"; the skipped count goes to a temp file
+#    so it can be printed AFTER the report.
+# 2) group by endpoint with latencies ascending.
+# 3) one pass emitting nearest-rank stats per group, with p99 as a hidden first column.
+# 4) sort by p99 desc, then METHOD PATH asc, and strip the hidden column.
+awk -v skipfile="$skipfile" '
+    NF == 4 && $3 ~ /^[0-9][0-9][0-9]$/ && $4 ~ /^[0-9]+$/ { print $1, $2, $4; next }
+    { skipped++ }
+    END { print skipped + 0 > skipfile }
+' "$1" |
+LC_ALL=C sort -k1,1 -k2,2 -k3,3n |
+awk '
+    function rank(p, c,    r) { r = int(p * c / 100); if (r * 100 < p * c) r++; return r }
+    function flush(    p50, p90, p99) {
+        if (cnt == 0) return
+        p50 = v[rank(50, cnt)]; p90 = v[rank(90, cnt)]; p99 = v[rank(99, cnt)]
+        printf "%s %s count=%d p50=%s p90=%s p99=%s max=%s\n", p99, key, cnt, p50, p90, p99, v[cnt]
+        cnt = 0
+    }
+    { k = $1 " " $2; if (k != key) { flush(); key = k } v[++cnt] = $3 }
+    END { flush() }
+' |
+LC_ALL=C sort -k1,1nr -k2,2 -k3,3 |
+cut -d' ' -f2-
+
+echo "skipped $(cat "$skipfile")" >&2
