@@ -61,6 +61,57 @@ if [ "$#" -ne 1 ] || [ ! -f "$1" ] || [ ! -r "$1" ]; then
     exit 1
 fi
 
-# TODO: replace this line
-echo "not implemented" >&2
-exit 1
+# Validate each line in awk and emit "<sort key>\t<original line>"; the key is built
+# so that a plain byte-wise (LC_ALL=C) string comparison gives SemVer precedence:
+#   * numbers -> 2-digit length + digits (so longer numbers sort later, no overflow)
+#   * flag "0" for a prerelease, "1" for a release
+#   * prerelease ids: numeric -> "0"+num-key, alnum -> "1"+text, joined by \002 and
+#     terminated by \001 (both lower than any identifier char, so a shorter list wins)
+# A stable sort on the key keeps input order for equal precedence.
+awk '
+function numkey(n) { return sprintf("%02d", length(n)) n }
+BEGIN { bad = 0 }
+{
+    line = $0
+    v = line
+    sub(/^v/, "", v)
+    build = ""
+    if (index(v, "+") > 0) {
+        build = substr(v, index(v, "+") + 1)
+        v = substr(v, 1, index(v, "+") - 1)
+        if (build !~ /^[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*$/) { bad++; next }
+    }
+    pre = ""
+    haspre = 0
+    if (index(v, "-") > 0) {
+        pre = substr(v, index(v, "-") + 1)
+        v = substr(v, 1, index(v, "-") - 1)
+        haspre = 1
+        if (pre !~ /^[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*$/) { bad++; next }
+    }
+    if (v !~ /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/) { bad++; next }
+    split(v, c, ".")
+    key = numkey(c[1]) "." numkey(c[2]) "." numkey(c[3]) "."
+    if (haspre) {
+        n = split(pre, ids, ".")
+        pk = ""
+        ok = 1
+        for (i = 1; i <= n; i++) {
+            id = ids[i]
+            if (id ~ /^[0-9]+$/) {
+                if (id ~ /^0[0-9]/) { ok = 0; break }
+                enc = "0" numkey(id)
+            } else {
+                enc = "1" id
+            }
+            pk = pk (i > 1 ? "\002" : "") enc
+        }
+        if (!ok) { bad++; next }
+        key = key "0" pk "\001"
+    } else {
+        key = key "1"
+    }
+    print key "\t" line
+}
+END { print "invalid " bad > "/dev/stderr" }
+' "$1" | LC_ALL=C sort -s -t "$(printf '\t')" -k1,1 | cut -f2-
