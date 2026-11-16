@@ -33,12 +33,29 @@ Run: python3 min_refueling_stops.py
 """
 
 
-def min_refuel_stops(target, start_fuel, stations):
-    raise NotImplementedError
+import heapq
 
 
 def which_stops(target, start_fuel, stations):
-    raise NotImplementedError
+    # Greedy: drive as far as possible; when stuck, retroactively refuel at the
+    # largest station already passed (max-heap of (-fuel, index)).
+    heap, chosen = [], []
+    fuel, i, n = start_fuel, 0, len(stations)
+    while fuel < target:
+        while i < n and stations[i][0] <= fuel:
+            heapq.heappush(heap, (-stations[i][1], i))
+            i += 1
+        if not heap:
+            return None
+        f, idx = heapq.heappop(heap)
+        fuel -= f  # f is negative
+        chosen.append(idx)
+    return sorted(chosen)
+
+
+def min_refuel_stops(target, start_fuel, stations):
+    ws = which_stops(target, start_fuel, stations)
+    return -1 if ws is None else len(ws)
 
 
 def _simulate(target, start_fuel, stations, chosen):
