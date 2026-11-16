@@ -39,12 +39,65 @@ Run: python3 common_free_slots.py
 """
 
 
+import re
+
+_TIME_RE = re.compile(r"^(\d{2}):(\d{2})$")
+
+
+def _to_min(t, allow_24=False):
+    m = _TIME_RE.match(t) if isinstance(t, str) else None
+    if not m:
+        raise ValueError("malformed time %r" % (t,))
+    h, mi = int(m.group(1)), int(m.group(2))
+    if h == 24 and mi == 0 and allow_24:
+        return 1440
+    if not (0 <= h <= 23 and 0 <= mi <= 59):
+        raise ValueError("time out of range %r" % (t,))
+    return h * 60 + mi
+
+
+def _fmt(m):
+    return "%02d:%02d" % divmod(m, 60)
+
+
+def _gaps(calendars, work_start, work_end):
+    ws = _to_min(work_start)
+    we = _to_min(work_end, allow_24=True)
+    if ws >= we:
+        raise ValueError("work_start must be before work_end")
+    intervals = []
+    for person in calendars:
+        for busy in person:
+            parts = busy.split("-") if isinstance(busy, str) else []
+            if len(parts) != 2:
+                raise ValueError("malformed interval %r" % (busy,))
+            s, e = _to_min(parts[0]), _to_min(parts[1], allow_24=True)
+            if s >= e:
+                raise ValueError("empty or reversed interval %r" % (busy,))
+            s, e = max(s, ws), min(e, we)
+            if s < e:
+                intervals.append((s, e))
+    intervals.sort()
+    gaps, cur = [], ws
+    for s, e in intervals:
+        if s > cur:
+            gaps.append((cur, s))
+        cur = max(cur, e)
+    if cur < we:
+        gaps.append((cur, we))
+    return gaps
+
+
 def free_slots(calendars, work_start, work_end, min_minutes):
-    raise NotImplementedError
+    return [_fmt(s) + "-" + _fmt(e)
+            for s, e in _gaps(calendars, work_start, work_end) if e - s >= min_minutes]
 
 
 def first_slot(calendars, work_start, work_end, minutes):
-    raise NotImplementedError
+    for s, e in _gaps(calendars, work_start, work_end):
+        if e - s >= minutes:
+            return _fmt(s) + "-" + _fmt(s + minutes)
+    return None
 
 
 def _run_tests():
