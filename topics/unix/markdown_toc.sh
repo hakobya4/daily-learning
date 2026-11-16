@@ -70,6 +70,31 @@ if [ "$#" -ne 1 ] || [ ! -f "$1" ] || [ ! -r "$1" ]; then
     exit 1
 fi
 
-# TODO: replace this line
-echo "not implemented" >&2
-exit 1
+awk '
+BEGIN { fence = 0; n = 0; minlvl = 7 }
+/^```/ { fence = !fence; next }
+fence { next }
+{
+    if (!match($0, /^#+ /)) next
+    lvl = RLENGTH - 1
+    if (lvl > 6) next
+    title = substr($0, RLENGTH + 1)
+    sub(/[ \t]+#+[ \t]*$/, "", title)     # closing run of hashes
+    gsub(/^[ \t]+|[ \t]+$/, "", title)    # trim
+    slug = tolower(title)
+    gsub(/[^a-z0-9 -]/, "", slug)
+    gsub(/ /, "-", slug)
+    if (slug in seen) { seen[slug]++; slug = slug "-" seen[slug] } else { seen[slug] = 0 }
+    n++
+    L[n] = lvl; T[n] = title; S[n] = slug
+    if (lvl < minlvl) minlvl = lvl
+}
+END {
+    if (fence) { print "unclosed code fence" > "/dev/stderr"; exit 2 }
+    for (i = 1; i <= n; i++) {
+        ind = ""
+        for (j = minlvl; j < L[i]; j++) ind = ind "  "
+        printf "%s- [%s](#%s)\n", ind, T[i], S[i]
+    }
+}
+' "$1"
