@@ -33,15 +33,41 @@ Run: python3 manacher_palindromes.py
 
 
 def radii(s):
-    raise NotImplementedError
+    # Work on indices of the conceptual t = "#" + "#".join(s) + "#".
+    # Even positions are separators, odd position 2k+1 holds s[k].
+    m = 2 * len(s) + 1
+    d = [0] * m
+    c = r = 0  # center and right edge (exclusive radius reach) of rightmost palindrome
+
+    def ch(i):
+        return None if i % 2 == 0 else s[i // 2]
+
+    for i in range(m):
+        k = min(d[2 * c - i], r - i) if i < r else 0
+        while i - k - 1 >= 0 and i + k + 1 < m and ch(i - k - 1) == ch(i + k + 1):
+            k += 1
+        d[i] = k
+        if i + k > r:
+            c, r = i, i + k
+    return d
 
 
 def longest_palindrome(s):
-    raise NotImplementedError
+    if not s:
+        return ""
+    d = radii(s)
+    best_i = 0
+    best_len = -1
+    best_start = 0
+    for i, k in enumerate(d):
+        start = (i - k) // 2
+        if k > best_len or (k == best_len and start < best_start):
+            best_len, best_start, best_i = k, start, i
+    return s[best_start:best_start + best_len]
 
 
 def count_palindromes(s):
-    raise NotImplementedError
+    return sum((k + 1) // 2 for k in radii(s))
 
 
 def _naive_longest(s):
