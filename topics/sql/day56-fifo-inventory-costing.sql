@@ -62,13 +62,93 @@ INSERT INTO sales VALUES
  (106, 'gear', '2026-11-11',  5, 15);
 
 -- Q1
--- TODO: your query here
+WITH lots AS (
+  SELECT lot_id, item, purchased_on, qty, unit_cost,
+         SUM(qty) OVER (PARTITION BY item ORDER BY purchased_on, lot_id) - qty AS lo,
+         SUM(qty) OVER (PARTITION BY item ORDER BY purchased_on, lot_id)       AS hi
+  FROM purchases
+),
+sls AS (
+  SELECT sale_id, item, sold_on, qty, unit_price,
+         SUM(qty) OVER (PARTITION BY item ORDER BY sold_on, sale_id) - qty AS lo,
+         SUM(qty) OVER (PARTITION BY item ORDER BY sold_on, sale_id)       AS hi
+  FROM sales
+),
+alloc AS (
+  SELECT s.sale_id, l.lot_id, l.unit_cost,
+         MIN(s.hi, l.hi) - MAX(s.lo, l.lo) AS qty_allocated
+  FROM sls s
+  JOIN lots l ON l.item = s.item AND s.lo < l.hi AND l.lo < s.hi
+)
+SELECT sale_id, lot_id, qty_allocated
+FROM alloc
+ORDER BY sale_id, lot_id;
 
 -- Q2
--- TODO: your query here
+WITH lots AS (
+  SELECT lot_id, item, purchased_on, qty, unit_cost,
+         SUM(qty) OVER (PARTITION BY item ORDER BY purchased_on, lot_id) - qty AS lo,
+         SUM(qty) OVER (PARTITION BY item ORDER BY purchased_on, lot_id)       AS hi
+  FROM purchases
+),
+sls AS (
+  SELECT sale_id, item, sold_on, qty, unit_price,
+         SUM(qty) OVER (PARTITION BY item ORDER BY sold_on, sale_id) - qty AS lo,
+         SUM(qty) OVER (PARTITION BY item ORDER BY sold_on, sale_id)       AS hi
+  FROM sales
+),
+alloc AS (
+  SELECT s.sale_id, l.lot_id, l.unit_cost,
+         MIN(s.hi, l.hi) - MAX(s.lo, l.lo) AS qty_allocated
+  FROM sls s
+  JOIN lots l ON l.item = s.item AND s.lo < l.hi AND l.lo < s.hi
+),
+per_sale AS (
+  SELECT sale_id, SUM(qty_allocated) AS filled, SUM(qty_allocated * unit_cost) AS cogs
+  FROM alloc GROUP BY sale_id
+)
+SELECT s.sale_id, s.item,
+       COALESCE(p.filled, 0)                                        AS filled_qty,
+       s.qty - COALESCE(p.filled, 0)                                AS unfilled_qty,
+       COALESCE(p.filled, 0) * s.unit_price                         AS revenue,
+       COALESCE(p.cogs, 0)                                          AS cogs,
+       COALESCE(p.filled, 0) * s.unit_price - COALESCE(p.cogs, 0)   AS profit
+FROM sales s
+LEFT JOIN per_sale p ON p.sale_id = s.sale_id
+ORDER BY s.sale_id;
 
 -- Q3
--- TODO: your query here
+WITH lots AS (
+  SELECT lot_id, item, purchased_on, qty, unit_cost,
+         SUM(qty) OVER (PARTITION BY item ORDER BY purchased_on, lot_id) - qty AS lo,
+         SUM(qty) OVER (PARTITION BY item ORDER BY purchased_on, lot_id)       AS hi
+  FROM purchases
+),
+sls AS (
+  SELECT sale_id, item, sold_on, qty, unit_price,
+         SUM(qty) OVER (PARTITION BY item ORDER BY sold_on, sale_id) - qty AS lo,
+         SUM(qty) OVER (PARTITION BY item ORDER BY sold_on, sale_id)       AS hi
+  FROM sales
+),
+alloc AS (
+  SELECT s.sale_id, l.lot_id, l.unit_cost,
+         MIN(s.hi, l.hi) - MAX(s.lo, l.lo) AS qty_allocated
+  FROM sls s
+  JOIN lots l ON l.item = s.item AND s.lo < l.hi AND l.lo < s.hi
+)
+SELECT l.item, l.lot_id, l.purchased_on,
+       l.qty - COALESCE((SELECT SUM(a.qty_allocated) FROM alloc a WHERE a.lot_id = l.lot_id), 0)
+         AS remaining_qty
+FROM purchases l
+WHERE l.qty - COALESCE((SELECT SUM(a.qty_allocated) FROM alloc a WHERE a.lot_id = l.lot_id), 0) > 0
+ORDER BY l.item, l.lot_id;
 
 -- Q4
--- TODO: your query here
+WITH sold AS (SELECT item, SUM(qty) AS total_sold FROM sales GROUP BY item),
+     bought AS (SELECT item, SUM(qty) AS total_purchased FROM purchases GROUP BY item)
+SELECT s.item, s.total_sold, COALESCE(b.total_purchased, 0) AS total_purchased,
+       s.total_sold - COALESCE(b.total_purchased, 0) AS shortfall
+FROM sold s
+LEFT JOIN bought b ON b.item = s.item
+WHERE s.total_sold > COALESCE(b.total_purchased, 0)
+ORDER BY s.item;
