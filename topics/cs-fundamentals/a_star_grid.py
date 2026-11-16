@@ -34,16 +34,73 @@ Run: python3 a_star_grid.py
 """
 
 
+import heapq
+
+
+def _parse(grid):
+    if not grid or not grid[0]:
+        raise ValueError("empty grid")
+    width = len(grid[0])
+    if any(len(row) != width for row in grid):
+        raise ValueError("ragged rows")
+    starts = [(r, c) for r, row in enumerate(grid) for c, ch in enumerate(row) if ch == "S"]
+    goals = [(r, c) for r, row in enumerate(grid) for c, ch in enumerate(row) if ch == "G"]
+    if len(starts) != 1 or len(goals) != 1:
+        raise ValueError("need exactly one S and one G")
+    return starts[0], goals[0]
+
+
+def _search(grid, use_heuristic):
+    start, goal = _parse(grid)
+    rows, cols = len(grid), len(grid[0])
+    gr, gc = goal
+
+    def h(r, c):
+        return abs(r - gr) + abs(c - gc) if use_heuristic else 0
+
+    best_g = {start: 0}
+    parent = {start: None}
+    heap = [(h(*start), 0, start)]
+    closed = set()
+    expansions = 0
+    while heap:
+        f, neg_g, node = heapq.heappop(heap)
+        g = -neg_g
+        if node in closed or g > best_g.get(node, float("inf")):
+            continue
+        closed.add(node)
+        expansions += 1
+        if node == goal:
+            path = []
+            while node is not None:
+                path.append(node)
+                node = parent[node]
+            return g, path[::-1], expansions
+        r, c = node
+        for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):
+            if 0 <= nr < rows and 0 <= nc < cols:
+                ch = grid[nr][nc]
+                if ch == "#":
+                    continue
+                ng = g + (int(ch) if ch.isdigit() else 1)
+                if ng < best_g.get((nr, nc), float("inf")):
+                    best_g[(nr, nc)] = ng
+                    parent[(nr, nc)] = node
+                    heapq.heappush(heap, (ng + h(nr, nc), -ng, (nr, nc)))
+    return None, None, expansions
+
+
 def shortest_path(grid):
-    raise NotImplementedError
+    cost, path, _ = _search(grid, True)
+    return cost, path
 
 
 def astar_expansions(grid):
-    raise NotImplementedError
+    return _search(grid, True)[2]
 
 
 def dijkstra_expansions(grid):
-    raise NotImplementedError
+    return _search(grid, False)[2]
 
 
 def _path_cost(grid, path):
