@@ -33,11 +33,48 @@ Run: python3 count_smaller_after_self.py
 
 
 def count_smaller(nums):
-    raise NotImplementedError
+    # Fenwick tree over coordinate-compressed ranks, walking right to left.
+    n = len(nums)
+    if n == 0:
+        return []
+    ranks = {v: i + 1 for i, v in enumerate(sorted(set(nums)))}
+    m = len(ranks)
+    tree = [0] * (m + 1)
+    counts = [0] * n
+    for i in range(n - 1, -1, -1):
+        r = ranks[nums[i]]
+        # query prefix sum of ranks < r
+        k, total = r - 1, 0
+        while k > 0:
+            total += tree[k]
+            k -= k & -k
+        counts[i] = total
+        k = r
+        while k <= m:
+            tree[k] += 1
+            k += k & -k
+    return counts
 
 
 def count_inversions_total(nums):
-    raise NotImplementedError
+    # Iterative-recursive merge sort counting strictly-greater-left pairs.
+    def sort(a):
+        if len(a) <= 1:
+            return a, 0
+        mid = len(a) // 2
+        left, x = sort(a[:mid])
+        right, y = sort(a[mid:])
+        merged, inv = [], x + y
+        i = j = 0
+        while i < len(left) and j < len(right):
+            if left[i] <= right[j]:
+                merged.append(left[i]); i += 1
+            else:
+                merged.append(right[j]); j += 1
+                inv += len(left) - i
+        merged.extend(left[i:]); merged.extend(right[j:])
+        return merged, inv
+    return sort(list(nums))[1]
 
 
 def _naive(nums):
