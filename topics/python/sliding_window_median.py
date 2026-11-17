@@ -29,7 +29,73 @@ Run: python3 sliding_window_median.py
 
 
 def sliding_median(nums, k):
-    raise NotImplementedError
+    import heapq
+    from collections import defaultdict
+
+    if not nums:
+        return []
+    lo, hi = [], []          # lo: max-heap (negated), hi: min-heap
+    delayed = defaultdict(int)
+    lo_size = hi_size = 0    # counts of VALID elements on each side
+
+    def prune(heap, sign):
+        while heap:
+            v = heap[0] * sign
+            if delayed[v]:
+                delayed[v] -= 1
+                heapq.heappop(heap)
+            else:
+                break
+
+    def rebalance():
+        nonlocal lo_size, hi_size
+        if lo_size > hi_size + 1:
+            heapq.heappush(hi, -heapq.heappop(lo))
+            lo_size -= 1
+            hi_size += 1
+            prune(lo, -1)
+        elif lo_size < hi_size:
+            heapq.heappush(lo, -heapq.heappop(hi))
+            hi_size -= 1
+            lo_size += 1
+            prune(hi, 1)
+
+    def insert(x):
+        nonlocal lo_size, hi_size
+        if not lo or x <= -lo[0]:
+            heapq.heappush(lo, -x)
+            lo_size += 1
+        else:
+            heapq.heappush(hi, x)
+            hi_size += 1
+        rebalance()
+
+    def remove(x):
+        nonlocal lo_size, hi_size
+        delayed[x] += 1
+        if x <= -lo[0]:
+            lo_size -= 1
+            if x == -lo[0]:
+                prune(lo, -1)
+        else:
+            hi_size -= 1
+            if hi and x == hi[0]:
+                prune(hi, 1)
+        rebalance()
+
+    def median():
+        if k % 2:
+            return float(-lo[0])
+        return (-lo[0] + hi[0]) / 2
+
+    for x in nums[:k]:
+        insert(x)
+    out = [median()]
+    for i in range(k, len(nums)):
+        insert(nums[i])
+        remove(nums[i - k])
+        out.append(median())
+    return out
 
 
 def _brute(nums, k):
