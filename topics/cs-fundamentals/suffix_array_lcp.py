@@ -34,19 +34,60 @@ Run: python3 suffix_array_lcp.py
 
 
 def suffix_array(s):
-    raise NotImplementedError
+    n = len(s)
+    if n == 0:
+        return []
+    rank = [ord(c) for c in s]
+    sa = list(range(n))
+    k = 1
+    while True:
+        key = lambda i: (rank[i], rank[i + k] if i + k < n else -1)
+        sa.sort(key=key)
+        new_rank = [0] * n
+        for j in range(1, n):
+            new_rank[sa[j]] = new_rank[sa[j - 1]] + (key(sa[j]) != key(sa[j - 1]))
+        rank = new_rank
+        if rank[sa[-1]] == n - 1:  # all ranks distinct
+            break
+        k *= 2
+    return sa
 
 
 def lcp_array(s, sa):
-    raise NotImplementedError
+    n = len(s)
+    if n == 0:
+        return []
+    rank = [0] * n
+    for pos, i in enumerate(sa):
+        rank[i] = pos
+    lcp = [0] * n
+    h = 0
+    for i in range(n):
+        if rank[i] > 0:
+            j = sa[rank[i] - 1]
+            while i + h < n and j + h < n and s[i + h] == s[j + h]:
+                h += 1
+            lcp[rank[i]] = h
+            if h:
+                h -= 1
+        else:
+            h = 0
+    return lcp
 
 
 def count_distinct_substrings(s):
-    raise NotImplementedError
+    n = len(s)
+    return n * (n + 1) // 2 - sum(lcp_array(s, suffix_array(s)))
 
 
 def longest_repeated_substring(s):
-    raise NotImplementedError
+    sa = suffix_array(s)
+    lcp = lcp_array(s, sa)
+    best_len, best_i = 0, -1
+    for i, h in enumerate(lcp):
+        if h > best_len:  # first max in suffix order = lexicographically smallest
+            best_len, best_i = h, i
+    return s[sa[best_i]:sa[best_i] + best_len] if best_len else ""
 
 
 def _brute_lrs(s):
