@@ -75,13 +75,168 @@ INSERT INTO orders VALUES
  (1008, 30, '2026-10-01',  70);
 
 -- Q1
--- TODO: your query here
+WITH last_of_day AS (
+  SELECT customer_id, changed_on, city, tier,
+         ROW_NUMBER() OVER (PARTITION BY customer_id, changed_on
+                            ORDER BY change_id DESC) AS rn
+  FROM customer_changes
+),
+daily AS (
+  SELECT customer_id, changed_on, city, tier,
+         LAG(city) OVER (PARTITION BY customer_id ORDER BY changed_on) AS prev_city,
+         LAG(tier) OVER (PARTITION BY customer_id ORDER BY changed_on) AS prev_tier
+  FROM last_of_day
+  WHERE rn = 1
+),
+changes AS (
+  SELECT customer_id, changed_on, city, tier
+  FROM daily
+  WHERE prev_city IS NULL OR city <> prev_city OR tier <> prev_tier
+),
+scd AS (
+  SELECT customer_id,
+         ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY changed_on) AS version_no,
+         city, tier,
+         changed_on AS valid_from,
+         LEAD(changed_on) OVER (PARTITION BY customer_id ORDER BY changed_on) AS valid_to
+  FROM changes
+)
+SELECT customer_id, version_no, city, tier, valid_from, valid_to,
+       CASE WHEN valid_to IS NULL THEN 1 ELSE 0 END AS is_current
+FROM scd
+ORDER BY customer_id, version_no;
 
 -- Q2
--- TODO: your query here
+WITH last_of_day AS (
+  SELECT customer_id, changed_on, city, tier,
+         ROW_NUMBER() OVER (PARTITION BY customer_id, changed_on
+                            ORDER BY change_id DESC) AS rn
+  FROM customer_changes
+),
+daily AS (
+  SELECT customer_id, changed_on, city, tier,
+         LAG(city) OVER (PARTITION BY customer_id ORDER BY changed_on) AS prev_city,
+         LAG(tier) OVER (PARTITION BY customer_id ORDER BY changed_on) AS prev_tier
+  FROM last_of_day
+  WHERE rn = 1
+),
+changes AS (
+  SELECT customer_id, changed_on, city, tier
+  FROM daily
+  WHERE prev_city IS NULL OR city <> prev_city OR tier <> prev_tier
+),
+scd AS (
+  SELECT customer_id,
+         ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY changed_on) AS version_no,
+         city, tier,
+         changed_on AS valid_from,
+         LEAD(changed_on) OVER (PARTITION BY customer_id ORDER BY changed_on) AS valid_to
+  FROM changes
+),
+attributed AS (
+  SELECT o.order_id, o.customer_id, o.amount,
+         COALESCE(s.city, 'unknown') AS city,
+         COALESCE(s.tier, 'unknown') AS tier
+  FROM orders o
+  LEFT JOIN scd s
+    ON s.customer_id = o.customer_id
+   AND s.valid_from <= o.ordered_on
+   AND (s.valid_to IS NULL OR o.ordered_on < s.valid_to)
+)
+SELECT order_id, customer_id, city, tier
+FROM attributed
+ORDER BY order_id;
 
 -- Q3
--- TODO: your query here
+WITH last_of_day AS (
+  SELECT customer_id, changed_on, city, tier,
+         ROW_NUMBER() OVER (PARTITION BY customer_id, changed_on
+                            ORDER BY change_id DESC) AS rn
+  FROM customer_changes
+),
+daily AS (
+  SELECT customer_id, changed_on, city, tier,
+         LAG(city) OVER (PARTITION BY customer_id ORDER BY changed_on) AS prev_city,
+         LAG(tier) OVER (PARTITION BY customer_id ORDER BY changed_on) AS prev_tier
+  FROM last_of_day
+  WHERE rn = 1
+),
+changes AS (
+  SELECT customer_id, changed_on, city, tier
+  FROM daily
+  WHERE prev_city IS NULL OR city <> prev_city OR tier <> prev_tier
+),
+scd AS (
+  SELECT customer_id,
+         ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY changed_on) AS version_no,
+         city, tier,
+         changed_on AS valid_from,
+         LEAD(changed_on) OVER (PARTITION BY customer_id ORDER BY changed_on) AS valid_to
+  FROM changes
+),
+attributed AS (
+  SELECT o.order_id, o.customer_id, o.amount,
+         COALESCE(s.city, 'unknown') AS city,
+         COALESCE(s.tier, 'unknown') AS tier
+  FROM orders o
+  LEFT JOIN scd s
+    ON s.customer_id = o.customer_id
+   AND s.valid_from <= o.ordered_on
+   AND (s.valid_to IS NULL OR o.ordered_on < s.valid_to)
+),
+tiers AS (
+  SELECT DISTINCT tier FROM customer_changes
+  UNION
+  SELECT 'unknown'
+),
+current_tier AS (
+  SELECT customer_id, tier FROM scd WHERE valid_to IS NULL
+)
+SELECT t.tier,
+       COALESCE((SELECT SUM(a.amount) FROM attributed a WHERE a.tier = t.tier), 0)
+         AS revenue_at_order_time,
+       COALESCE((SELECT SUM(o.amount)
+                 FROM orders o JOIN current_tier c ON c.customer_id = o.customer_id
+                 WHERE c.tier = t.tier), 0)
+         AS revenue_by_current_tier
+FROM tiers t
+ORDER BY t.tier;
 
 -- Q4
--- TODO: your query here
+WITH last_of_day AS (
+  SELECT customer_id, changed_on, city, tier,
+         ROW_NUMBER() OVER (PARTITION BY customer_id, changed_on
+                            ORDER BY change_id DESC) AS rn
+  FROM customer_changes
+),
+daily AS (
+  SELECT customer_id, changed_on, city, tier,
+         LAG(city) OVER (PARTITION BY customer_id ORDER BY changed_on) AS prev_city,
+         LAG(tier) OVER (PARTITION BY customer_id ORDER BY changed_on) AS prev_tier
+  FROM last_of_day
+  WHERE rn = 1
+),
+changes AS (
+  SELECT customer_id, changed_on, city, tier
+  FROM daily
+  WHERE prev_city IS NULL OR city <> prev_city OR tier <> prev_tier
+),
+scd AS (
+  SELECT customer_id,
+         ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY changed_on) AS version_no,
+         city, tier,
+         changed_on AS valid_from,
+         LEAD(changed_on) OVER (PARTITION BY customer_id ORDER BY changed_on) AS valid_to
+  FROM changes
+),
+moves AS (
+  SELECT customer_id, city,
+         LAG(city) OVER (PARTITION BY customer_id ORDER BY version_no) AS prev_city
+  FROM scd
+)
+SELECT customer_id, COUNT(*) AS city_changes
+FROM moves
+WHERE prev_city IS NOT NULL AND city <> prev_city
+GROUP BY customer_id
+HAVING COUNT(*) >= 2
+ORDER BY customer_id;
