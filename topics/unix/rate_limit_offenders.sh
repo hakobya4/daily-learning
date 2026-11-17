@@ -43,6 +43,36 @@ if [ "$#" -ne 3 ] || [ ! -f "$3" ] || [ ! -r "$3" ]; then
     exit 1
 fi
 
-# TODO: replace this line
-echo "not implemented" >&2
-exit 1
+N=$1
+W=$2
+if ! [[ $N =~ ^[1-9][0-9]*$ ]] || ! [[ $W =~ ^[1-9][0-9]*$ ]]; then
+    echo "usage: $0 N W FILE (N and W must be positive integers)" >&2
+    exit 1
+fi
+
+awk -v N="$N" -v W="$W" '
+NF == 2 && $1 ~ /^[0-9]+$/ && $2 ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ {
+    ip = $2
+    if (!(ip in cnt)) ips[++nips] = ip
+    t[ip, ++cnt[ip]] = $1 + 0
+    next
+}
+{ skipped++ }
+END {
+    for (k = 1; k <= nips; k++) {
+        ip = ips[k]
+        n = cnt[ip]
+        best = 0; best_t = ""
+        hi = 1
+        # For each start time t[lo], count requests in [t[lo], t[lo] + W).
+        for (lo = 1; lo <= n; lo++) {
+            if (hi < lo) hi = lo
+            while (hi + 1 <= n && t[ip, hi + 1] - t[ip, lo] < W) hi++
+            size = hi - lo + 1
+            if (size > best) { best = size; best_t = t[ip, lo] }
+        }
+        if (best >= N) print ip, best, best_t
+    }
+    printf "skipped %d\n", skipped + 0 > "/dev/stderr"
+}
+' "$3" | LC_ALL=C sort -k2,2nr -k1,1
