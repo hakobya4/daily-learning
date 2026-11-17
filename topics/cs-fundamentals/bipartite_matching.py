@@ -30,16 +30,79 @@ Run: python3 bipartite_matching.py
 """
 
 
+def _adjacency(n_left, edges):
+    adj = [[] for _ in range(n_left)]
+    seen = set()
+    for u, v in edges:
+        if (u, v) not in seen:
+            seen.add((u, v))
+            adj[u].append(v)
+    return adj
+
+
+def _kuhn(n_left, n_right, edges):
+    """Iterative Kuhn's algorithm. Returns (adj, match_l, match_r)."""
+    adj = _adjacency(n_left, edges)
+    match_l = [-1] * n_left
+    match_r = [-1] * n_right
+    for root in range(n_left):
+        visited_r = [False] * n_right
+        # stack frames: [left vertex, next edge index, right vertex we came through]
+        stack = [[root, 0, -1]]
+        found = False
+        while stack:
+            frame = stack[-1]
+            u, idx = frame[0], frame[1]
+            if idx == len(adj[u]):
+                stack.pop()
+                continue
+            v = adj[u][idx]
+            frame[1] += 1
+            if visited_r[v]:
+                continue
+            visited_r[v] = True
+            if match_r[v] == -1:
+                # augment along the stack: each frame's left vertex takes the right
+                # vertex it just stepped to
+                # rebuild path: frame i stepped to right vertex stack[i+1][2] (or v for last)
+                for i in range(len(stack)):
+                    lu = stack[i][0]
+                    rv = stack[i + 1][2] if i + 1 < len(stack) else v
+                    match_l[lu] = rv
+                    match_r[rv] = lu
+                found = True
+                break
+            stack.append([match_r[v], 0, v])
+        if not found:
+            continue
+    return adj, match_l, match_r
+
+
 def max_matching(n_left, n_right, edges):
-    raise NotImplementedError
+    _, match_l, _ = _kuhn(n_left, n_right, edges)
+    return [(u, v) for u, v in enumerate(match_l) if v != -1]
 
 
 def min_vertex_cover(n_left, n_right, edges):
-    raise NotImplementedError
+    adj, match_l, match_r = _kuhn(n_left, n_right, edges)
+    z_left = set(u for u in range(n_left) if match_l[u] == -1)
+    z_right = set()
+    stack = list(z_left)
+    while stack:
+        u = stack.pop()
+        for v in adj[u]:
+            if v != match_l[u] and v not in z_right:
+                z_right.add(v)
+                w = match_r[v]
+                if w != -1 and w not in z_left:
+                    z_left.add(w)
+                    stack.append(w)
+    left_cover = set(range(n_left)) - z_left
+    return left_cover, z_right
 
 
 def max_independent_set_size(n_left, n_right, edges):
-    raise NotImplementedError
+    return n_left + n_right - len(max_matching(n_left, n_right, edges))
 
 
 def _brute_matching_size(edges):
