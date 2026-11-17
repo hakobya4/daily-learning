@@ -36,12 +36,55 @@ Run: python3 min_raggedness_wrap.py
 """
 
 
+def _check_widths(words, W):
+    for w in words:
+        if len(w) > W:
+            raise ValueError(f"word {w!r} is longer than width {W}")
+
+
 def greedy_wrap(words, W):
-    raise NotImplementedError
+    _check_widths(words, W)
+    lines, cur = [], []
+    cur_len = 0
+    for w in words:
+        if cur and cur_len + 1 + len(w) <= W:
+            cur.append(w)
+            cur_len += 1 + len(w)
+        else:
+            if cur:
+                lines.append(" ".join(cur))
+            cur, cur_len = [w], len(w)
+    if cur:
+        lines.append(" ".join(cur))
+    return lines
 
 
 def wrap_min_raggedness(words, W):
-    raise NotImplementedError
+    _check_widths(words, W)
+    n = len(words)
+    if n == 0:
+        return 0, []
+    INF = float("inf")
+    dp = [INF] * (n + 1)
+    nxt = [n] * (n + 1)
+    dp[n] = 0
+    for i in range(n - 1, -1, -1):
+        length = -1
+        for j in range(i, n):
+            length += len(words[j]) + 1
+            if length > W:
+                break
+            cost = (0 if j == n - 1 else (W - length) ** 2) + dp[j + 1]
+            # On a tie prefer the LARGER j: a longer first line makes the list of line
+            # lengths lexicographically larger, and the tail is already tie-broken.
+            if cost <= dp[i]:
+                dp[i] = cost
+                nxt[i] = j + 1
+    lines, i = [], 0
+    while i < n:
+        lines.append(" ".join(words[i:nxt[i]]))
+        i = nxt[i]
+    return dp[0], lines
 
 
 def _cost(lines, W):
