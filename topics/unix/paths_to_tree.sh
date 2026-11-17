@@ -54,6 +54,65 @@ if [ "$#" -ne 1 ] || [ ! -f "$1" ] || [ ! -r "$1" ]; then
     exit 1
 fi
 
-# TODO: replace this line
-echo "not implemented" >&2
-exit 1
+LC_ALL=C awk '
+function add(path, isdir,    parent, idx) {
+    if (!(path in seen)) {
+        seen[path] = 1
+        idx = path
+        if (match(path, /\/[^\/]*$/)) {
+            parent = substr(path, 1, RSTART - 1)
+            name[path] = substr(path, RSTART + 1)
+        } else {
+            parent = "."
+            name[path] = path
+        }
+        nkids[parent]++
+        kid[parent, nkids[parent]] = path
+    }
+    if (isdir) dir[path] = 1
+}
+function walk(p, prefix,    n, i, j, tmp, c, last) {
+    n = nkids[p]
+    # insertion sort of children by name (byte order under LC_ALL=C)
+    for (i = 2; i <= n; i++) {
+        tmp = kid[p, i]
+        for (j = i - 1; j >= 1 && name[kid[p, j]] > name[tmp]; j--)
+            kid[p, j + 1] = kid[p, j]
+        kid[p, j + 1] = tmp
+    }
+    for (i = 1; i <= n; i++) {
+        c = kid[p, i]
+        last = (i == n)
+        if (c in dir) {
+            print prefix (last ? "└── " : "├── ") name[c] "/"
+            ndirs++
+            walk(c, prefix (last ? "    " : "│   "))
+        } else {
+            print prefix (last ? "└── " : "├── ") name[c]
+            nfiles++
+        }
+    }
+}
+{
+    line = $0
+    sub(/\r$/, "", line)
+    while (sub(/^\.\//, "", line)) {}
+    while (gsub(/\/\/+/, "/", line)) {}
+    while (sub(/^\.\//, "", line)) {}
+    if (line == "" || line == "/" || line == ".") next
+    explicit_dir = (line ~ /\/$/)
+    sub(/\/+$/, "", line)
+    np = split(line, parts, "/")
+    path = ""
+    for (k = 1; k <= np; k++) {
+        path = (k == 1) ? parts[k] : path "/" parts[k]
+        add(path, (k < np) || explicit_dir)
+    }
+}
+END {
+    print "."
+    ndirs = 0; nfiles = 0
+    walk(".", "")
+    printf "%d directories, %d files\n", ndirs, nfiles
+}
+' "$1"
