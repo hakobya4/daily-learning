@@ -33,12 +33,37 @@ Run: python3 maximal_rectangle.py
 """
 
 
+def _scan(grid):
+    """Return (best_area, rect) using row-by-row histograms + a monotonic stack."""
+    if not grid or not grid[0]:
+        return 0, None
+    cols = len(grid[0])
+    heights = [0] * cols
+    best, rect = 0, None
+    for row_idx, row in enumerate(grid):
+        for c in range(cols):
+            heights[c] = heights[c] + 1 if row[c] == "1" else 0
+        stack = []  # indices with increasing heights
+        for i in range(cols + 1):
+            cur = heights[i] if i < cols else 0
+            while stack and heights[stack[-1]] >= cur:
+                h = heights[stack.pop()]
+                left = stack[-1] + 1 if stack else 0
+                right = i - 1
+                area = h * (right - left + 1)
+                if area > best:
+                    best = area
+                    rect = (row_idx - h + 1, left, row_idx, right)
+            stack.append(i)
+    return best, rect
+
+
 def maximal_rectangle(grid):
-    raise NotImplementedError
+    return _scan(grid)[0]
 
 
 def best_rectangle(grid):
-    raise NotImplementedError
+    return _scan(grid)[1]
 
 
 def _brute(grid):
