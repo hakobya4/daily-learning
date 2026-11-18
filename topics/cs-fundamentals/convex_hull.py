@@ -43,15 +43,72 @@ Run: python3 convex_hull.py
 
 
 def convex_hull(points):
-    raise NotImplementedError
+    pts = sorted(set(tuple(p) for p in points))
+    if len(pts) <= 1:
+        return pts
+    lower = []
+    for p in pts:
+        while len(lower) >= 2 and _cross(lower[-2], lower[-1], p) <= 0:
+            lower.pop()
+        lower.append(p)
+    upper = []
+    for p in reversed(pts):
+        while len(upper) >= 2 and _cross(upper[-2], upper[-1], p) <= 0:
+            upper.pop()
+        upper.append(p)
+    return lower[:-1] + upper[:-1]
 
 
 def twice_area(polygon):
-    raise NotImplementedError
+    n = len(polygon)
+    if n < 3:
+        return 0
+    total = 0
+    for i in range(n):
+        x1, y1 = polygon[i]
+        x2, y2 = polygon[(i + 1) % n]
+        total += x1 * y2 - x2 * y1
+    return total
+
+
+def _on_segment(a, b, p):
+    return (_cross(a, b, p) == 0
+            and min(a[0], b[0]) <= p[0] <= max(a[0], b[0])
+            and min(a[1], b[1]) <= p[1] <= max(a[1], b[1]))
 
 
 def locate(hull, p):
-    raise NotImplementedError
+    p = tuple(p)
+    n = len(hull)
+    if n == 0:
+        return "outside"
+    if n == 1:
+        return "boundary" if p == tuple(hull[0]) else "outside"
+    if n == 2:
+        return "boundary" if _on_segment(hull[0], hull[1], p) else "outside"
+    o = hull[0]
+    c1 = _cross(o, hull[1], p)
+    c2 = _cross(o, hull[-1], p)
+    if c1 < 0 or c2 > 0:
+        return "outside"                 # outside the wedge at hull[0]
+    if c1 == 0:
+        return "boundary" if _on_segment(o, hull[1], p) else "outside"
+    if c2 == 0:
+        return "boundary" if _on_segment(o, hull[-1], p) else "outside"
+    # binary search the fan: largest i in [1, n-2] with p left of (or on) o->hull[i]
+    lo, hi = 1, n - 1
+    while hi - lo > 1:
+        mid = (lo + hi) // 2
+        if _cross(o, hull[mid], p) >= 0:
+            lo = mid
+        else:
+            hi = mid
+    c = _cross(hull[lo], hull[lo + 1], p)
+    if c > 0:
+        return "inside"
+    if c == 0:
+        return "boundary"
+    return "outside"
 
 
 def _cross(o, a, b):
