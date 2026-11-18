@@ -48,8 +48,98 @@ Run: python3 json_path_query.py
 """
 
 
+import re
+
+_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+_INT = re.compile(r"-?[0-9]+")
+
+
+def _tokenize(path):
+    if not isinstance(path, str) or not path.startswith("$"):
+        raise ValueError("path must start with '$': %r" % (path,))
+    steps = []
+    i, n = 1, len(path)
+    while i < n:
+        c = path[i]
+        if c == ".":
+            if path.startswith("..", i):
+                m = _NAME.match(path, i + 2)
+                if not m:
+                    raise ValueError("bad name after '..' at %d in %r" % (i, path))
+                steps.append(("descend", m.group()))
+                i = m.end()
+            else:
+                i += 1
+                if i < n and path[i] == "*":
+                    steps.append(("wild",))
+                    i += 1
+                else:
+                    m = _NAME.match(path, i)
+                    if not m:
+                        raise ValueError("bad name at %d in %r" % (i, path))
+                    steps.append(("key", m.group()))
+                    i = m.end()
+        elif c == "[":
+            i += 1
+            if path.startswith("*]", i):
+                steps.append(("wild",))
+                i += 2
+            elif i < n and path[i] == "'":
+                close = path.find("'", i + 1)
+                if close < 0 or close + 1 >= n or path[close + 1] != "]":
+                    raise ValueError("unterminated quoted key in %r" % (path,))
+                steps.append(("key", path[i + 1:close]))
+                i = close + 2
+            else:
+                m = _INT.match(path, i)
+                if not m or m.end() >= n or path[m.end()] != "]":
+                    raise ValueError("bad index at %d in %r" % (i, path))
+                steps.append(("index", int(m.group())))
+                i = m.end() + 1
+        else:
+            raise ValueError("unexpected %r at %d in %r" % (c, i, path))
+    return steps
+
+
+def _children(node):
+    if isinstance(node, dict):
+        return list(node.values())
+    if isinstance(node, list):
+        return list(node)
+    return []
+
+
+def _descend(node, name, out):
+    # pre-order: emit node[name] first, then search every child (including that value)
+    if isinstance(node, dict) and name in node:
+        out.append(node[name])
+    for child in _children(node):
+        _descend(child, name, out)
+
+
+def _apply(step, node, out):
+    kind = step[0]
+    if kind == "key":
+        if isinstance(node, dict) and step[1] in node:
+            out.append(node[step[1]])
+    elif kind == "index":
+        if isinstance(node, list) and -len(node) <= step[1] < len(node):
+            out.append(node[step[1]])
+    elif kind == "wild":
+        out.extend(_children(node))
+    else:  # descend
+        _descend(node, step[1], out)
+
+
 def query(doc, path):
-    raise NotImplementedError
+    steps = _tokenize(path)
+    current = [doc]
+    for step in steps:
+        nxt = []
+        for node in current:
+            _apply(step, node, nxt)
+        current = nxt
+    return current
 
 
 def _run_tests():
