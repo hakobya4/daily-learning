@@ -56,6 +56,59 @@
 #   /tmp/new.env:10: invalid line
 #   ./env_diff.sh /tmp/old.env /tmp/old.env  -> no stdout, exit 0
 
-echo "not implemented" >&2
-# TODO: replace this line with your implementation
-exit 2
+usage() {
+    echo "usage: $0 OLD NEW   (both must be readable regular files)" >&2
+    exit 2
+}
+
+[ "$#" -eq 2 ] || usage
+for f in "$1" "$2"; do
+    [ -f "$f" ] && [ -r "$f" ] || usage
+done
+
+# Everything happens in BEGIN with getline, so an EMPTY old file (or OLD == NEW) is
+# handled correctly -- no FNR == NR trick needed.
+awk -v oldf="$1" -v newf="$2" '
+function load(file, map,    line, lineno, eq, key, val) {
+    lineno = 0
+    while ((getline line < file) > 0) {
+        lineno++
+        if (line ~ /^[ \t]*$/ || line ~ /^[ \t]*#/) continue
+        sub(/^export /, "", line)
+        eq = index(line, "=")
+        key = (eq > 0) ? substr(line, 1, eq - 1) : ""
+        if (eq == 0 || key !~ /^[A-Za-z_][A-Za-z0-9_]*$/) {
+            printf "%s:%d: invalid line\n", file, lineno > "/dev/stderr"
+            continue
+        }
+        val = substr(line, eq + 1)
+        if (length(val) >= 2 && (val ~ /^".*"$/ || val ~ /^\047.*\047$/))
+            val = substr(val, 2, length(val) - 2)
+        map[key] = val            # last occurrence wins
+    }
+    close(file)
+}
+function secret(key) { return toupper(key) ~ /SECRET|PASSWORD|TOKEN|KEY/ }
+function show(key, val) { return secret(key) ? "***" : val }
+BEGIN {
+    load(oldf, old)
+    load(newf, new)
+    cmd = "LC_ALL=C sort -t \"\t\" -k1,1 | cut -f2-"
+    changed = 0
+    for (k in old) all[k] = 1
+    for (k in new) all[k] = 1
+    for (k in all) {
+        if (!(k in old))
+            line = "+ " k "=" show(k, new[k])
+        else if (!(k in new))
+            line = "- " k "=" show(k, old[k])
+        else if (old[k] != new[k])
+            line = "~ " k ": " show(k, old[k]) " -> " show(k, new[k])
+        else
+            continue
+        changed = 1
+        print k "\t" line | cmd
+    }
+    close(cmd)
+    exit(changed ? 1 : 0)
+}'
