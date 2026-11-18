@@ -31,7 +31,35 @@ Run: python3 min_window_subsequence.py
 
 
 def min_window_subsequence(s, t):
-    raise NotImplementedError
+    if not t or not s:
+        return ""
+    n, m = len(s), len(t)
+    best_start, best_len = -1, n + 1
+    i = 0
+    while i < n:
+        # forward scan: match t left-to-right until its last char is matched at `end`
+        j = 0
+        while i < n:
+            if s[i] == t[j]:
+                j += 1
+                if j == m:
+                    break
+            i += 1
+        if i == n:
+            break
+        end = i
+        # backward scan: match t right-to-left to find the latest possible start
+        j = m - 1
+        k = end
+        while j >= 0:
+            if s[k] == t[j]:
+                j -= 1
+            k -= 1
+        start = k + 1
+        if end - start + 1 < best_len:          # strict: keeps the leftmost on ties
+            best_start, best_len = start, end - start + 1
+        i = start + 1
+    return "" if best_start < 0 else s[best_start:best_start + best_len]
 
 
 def _brute(s, t):
