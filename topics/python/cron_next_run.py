@@ -44,8 +44,89 @@ Run: python3 cron_next_run.py
 from datetime import datetime, timedelta
 
 
+import re as _re
+
+_FIELD_RANGES = [(0, 59), (0, 23), (1, 31), (1, 12), (0, 7)]
+_DIGITS = _re.compile(r"[0-9]+\Z")
+
+
+def _number(tok, lo, hi):
+    if not _DIGITS.match(tok):
+        raise ValueError("bad number %r" % (tok,))
+    v = int(tok)
+    if not lo <= v <= hi:
+        raise ValueError("%d out of range %d-%d" % (v, lo, hi))
+    return v
+
+
+def _parse_field(text, lo, hi):
+    values = set()
+    for item in text.split(","):
+        if not item:
+            raise ValueError("empty list item in %r" % (text,))
+        step = 1
+        has_step = "/" in item
+        if has_step:
+            base, step_text = item.split("/", 1)
+            if not _DIGITS.match(step_text):
+                raise ValueError("bad step in %r" % (item,))
+            step = int(step_text)
+            if step < 1:
+                raise ValueError("step must be >= 1 in %r" % (item,))
+        else:
+            base = item
+        if base == "*":
+            a, b = lo, hi
+        elif "-" in base:
+            parts = base.split("-")
+            if len(parts) != 2:
+                raise ValueError("bad range %r" % (base,))
+            a, b = _number(parts[0], lo, hi), _number(parts[1], lo, hi)
+            if a > b:
+                raise ValueError("range start > end in %r" % (base,))
+        else:
+            a = _number(base, lo, hi)
+            b = hi if has_step else a
+        values.update(range(a, b + 1, step))
+    return values
+
+
+def _parse(expr):
+    if not isinstance(expr, str):
+        raise ValueError("expression must be a string")
+    fields = expr.split()
+    if len(fields) != 5:
+        raise ValueError("expected 5 fields, got %d" % len(fields))
+    sets = [_parse_field(f, lo, hi) for f, (lo, hi) in zip(fields, _FIELD_RANGES)]
+    sets[4] = {d % 7 for d in sets[4]}           # 7 and 0 are both Sunday
+    return sets, fields[2] != "*", fields[4] != "*"
+
+
 def next_run(expr, after):
-    raise NotImplementedError
+    (mins, hours, doms, months, dows), dom_restricted, dow_restricted = _parse(expr)
+
+    def day_ok(t):
+        dom_ok = t.day in doms
+        dow_ok = (t.weekday() + 1) % 7 in dows
+        if dom_restricted and dow_restricted:
+            return dom_ok or dow_ok
+        return dom_ok and dow_ok
+
+    t = after.replace(second=0, microsecond=0) + timedelta(minutes=1)
+    try:
+        limit = after.replace(year=after.year + 5)
+    except ValueError:                           # after is Feb 29
+        limit = after.replace(year=after.year + 5, day=28)
+    while t <= limit:
+        if t.month not in months or not day_ok(t):
+            t = datetime(t.year, t.month, t.day) + timedelta(days=1)
+        elif t.hour not in hours:
+            t = t.replace(minute=0) + timedelta(hours=1)
+        elif t.minute not in mins:
+            t += timedelta(minutes=1)
+        else:
+            return t
+    return None
 
 
 def _brute(expr, after, limit_minutes):
