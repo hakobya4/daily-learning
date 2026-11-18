@@ -49,17 +49,78 @@ Run: python3 aho_corasick.py
 
 class AhoCorasick:
     def __init__(self, patterns):
-        raise NotImplementedError
+        from collections import deque
+        self.patterns = list(patterns)
+        for p in self.patterns:
+            if not p:
+                raise ValueError("patterns must be non-empty")
+        # 1. trie
+        self.goto = [{}]
+        self.out = [[]]
+        for idx, p in enumerate(self.patterns):
+            state = 0
+            for ch in p:
+                nxt = self.goto[state].get(ch)
+                if nxt is None:
+                    nxt = len(self.goto)
+                    self.goto[state][ch] = nxt
+                    self.goto.append({})
+                    self.out.append([])
+                state = nxt
+            self.out[state].append(idx)
+        # 2. BFS failure links + dictionary (output) links
+        size = len(self.goto)
+        self.fail = [0] * size
+        self.dict_link = [-1] * size
+        queue = deque(self.goto[0].values())
+        while queue:
+            u = queue.popleft()
+            for ch, v in self.goto[u].items():
+                f = self.fail[u]
+                while f and ch not in self.goto[f]:
+                    f = self.fail[f]
+                fv = self.goto[f].get(ch, 0)
+                self.fail[v] = fv
+                self.dict_link[v] = fv if self.out[fv] else self.dict_link[fv]
+                queue.append(v)
+
+    def _scan(self, text):
+        """Yield (end_index, pattern_index) for every match, in order of end_index."""
+        goto, fail, out, dict_link = self.goto, self.fail, self.out, self.dict_link
+        state = 0
+        for i, ch in enumerate(text):
+            while state and ch not in goto[state]:
+                state = fail[state]
+            state = goto[state].get(ch, 0)
+            s = state
+            while s > 0:
+                for idx in out[s]:
+                    yield i, idx
+                s = dict_link[s]
 
     def find_all(self, text):
-        raise NotImplementedError
+        lens = [len(p) for p in self.patterns]
+        return sorted((end - lens[idx] + 1, idx) for end, idx in self._scan(text))
 
     def count(self, text):
-        raise NotImplementedError
+        counts = [0] * len(self.patterns)
+        for _, idx in self._scan(text):
+            counts[idx] += 1
+        return counts
 
 
 def first_match(patterns, text):
-    raise NotImplementedError
+    ac = AhoCorasick(patterns)
+    best = None
+    best_end = None
+    for end, idx in ac._scan(text):
+        if best_end is not None and end > best_end:
+            break                       # every match at the earliest end has been seen
+        best_end = end
+        cand = (end - len(ac.patterns[idx]) + 1, idx)
+        if best is None or cand < best:
+            best = cand
+    return best
 
 
 def _brute(patterns, text):
