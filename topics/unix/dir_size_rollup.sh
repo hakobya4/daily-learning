@@ -44,6 +44,42 @@
 #   ./dir_size_rollup.sh 1 /tmp/d58.files  -> ".", "a" (355) and "d" (300) only
 #   ./dir_size_rollup.sh 02 /tmp/d58.files -> usage message, exit 1
 
-echo "not implemented" >&2
-# TODO: replace this line with your implementation
-exit 1
+usage() {
+    echo "usage: $0 DEPTH FILE   (DEPTH: positive integer, FILE: readable regular file of \"SIZE PATH\" lines)" >&2
+    exit 1
+}
+
+[ "$#" -eq 2 ] || usage
+depth=$1
+file=$2
+[[ $depth =~ ^[1-9][0-9]*$ ]] || usage
+[ -f "$file" ] && [ -r "$file" ] || usage
+
+awk -v maxd="$depth" '
+function valid_path(path,    n, parts, i) {
+    if (path ~ /^\// || path ~ /\/$/ || path ~ /\/\//) return 0
+    n = split(path, parts, "/")
+    for (i = 1; i <= n; i++)
+        if (parts[i] == "" || parts[i] == "." || parts[i] == "..") return 0
+    return 1
+}
+{
+    if (NF != 2 || $1 !~ /^[0-9]+$/ || !valid_path($2)) { skipped++; next }
+    size = $1 + 0
+    total += size
+    n = split($2, parts, "/")
+    prefix = ""
+    # directories are the first n-1 components; never the file name itself
+    for (i = 1; i < n && i <= maxd; i++) {
+        prefix = (i == 1) ? parts[1] : prefix "/" parts[i]
+        sum[prefix] += size
+    }
+}
+END {
+    printf "%d\t.\n", total
+    fflush()
+    cmd = "LC_ALL=C sort -k2,2"
+    for (d in sum) printf "%d\t%s\n", sum[d], d | cmd
+    close(cmd)
+    print "skipped " (skipped + 0) > "/dev/stderr"
+}' "$file"
