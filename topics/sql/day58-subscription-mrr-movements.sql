@@ -68,10 +68,101 @@ INSERT INTO sub_events VALUES
  (17, 7, '2026-03-01', 0);
 
 -- Q1
-
+WITH RECURSIVE months(month_start) AS (
+    SELECT '2026-01-01'
+    UNION ALL
+    SELECT date(month_start, '+1 month') FROM months WHERE month_start < '2026-06-01'
+),
+month_ends AS (
+    SELECT strftime('%Y-%m', month_start) AS month,
+           date(month_start, '+1 month', '-1 day') AS month_end
+    FROM months
+),
+customers AS (SELECT DISTINCT customer_id FROM sub_events),
+snapshots AS (
+    SELECT me.month, c.customer_id,
+           COALESCE((SELECT e.mrr FROM sub_events e
+                     WHERE e.customer_id = c.customer_id AND e.event_date <= me.month_end
+                     ORDER BY e.event_date DESC, e.event_id DESC
+                     LIMIT 1), 0) AS mrr
+    FROM month_ends me CROSS JOIN customers c
+)
+SELECT month,
+       SUM(mrr)     AS total_mrr,
+       SUM(mrr > 0) AS paying_customers
+FROM snapshots
+GROUP BY month
+ORDER BY month;
 
 -- Q2
-
+WITH RECURSIVE months(month_start) AS (
+    SELECT '2025-12-01'                 -- baseline month-end (Dec 2025) + the 6 reporting months
+    UNION ALL
+    SELECT date(month_start, '+1 month') FROM months WHERE month_start < '2026-06-01'
+),
+month_ends AS (
+    SELECT strftime('%Y-%m', month_start) AS month,
+           date(month_start, '+1 month', '-1 day') AS month_end
+    FROM months
+),
+customers AS (SELECT DISTINCT customer_id FROM sub_events),
+snapshots AS (
+    SELECT me.month, c.customer_id,
+           COALESCE((SELECT e.mrr FROM sub_events e
+                     WHERE e.customer_id = c.customer_id AND e.event_date <= me.month_end
+                     ORDER BY e.event_date DESC, e.event_id DESC
+                     LIMIT 1), 0) AS mrr
+    FROM month_ends me CROSS JOIN customers c
+),
+compared AS (
+    SELECT month, customer_id, mrr AS cur,
+           LAG(mrr) OVER w AS prev,
+           -- highest MRR at any month-end snapshot BEFORE this one (baseline included)
+           MAX(mrr) OVER (w ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS max_before
+    FROM snapshots
+    WINDOW w AS (PARTITION BY customer_id ORDER BY month)
+),
+classified AS (
+    SELECT month, cur, prev,
+           CASE
+               WHEN prev = 0 AND cur > 0 AND max_before = 0 THEN 'new'
+               WHEN prev = 0 AND cur > 0                    THEN 'reactivation'
+               WHEN prev > 0 AND cur > prev                 THEN 'expansion'
+               WHEN prev > 0 AND cur > 0 AND cur < prev     THEN 'contraction'
+               WHEN prev > 0 AND cur = 0                    THEN 'churn'
+           END AS kind
+    FROM compared
+    WHERE month > '2025-12'                     -- the baseline itself is not reported
+),
+bridge AS (
+    SELECT month,
+           SUM(CASE WHEN kind = 'new'          THEN cur - prev ELSE 0 END) AS new_mrr,
+           SUM(CASE WHEN kind = 'expansion'    THEN cur - prev ELSE 0 END) AS expansion_mrr,
+           SUM(CASE WHEN kind = 'contraction'  THEN prev - cur ELSE 0 END) AS contraction_mrr,
+           SUM(CASE WHEN kind = 'churn'        THEN prev       ELSE 0 END) AS churned_mrr,
+           SUM(CASE WHEN kind = 'reactivation' THEN cur        ELSE 0 END) AS reactivation_mrr
+    FROM classified
+    GROUP BY month
+)
+SELECT month, new_mrr, expansion_mrr, contraction_mrr, churned_mrr, reactivation_mrr,
+       new_mrr + expansion_mrr + reactivation_mrr - contraction_mrr - churned_mrr AS net_change
+FROM bridge
+ORDER BY month;
 
 -- Q3
+WITH snap(customer_id, jan, jun) AS (
+    SELECT c.customer_id,
+           COALESCE((SELECT e.mrr FROM sub_events e
+                     WHERE e.customer_id = c.customer_id AND e.event_date <= '2026-01-31'
+                     ORDER BY e.event_date DESC, e.event_id DESC LIMIT 1), 0),
+           COALESCE((SELECT e.mrr FROM sub_events e
+                     WHERE e.customer_id = c.customer_id AND e.event_date <= '2026-06-30'
+                     ORDER BY e.event_date DESC, e.event_id DESC LIMIT 1), 0)
+    FROM (SELECT DISTINCT customer_id FROM sub_events) c
+),
+jan_book AS (SELECT * FROM snap WHERE jan > 0)   -- customers paying at Jan month-end
+SELECT SUM(jan) AS jan_mrr,
+       SUM(jun) AS jun_mrr,
+       ROUND(100.0 * SUM(jun) / SUM(jan), 1) AS nrr_pct
+FROM jan_book;
 
