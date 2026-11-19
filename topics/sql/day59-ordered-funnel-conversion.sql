@@ -74,10 +74,76 @@ INSERT INTO events VALUES
  (30, 8, '2026-11-06 09:45', 'purchase');
 
 -- Q1
-
+WITH s1 AS (
+  SELECT user_id, MIN(ts) AS t1 FROM events WHERE event = 'view' GROUP BY user_id
+), s2 AS (
+  SELECT s1.user_id, s1.t1,
+         (SELECT MIN(e.ts) FROM events e
+           WHERE e.user_id = s1.user_id AND e.event = 'cart' AND e.ts > s1.t1
+             AND julianday(e.ts) <= julianday(s1.t1) + 3) AS t2
+  FROM s1
+), s3 AS (
+  SELECT s2.user_id, s2.t1, s2.t2,
+         (SELECT MIN(e.ts) FROM events e
+           WHERE e.user_id = s2.user_id AND e.event = 'checkout' AND e.ts > s2.t2
+             AND julianday(e.ts) <= julianday(s2.t1) + 3) AS t3
+  FROM s2 WHERE s2.t2 IS NOT NULL
+), s4 AS (
+  SELECT s3.user_id, s3.t1,
+         (SELECT MIN(e.ts) FROM events e
+           WHERE e.user_id = s3.user_id AND e.event = 'purchase' AND e.ts > s3.t3
+             AND julianday(e.ts) <= julianday(s3.t1) + 3) AS t4
+  FROM s3 WHERE s3.t3 IS NOT NULL
+), counts AS (
+  SELECT 1 AS step_no, 'view' AS step, COUNT(*) AS users FROM s1
+  UNION ALL SELECT 2, 'cart',     COUNT(t2) FROM s2
+  UNION ALL SELECT 3, 'checkout', COUNT(t3) FROM s3
+  UNION ALL SELECT 4, 'purchase', COUNT(t4) FROM s4
+)
+SELECT step_no, step, users,
+       ROUND(100.0 * users / NULLIF((SELECT users FROM counts WHERE step_no = 1), 0), 1)
+         AS pct_of_viewers,
+       ROUND(100.0 * users / NULLIF(LAG(users) OVER (ORDER BY step_no), 0), 1)
+         AS pct_of_previous
+FROM counts
+ORDER BY step_no;
 
 -- Q2
-
+WITH s1 AS (
+  SELECT user_id, MIN(ts) AS t1 FROM events WHERE event = 'view' GROUP BY user_id
+), s2 AS (
+  SELECT s1.user_id, s1.t1,
+         (SELECT MIN(e.ts) FROM events e
+           WHERE e.user_id = s1.user_id AND e.event = 'cart' AND e.ts > s1.t1
+             AND julianday(e.ts) <= julianday(s1.t1) + 3) AS t2
+  FROM s1
+), s3 AS (
+  SELECT s2.user_id, s2.t1,
+         (SELECT MIN(e.ts) FROM events e
+           WHERE e.user_id = s2.user_id AND e.event = 'checkout' AND e.ts > s2.t2
+             AND julianday(e.ts) <= julianday(s2.t1) + 3) AS t3
+  FROM s2 WHERE s2.t2 IS NOT NULL
+), s4 AS (
+  SELECT s3.user_id, s3.t1,
+         (SELECT MIN(e.ts) FROM events e
+           WHERE e.user_id = s3.user_id AND e.event = 'purchase' AND e.ts > s3.t3
+             AND julianday(e.ts) <= julianday(s3.t1) + 3) AS t4
+  FROM s3 WHERE s3.t3 IS NOT NULL
+)
+SELECT user_id,
+       CAST(ROUND((julianday(t4) - julianday(t1)) * 1440) AS INTEGER) AS minutes_to_purchase
+FROM s4
+WHERE t4 IS NOT NULL
+ORDER BY minutes_to_purchase DESC, user_id;
 
 -- Q3
-
+WITH last_cart AS (
+  SELECT user_id, MAX(ts) AS last_cart_ts FROM events WHERE event = 'cart' GROUP BY user_id
+)
+SELECT lc.user_id, lc.last_cart_ts
+FROM last_cart lc
+WHERE NOT EXISTS (
+  SELECT 1 FROM events e
+  WHERE e.user_id = lc.user_id AND e.event = 'purchase' AND e.ts >= lc.last_cart_ts
+)
+ORDER BY lc.user_id;
