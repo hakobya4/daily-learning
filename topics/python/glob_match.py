@@ -39,8 +39,121 @@ Run: python3 glob_match.py
 """
 
 
+def _tokenize(seg):
+    """Turn one pattern segment into tokens: ('lit', c), ('star',), ('any',), ('cls', neg, items)."""
+    toks = []
+    i, n = 0, len(seg)
+    while i < n:
+        c = seg[i]
+        if c == "\\":
+            if i + 1 >= n:
+                raise ValueError("trailing backslash in pattern")
+            toks.append(("lit", seg[i + 1]))
+            i += 2
+        elif c == "*":
+            if not (toks and toks[-1][0] == "star"):
+                toks.append(("star",))
+            i += 1
+        elif c == "?":
+            toks.append(("any",))
+            i += 1
+        elif c == "[":
+            j = i + 1
+            neg = False
+            if j < n and seg[j] == "!":
+                neg = True
+                j += 1
+            members = []
+            first = True
+            while True:
+                if j >= n:
+                    raise ValueError("unclosed '[' in pattern")
+                ch = seg[j]
+                if ch == "]" and not first:
+                    break
+                first = False
+                if ch == "\\" and j + 1 < n:
+                    ch = seg[j + 1]
+                    j += 1
+                # range?
+                if j + 2 < n and seg[j + 1] == "-" and seg[j + 2] != "]":
+                    hi = seg[j + 2]
+                    if hi == "\\" and j + 3 < n:
+                        hi = seg[j + 3]
+                        j += 1
+                    if ord(hi) < ord(ch):
+                        raise ValueError("reversed range in pattern")
+                    members.append((ch, hi))
+                    j += 3
+                else:
+                    members.append((ch, ch))
+                    j += 1
+            toks.append(("cls", neg, tuple(members)))
+            i = j + 1
+        else:
+            toks.append(("lit", c))
+            i += 1
+    return toks
+
+
+def _match_segment(toks, s):
+    # Hidden-file rule: a segment starting with "." needs a literal "." first token.
+    if s.startswith(".") and not (toks and toks[0] == ("lit", ".")):
+        return False
+    memo = {}
+    nt, ns = len(toks), len(s)
+
+    def go(ti, si):
+        key = (ti, si)
+        if key in memo:
+            return memo[key]
+        if ti == nt:
+            res = si == ns
+        else:
+            t = toks[ti]
+            kind = t[0]
+            if kind == "star":
+                res = any(go(ti + 1, k) for k in range(si, ns + 1))
+            elif si == ns:
+                res = False
+            elif kind == "lit":
+                res = s[si] == t[1] and go(ti + 1, si + 1)
+            elif kind == "any":
+                res = go(ti + 1, si + 1)
+            else:
+                ch = s[si]
+                inside = any(lo <= ch <= hi for lo, hi in t[2])
+                res = (inside != t[1]) and go(ti + 1, si + 1)
+        memo[key] = res
+        return res
+
+    return go(0, 0)
+
+
 def match(pattern, path):
-    raise NotImplementedError
+    psegs = pattern.split("/")
+    # Tokenize every segment up front so malformed patterns always raise.
+    ptoks = [None if seg == "**" else _tokenize(seg) for seg in psegs]
+    segs = path.split("/")
+    np_, ns = len(ptoks), len(segs)
+    memo = {}
+
+    def go(pi, si):
+        key = (pi, si)
+        if key in memo:
+            return memo[key]
+        if pi == np_:
+            res = si == ns
+        elif ptoks[pi] is None:  # "**": zero or more whole segments
+            res = any(go(pi + 1, k) for k in range(si, ns + 1))
+        elif si == ns:
+            res = False
+        else:
+            res = _match_segment(ptoks[pi], segs[si]) and go(pi + 1, si + 1)
+        memo[key] = res
+        return res
+
+    return go(0, 0)
 
 
 def _run_tests():
