@@ -45,6 +45,53 @@
 #                                                 ... TOTAL sessions=3 requests=9
 #   ./log_sessionize.sh -g 0 /tmp/s.log         -> usage on stderr, exit 2
 
-echo "not implemented" >&2
-# TODO: replace this line with your implementation
-exit 1
+usage() {
+    echo "usage: $0 [-g GAP] [FILE]   (GAP: positive integer seconds, default 1800)" >&2
+    exit 2
+}
+
+gap=1800
+while getopts ":g:" opt; do
+    case $opt in
+        g) gap=$OPTARG ;;
+        *) usage ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+case $gap in
+    ''|*[!0-9]*) usage ;;
+esac
+[ "$((10#$gap))" -gt 0 ] || usage
+gap=$((10#$gap))
+
+[ $# -le 1 ] || usage
+if [ $# -eq 1 ]; then
+    { [ -f "$1" ] && [ -r "$1" ]; } || usage
+    exec < "$1"
+fi
+
+awk '
+    NF < 3 || $1 !~ /^[0-9]+$/ { print "line " NR ": skipped" > "/dev/stderr"; next }
+    { printf "%s\t%s\t%s\n", $2, $1, $3 }
+' | LC_ALL=C sort -t "$(printf '\t')" -k1,1 -k2,2n | awk -F '\t' -v gap="$gap" '
+    function flush() {
+        if (count == 0) return
+        print ip, start, last, count, last - start, uniq
+        sessions++
+        count = 0; uniq = 0
+        delete seen
+    }
+    {
+        t = $2 + 0
+        if (count > 0 && ($1 != ip || t - last > gap)) flush()
+        if (count == 0) { ip = $1; start = t }
+        last = t
+        count++; requests++
+        if (!($3 in seen)) { seen[$3] = 1; uniq++ }
+    }
+    END {
+        flush()
+        printf "TOTAL sessions=%d requests=%d\n", sessions, requests
+    }
+'
