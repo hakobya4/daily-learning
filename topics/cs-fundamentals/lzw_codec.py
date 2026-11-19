@@ -42,20 +42,95 @@ Run: python3 lzw_codec.py
 """
 
 
+def _check_max_bits(max_bits):
+    if not (9 <= max_bits <= 16):
+        raise ValueError("max_bits must be in 9..16, got %r" % (max_bits,))
+
+
 def compress(data, max_bits=12):
-    raise NotImplementedError
+    _check_max_bits(max_bits)
+    limit = 1 << max_bits
+    table = {bytes([i]): i for i in range(256)}
+    out = []
+    w = b""
+    for byte in data:
+        wc = w + bytes([byte])
+        if wc in table:
+            w = wc
+            continue
+        out.append(table[w])
+        if len(table) < limit:
+            table[wc] = len(table)
+        w = bytes([byte])
+    if w:
+        out.append(table[w])
+    return out
 
 
 def decompress(codes, max_bits=12):
-    raise NotImplementedError
+    _check_max_bits(max_bits)
+    codes = list(codes)
+    if not codes:
+        return b""
+    limit = 1 << max_bits
+    table = [bytes([i]) for i in range(256)]
+    first = codes[0]
+    if not (0 <= first < 256):
+        raise ValueError("invalid first code %r" % (first,))
+    prev = table[first]
+    out = [prev]
+    for code in codes[1:]:
+        if 0 <= code < len(table):
+            cur = table[code]
+        elif code == len(table) and len(table) < limit:
+            cur = prev + prev[:1]  # KwKwK case
+        else:
+            raise ValueError("invalid code %r" % (code,))
+        out.append(cur)
+        if len(table) < limit:
+            table.append(prev + cur[:1])
+        prev = cur
+    return b"".join(out)
 
 
 def pack(codes, width):
-    raise NotImplementedError
+    if width <= 0:
+        raise ValueError("width must be positive")
+    out = bytearray()
+    acc = 0
+    nbits = 0
+    for code in codes:
+        if not (0 <= code < (1 << width)):
+            raise ValueError("code %r does not fit in %d bits" % (code, width))
+        acc = (acc << width) | code
+        nbits += width
+        while nbits >= 8:
+            nbits -= 8
+            out.append((acc >> nbits) & 0xFF)
+        acc &= (1 << nbits) - 1
+    if nbits:
+        out.append((acc << (8 - nbits)) & 0xFF)
+    return bytes(out)
 
 
 def unpack(data, width, count):
-    raise NotImplementedError
+    if width <= 0:
+        raise ValueError("width must be positive")
+    if len(data) * 8 < count * width:
+        raise ValueError("not enough bits for %d codes of width %d" % (count, width))
+    out = []
+    acc = 0
+    nbits = 0
+    mask = (1 << width) - 1
+    it = iter(data)
+    while len(out) < count:
+        while nbits < width:
+            acc = (acc << 8) | next(it)
+            nbits += 8
+        nbits -= width
+        out.append((acc >> nbits) & mask)
+        acc &= (1 << nbits) - 1
+    return out
 
 
 def _run_tests():
