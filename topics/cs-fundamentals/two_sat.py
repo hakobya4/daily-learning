@@ -34,8 +34,75 @@ Run: python3 two_sat.py
 """
 
 
+def _node(lit, n):
+    if lit == 0 or abs(lit) > n:
+        raise ValueError("literal out of range: %r" % (lit,))
+    v = 2 * (abs(lit) - 1)
+    return v if lit > 0 else v ^ 1
+
+
+def _tarjan_iterative(num_nodes, adj):
+    """Return comp[v]; components are numbered in reverse topological order."""
+    index = [-1] * num_nodes
+    low = [0] * num_nodes
+    on_stack = [False] * num_nodes
+    comp = [-1] * num_nodes
+    stack = []
+    counter = 0
+    comp_count = 0
+    for root in range(num_nodes):
+        if index[root] != -1:
+            continue
+        work = [(root, 0)]
+        index[root] = low[root] = counter
+        counter += 1
+        stack.append(root)
+        on_stack[root] = True
+        while work:
+            v, ei = work[-1]
+            edges = adj[v]
+            if ei < len(edges):
+                work[-1] = (v, ei + 1)
+                w = edges[ei]
+                if index[w] == -1:
+                    index[w] = low[w] = counter
+                    counter += 1
+                    stack.append(w)
+                    on_stack[w] = True
+                    work.append((w, 0))
+                elif on_stack[w] and index[w] < low[v]:
+                    low[v] = index[w]
+            else:
+                work.pop()
+                if work:
+                    parent = work[-1][0]
+                    if low[v] < low[parent]:
+                        low[parent] = low[v]
+                if low[v] == index[v]:
+                    while True:
+                        w = stack.pop()
+                        on_stack[w] = False
+                        comp[w] = comp_count
+                        if w == v:
+                            break
+                    comp_count += 1
+    return comp
+
+
 def solve(n, clauses):
-    raise NotImplementedError
+    adj = [[] for _ in range(2 * n)]
+    for a, b in clauses:
+        na, nb = _node(a, n), _node(b, n)
+        adj[na ^ 1].append(nb)  # NOT a -> b
+        adj[nb ^ 1].append(na)  # NOT b -> a
+    comp = _tarjan_iterative(2 * n, adj)
+    result = []
+    for i in range(n):
+        pos, neg = comp[2 * i], comp[2 * i + 1]
+        if pos == neg:
+            return None
+        result.append(pos < neg)
+    return result
 
 
 def _satisfies(assign, clauses):
