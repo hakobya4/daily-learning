@@ -44,11 +44,87 @@ Run: python3 unified_diff_hunks.py
 
 
 def diff_ops(a, b):
-    raise NotImplementedError
+    na, nb = len(a), len(b)
+    # L[i][j] = LCS length of a[i:] and b[j:]
+    L = [[0] * (nb + 1) for _ in range(na + 1)]
+    for i in range(na - 1, -1, -1):
+        row, nxt = L[i], L[i + 1]
+        for j in range(nb - 1, -1, -1):
+            if a[i] == b[j]:
+                row[j] = nxt[j + 1] + 1
+            else:
+                row[j] = max(nxt[j], row[j + 1])
+    raw = []
+    i = j = 0
+    while i < na and j < nb:
+        if a[i] == b[j] and L[i][j] == L[i + 1][j + 1] + 1:
+            raw.append((" ", a[i]))
+            i += 1
+            j += 1
+        elif L[i + 1][j] >= L[i][j + 1]:
+            raw.append(("-", a[i]))
+            i += 1
+        else:
+            raw.append(("+", b[j]))
+            j += 1
+    raw += [("-", x) for x in a[i:]]
+    raw += [("+", y) for y in b[j:]]
+    # Reorder each maximal change block: all "-" before all "+".
+    ops, block = [], []
+
+    def flush():
+        ops.extend(o for o in block if o[0] == "-")
+        ops.extend(o for o in block if o[0] == "+")
+        block.clear()
+
+    for op in raw:
+        if op[0] == " ":
+            flush()
+            ops.append(op)
+        else:
+            block.append(op)
+    flush()
+    return ops
 
 
 def unified(a, b, n=3):
-    raise NotImplementedError
+    ops = diff_ops(a, b)
+    # Position (index into a, index into b) at which each op starts.
+    pos, ia, ib = [], 0, 0
+    for t, _ in ops:
+        pos.append((ia, ib))
+        if t in " -":
+            ia += 1
+        if t in " +":
+            ib += 1
+    changes = [k for k, (t, _) in enumerate(ops) if t != " "]
+    if not changes:
+        return []
+    groups = [[changes[0], changes[0]]]
+    for k in changes[1:]:
+        if k - groups[-1][1] - 1 <= 2 * n:
+            groups[-1][1] = k
+        else:
+            groups.append([k, k])
+
+    def rng(start0, length):
+        if length == 0:
+            return "%d,0" % start0
+        if length == 1:
+            return "%d" % (start0 + 1)
+        return "%d,%d" % (start0 + 1, length)
+
+    out = []
+    for first, last in groups:
+        lo = max(0, first - n)
+        hi = min(len(ops) - 1, last + n)
+        chunk = ops[lo:hi + 1]
+        a0, b0 = pos[lo]
+        alen = sum(1 for t, _ in chunk if t in " -")
+        blen = sum(1 for t, _ in chunk if t in " +")
+        out.append("@@ -%s +%s @@" % (rng(a0, alen), rng(b0, blen)))
+        out += [t + line for t, line in chunk]
+    return out
 
 
 def _lcs(a, b):
