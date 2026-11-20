@@ -34,7 +34,63 @@ Run: python3 hungarian_assignment.py
 
 
 def assign(cost):
-    raise NotImplementedError
+    n = len(cost)
+    if n == 0:
+        return 0, []
+    m = len(cost[0])
+    if any(len(row) != m for row in cost):
+        raise ValueError("rows have different lengths")
+    if n > m:
+        raise ValueError("more rows than columns")
+    INF = float("inf")
+    # 1-based: u[0..n], v[0..m]; p[j] = row matched to column j (0 = free)
+    u = [0] * (n + 1)
+    v = [0] * (m + 1)
+    p = [0] * (m + 1)
+    way = [0] * (m + 1)
+    for i in range(1, n + 1):
+        p[0] = i
+        j0 = 0
+        minv = [INF] * (m + 1)
+        used = [False] * (m + 1)
+        while True:
+            used[j0] = True
+            i0 = p[j0]
+            row = cost[i0 - 1]
+            ui0 = u[i0]
+            delta = INF
+            j1 = 0
+            for j in range(1, m + 1):
+                if not used[j]:
+                    cur = row[j - 1] - ui0 - v[j]
+                    if cur < minv[j]:
+                        minv[j] = cur
+                        way[j] = j0
+                    if minv[j] < delta:
+                        delta = minv[j]
+                        j1 = j
+            for j in range(m + 1):
+                if used[j]:
+                    u[p[j]] += delta
+                    v[j] -= delta
+                else:
+                    minv[j] -= delta
+            j0 = j1
+            if p[j0] == 0:
+                break
+        # flip the alternating path
+        while True:
+            j1 = way[j0]
+            p[j0] = p[j1]
+            j0 = j1
+            if j0 == 0:
+                break
+    match = [0] * n
+    for j in range(1, m + 1):
+        if p[j]:
+            match[p[j] - 1] = j - 1
+    total = sum(cost[i][match[i]] for i in range(n))
+    return total, match
 
 
 def _brute(cost):
