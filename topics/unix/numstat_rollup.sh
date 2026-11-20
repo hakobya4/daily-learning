@@ -54,6 +54,65 @@
 #   ./numstat_rollup.sh -n 0 /tmp/n.txt   -> usage on stderr, exit 2
 # Real use: git log --numstat --format='@@ %an' | ./numstat_rollup.sh -n 5
 
-echo "not implemented" >&2
-# TODO: replace this line with your implementation
-exit 1
+usage() {
+    echo "usage: $(basename "$0") [-n TOP] [FILE]   (TOP must be a positive integer)" >&2
+    exit 2
+}
+
+top=0
+while getopts ":n:" opt; do
+    case "$opt" in
+        n) case "$OPTARG" in
+               ''|*[!0-9]*) usage ;;
+           esac
+           [ "$((10#$OPTARG))" -gt 0 ] || usage
+           top=$((10#$OPTARG)) ;;
+        *) usage ;;
+    esac
+done
+shift $((OPTIND - 1))
+[ $# -le 1 ] || usage
+if [ $# -eq 1 ]; then
+    { [ -f "$1" ] && [ -r "$1" ]; } || usage
+    input="$1"
+else
+    input="-"
+fi
+
+# Stage 1: aggregate. Author rows are "0<TAB>churn<TAB>author<TAB>formatted line";
+# the TOTAL row starts with "1" so it always sorts after every author.
+awk -F'\t' '
+function isint(s) { return s ~ /^[0-9]+$/ }
+{
+    sub(/\r$/, "")
+    if ($0 == "") next
+    if (substr($0, 1, 3) == "@@ ") {
+        cur = substr($0, 4)
+        if (!(cur in commits)) order[++na] = cur
+        commits[cur]++
+        ncommits++
+        next
+    }
+    ok = (NF == 3 && $3 != "" && ((isint($1) && isint($2)) || ($1 == "-" && $2 == "-")))
+    if (!ok) { printf "line %d: malformed\n", NR > "/dev/stderr"; next }
+    if (cur == "" && !(cur in commits)) {
+        printf "line %d: outside a commit\n", NR > "/dev/stderr"; next
+    }
+    if ($1 == "-") binary[cur]++
+    else { added[cur] += $1; removed[cur] += $2; tadd += $1; trem += $2 }
+    if (!((cur, $3) in seen)) { seen[cur, $3] = 1; files[cur]++ }
+}
+END {
+    for (k = 1; k <= na; k++) {
+        a = order[k]
+        printf "0\t%d\t%s\t%s: commits=%d files=%d added=%d removed=%d binary=%d\n",
+            added[a] + removed[a], a, a, commits[a], files[a] + 0,
+            added[a] + 0, removed[a] + 0, binary[a] + 0
+    }
+    printf "1\t0\t\tTOTAL authors=%d commits=%d added=%d removed=%d\n",
+        na, ncommits + 0, tadd + 0, trem + 0
+}' "$input" |
+LC_ALL=C sort -t "$(printf '\t')" -k1,1n -k2,2nr -k3,3 |
+awk -F'\t' -v top="$top" '
+$1 == "1" { print $4; next }
+top == 0 || ++shown <= top { print $4 }'
