@@ -33,16 +33,63 @@ Run: python3 segmented_sieve.py
 """
 
 
+from math import isqrt
+
+_MAX_SPAN = 2_000_000
+
+
+def _base_primes(n):
+    if n < 2:
+        return []
+    s = bytearray([1]) * (n + 1)
+    s[0] = s[1] = 0
+    for i in range(2, isqrt(n) + 1):
+        if s[i]:
+            s[i * i::i] = bytes(len(range(i * i, n + 1, i)))
+    return [i for i in range(n + 1) if s[i]]
+
+
+def _segment(lo, hi):
+    """Return a bytearray seg with seg[k] == 1 iff lo + k is prime (None if lo > hi)."""
+    if lo < 0:
+        raise ValueError("lo must be >= 0")
+    if lo > hi:
+        return None
+    if hi - lo > _MAX_SPAN:
+        raise ValueError("range too wide (hi - lo > %d)" % _MAX_SPAN)
+    size = hi - lo + 1
+    seg = bytearray([1]) * size
+    for p in _base_primes(isqrt(hi)):
+        start = max(p * p, -(-lo // p) * p)
+        if start > hi:
+            continue
+        k = start - lo
+        seg[k::p] = bytes(len(range(k, size, p)))
+    for x in (0, 1):
+        if lo <= x <= hi:
+            seg[x - lo] = 0
+    return seg
+
+
 def primes_in_range(lo, hi):
-    raise NotImplementedError
+    seg = _segment(lo, hi)
+    if seg is None:
+        return []
+    return [lo + k for k, b in enumerate(seg) if b]
 
 
 def count_in_range(lo, hi):
-    raise NotImplementedError
+    seg = _segment(lo, hi)
+    return 0 if seg is None else seg.count(1)
 
 
 def max_gap(lo, hi):
-    raise NotImplementedError
+    ps = primes_in_range(lo, hi)
+    best = None
+    for p, q in zip(ps, ps[1:]):
+        if best is None or q - p > best[0]:
+            best = (q - p, p, q)
+    return best
 
 
 def _simple(n):
