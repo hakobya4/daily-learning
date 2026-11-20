@@ -78,12 +78,61 @@ INSERT INTO bookings VALUES
  (13, 103, 'Mo',    '2026-11-20', '2026-11-25', 150, 'confirmed');  -- before the window
 
 -- Q1: nightly occupancy
--- TODO: write your query here
+WITH RECURSIVE nights(night) AS (
+  SELECT '2026-12-01'
+  UNION ALL
+  SELECT date(night, '+1 day') FROM nights WHERE night < '2026-12-07'
+)
+SELECT n.night,
+       COUNT(DISTINCT b.room_id) AS rooms_occupied,
+       ROUND(100.0 * COUNT(DISTINCT b.room_id) / (SELECT COUNT(*) FROM rooms), 1) AS occupancy_pct
+FROM nights n
+LEFT JOIN bookings b
+       ON b.status = 'confirmed'
+      AND n.night >= b.check_in
+      AND n.night <  b.check_out
+GROUP BY n.night
+ORDER BY n.night;
 
 
 -- Q2: double bookings
--- TODO: write your query here
+SELECT a.room_id,
+       a.booking_id AS booking_a,
+       b.booking_id AS booking_b,
+       CAST(julianday(MIN(a.check_out, b.check_out))
+          - julianday(MAX(a.check_in,  b.check_in)) AS INTEGER) AS overlap_nights
+FROM bookings a
+JOIN bookings b
+  ON a.room_id = b.room_id
+ AND a.booking_id < b.booking_id
+ AND a.check_in < b.check_out
+ AND b.check_in < a.check_out
+WHERE a.status = 'confirmed' AND b.status = 'confirmed'
+ORDER BY a.room_id, booking_a, booking_b;
 
 
 -- Q3: room-type revenue and ADR inside the window
--- TODO: write your query here
+WITH clipped AS (
+  SELECT r.room_type,
+         b.nightly_rate,
+         CAST(julianday(MIN(b.check_out, '2026-12-08'))
+            - julianday(MAX(b.check_in,  '2026-12-01')) AS INTEGER) AS nights
+  FROM bookings b
+  JOIN rooms r ON r.room_id = b.room_id
+  WHERE b.status = 'confirmed'
+),
+per_type AS (
+  SELECT room_type,
+         SUM(nights)                AS nights_sold,
+         SUM(nights * nightly_rate) AS revenue
+  FROM clipped
+  WHERE nights > 0
+  GROUP BY room_type
+)
+SELECT room_type,
+       nights_sold,
+       revenue,
+       ROUND(revenue * 1.0 / nights_sold, 2) AS adr,
+       RANK() OVER (ORDER BY revenue DESC) AS rank_by_revenue
+FROM per_type
+ORDER BY rank_by_revenue, room_type;
