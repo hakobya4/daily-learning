@@ -33,12 +33,69 @@ Run: python3 shell_split.py
 """
 
 
+_WS = " \t\r\n"
+_SAFE = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@%+=:,./-_")
+
+
 def shell_split(s):
-    raise NotImplementedError
+    words = []
+    buf = []
+    started = False      # a word has begun (so '' yields an empty word)
+    state = None         # None (between/inside plain word), "SQ", "DQ"
+    i, n = 0, len(s)
+    while i < n:
+        ch = s[i]
+        if state is None:
+            if ch in _WS:
+                if started:
+                    words.append("".join(buf))
+                    buf, started = [], False
+            elif ch == "\\":
+                if i + 1 >= n:
+                    raise ValueError("No escaped character")
+                i += 1
+                buf.append(s[i])
+                started = True
+            elif ch == "'":
+                state, started = "SQ", True
+            elif ch == '"':
+                state, started = "DQ", True
+            else:
+                buf.append(ch)
+                started = True
+        elif state == "SQ":
+            if ch == "'":
+                state = None
+            else:
+                buf.append(ch)
+        else:  # DQ
+            if ch == '"':
+                state = None
+            elif ch == "\\":
+                if i + 1 >= n:
+                    raise ValueError("No escaped character")
+                nxt = s[i + 1]
+                if nxt in '"\\':
+                    buf.append(nxt)
+                else:
+                    buf.append("\\" + nxt)
+                i += 1
+            else:
+                buf.append(ch)
+        i += 1
+    if state is not None:
+        raise ValueError("No closing quotation")
+    if started:
+        words.append("".join(buf))
+    return words
 
 
 def shell_quote(s):
-    raise NotImplementedError
+    if not s:
+        return "''"
+    if all(c in _SAFE for c in s):
+        return s
+    return "'" + s.replace("'", "'\"'\"'") + "'"
 
 
 def _run_tests():
