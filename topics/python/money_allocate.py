@@ -38,11 +38,24 @@ Run: python3 money_allocate.py
 
 
 def allocate(total_cents, weights):
-    raise NotImplementedError
+    weights = list(weights)
+    if not weights or any(w < 0 for w in weights) or sum(weights) == 0:
+        raise ValueError("weights must be non-empty, non-negative and not all zero")
+    sign = -1 if total_cents < 0 else 1
+    total = abs(total_cents)
+    s = sum(weights)
+    base = [total * w // s for w in weights]
+    rem = [total * w % s for w in weights]
+    left = total - sum(base)
+    for i in sorted(range(len(weights)), key=lambda i: (-rem[i], i))[:left]:
+        base[i] += 1
+    return [sign * b for b in base]
 
 
 def format_cents(cents):
-    raise NotImplementedError
+    sign = "-" if cents < 0 else ""
+    dollars, c = divmod(abs(cents), 100)
+    return "%s$%s.%02d" % (sign, "{:,}".format(dollars), c)
 
 
 def _run_tests():
