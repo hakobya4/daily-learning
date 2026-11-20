@@ -50,6 +50,57 @@
 #        /home/narek/up
 #   ./path_normalize.sh -b relative/base /tmp/p.txt   -> usage on stderr, exit 2
 
-echo "not implemented" >&2
-# TODO: replace this line with your implementation
-exit 1
+usage() {
+    echo "usage: $(basename "$0") [-b BASE] [FILE]   (BASE must be absolute)" >&2
+    exit 2
+}
+
+base=""
+have_base=0
+while getopts ":b:" opt; do
+    case "$opt" in
+        b) base="$OPTARG"; have_base=1 ;;
+        *) usage ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+if [ "$have_base" -eq 1 ] && [ "${base#/}" = "$base" ]; then
+    usage
+fi
+[ $# -le 1 ] || usage
+if [ $# -eq 1 ]; then
+    { [ -f "$1" ] && [ -r "$1" ]; } || usage
+    input="$1"
+else
+    input="-"
+fi
+
+awk -v base="$base" '
+{
+    path = $0
+    sub(/\r$/, "", path)
+    if (path == "") {
+        printf "line %d: empty path\n", NR > "/dev/stderr"
+        next
+    }
+    if (base != "" && substr(path, 1, 1) != "/")
+        path = base "/" path
+    abs = (substr(path, 1, 1) == "/")
+    n = split(path, parts, "/")
+    top = 0
+    for (k = 1; k <= n; k++) {
+        seg = parts[k]
+        if (seg == "" || seg == ".") continue
+        if (seg == "..") {
+            if (top > 0 && stack[top] != "..") { top--; continue }
+            if (abs) continue
+        }
+        stack[++top] = seg
+    }
+    out = ""
+    for (k = 1; k <= top; k++) out = (k == 1 ? stack[k] : out "/" stack[k])
+    if (abs) out = "/" out
+    else if (out == "") out = "."
+    print out
+}' "$input"
