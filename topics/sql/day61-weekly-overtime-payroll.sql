@@ -71,12 +71,66 @@ INSERT INTO timesheets VALUES
  (4, '2026-11-17', 2);
 
 -- Q1: weekly totals and overtime
--- TODO: write your query here
+WITH weekly AS (
+  SELECT emp_id,
+         date(work_date, 'weekday 0', '-6 days') AS week_start,
+         SUM(hours) AS total_hours
+  FROM timesheets
+  GROUP BY emp_id, week_start
+)
+SELECT e.name, w.week_start, w.total_hours,
+       MAX(w.total_hours - 40, 0) AS overtime_hours
+FROM weekly w
+JOIN employees e ON e.emp_id = w.emp_id
+ORDER BY w.week_start, e.name;
 
 
 -- Q2: payroll with 1.5x overtime and DENSE_RANK
--- TODO: write your query here
+WITH weekly AS (
+  SELECT emp_id,
+         date(work_date, 'weekday 0', '-6 days') AS week_start,
+         SUM(hours) AS total_hours
+  FROM timesheets
+  GROUP BY emp_id, week_start
+),
+per_emp AS (
+  SELECT e.name,
+         e.hourly_rate,
+         SUM(MIN(w.total_hours, 40))     AS regular_hours,
+         SUM(MAX(w.total_hours - 40, 0)) AS overtime_hours
+  FROM weekly w
+  JOIN employees e ON e.emp_id = w.emp_id
+  GROUP BY e.emp_id, e.name, e.hourly_rate
+),
+paid AS (
+  SELECT name, regular_hours, overtime_hours,
+         ROUND(regular_hours * hourly_rate + overtime_hours * hourly_rate * 1.5, 2) AS total_pay
+  FROM per_emp
+)
+SELECT name, regular_hours, overtime_hours, total_pay,
+       DENSE_RANK() OVER (ORDER BY total_pay DESC) AS pay_rank
+FROM paid
+ORDER BY pay_rank, name;
 
 
 -- Q3: week-over-week increases (consecutive weeks only)
--- TODO: write your query here
+WITH weekly AS (
+  SELECT emp_id,
+         date(work_date, 'weekday 0', '-6 days') AS week_start,
+         SUM(hours) AS hours
+  FROM timesheets
+  GROUP BY emp_id, week_start
+),
+with_prev AS (
+  SELECT emp_id, week_start, hours,
+         LAG(hours)      OVER (PARTITION BY emp_id ORDER BY week_start) AS prev_hours,
+         LAG(week_start) OVER (PARTITION BY emp_id ORDER BY week_start) AS prev_week_start
+  FROM weekly
+)
+SELECT e.name, p.week_start, p.prev_hours, p.hours,
+       p.hours - p.prev_hours AS increase
+FROM with_prev p
+JOIN employees e ON e.emp_id = p.emp_id
+WHERE p.prev_week_start = date(p.week_start, '-7 days')
+  AND p.hours > p.prev_hours
+ORDER BY p.week_start, e.name;
