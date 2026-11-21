@@ -38,16 +38,37 @@ Run: python3 natural_sort_key.py
 """
 
 
+def _runs(s):
+    """Yield (is_digit_run, text) for maximal runs of ASCII digits / non-digits."""
+    i, n = 0, len(s)
+    while i < n:
+        isd = "0" <= s[i] <= "9"
+        j = i + 1
+        while j < n and ("0" <= s[j] <= "9") == isd:
+            j += 1
+        yield isd, s[i:j]
+        i = j
+
+
 def tokenize(s):
-    raise NotImplementedError
+    return [int(run) if isd else run for isd, run in _runs(s)]
 
 
 def natural_key(s):
-    raise NotImplementedError
+    main = []
+    zeros = []
+    for isd, run in _runs(s):
+        if isd:
+            value = int(run)
+            main.append((0, value))
+            zeros.append(len(run) - len(str(value)))
+        else:
+            main.append((1, run.casefold()))
+    return (tuple(main), tuple(zeros), s)
 
 
 def natural_sorted(items, reverse=False):
-    raise NotImplementedError
+    return sorted(items, key=natural_key, reverse=reverse)
 
 
 def _run_tests():
