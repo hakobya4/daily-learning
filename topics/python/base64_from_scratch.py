@@ -40,16 +40,70 @@ ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 URL_ALPHABET = ALPHABET[:62] + "-_"
 
 
+_DECODE = {
+    False: {c: i for i, c in enumerate(ALPHABET)},
+    True: {c: i for i, c in enumerate(URL_ALPHABET)},
+}
+
+
 def b64encode(data, urlsafe=False, pad=True):
-    raise NotImplementedError
+    alpha = URL_ALPHABET if urlsafe else ALPHABET
+    out = []
+    n_full = len(data) - len(data) % 3
+    for i in range(0, n_full, 3):
+        n = (data[i] << 16) | (data[i + 1] << 8) | data[i + 2]
+        out.append(alpha[(n >> 18) & 63] + alpha[(n >> 12) & 63]
+                   + alpha[(n >> 6) & 63] + alpha[n & 63])
+    rest = len(data) - n_full
+    if rest == 1:
+        n = data[n_full] << 16
+        out.append(alpha[(n >> 18) & 63] + alpha[(n >> 12) & 63] + ("==" if pad else ""))
+    elif rest == 2:
+        n = (data[n_full] << 16) | (data[n_full + 1] << 8)
+        out.append(alpha[(n >> 18) & 63] + alpha[(n >> 12) & 63]
+                   + alpha[(n >> 6) & 63] + ("=" if pad else ""))
+    return "".join(out)
 
 
 def b64decode(text, urlsafe=False):
-    raise NotImplementedError
+    table = _DECODE[bool(urlsafe)]
+    body = text.rstrip("=")
+    npad = len(text) - len(body)
+    if npad:
+        if npad > 2 or len(text) % 4:
+            raise ValueError("bad padding")
+    if len(body) % 4 == 1:
+        raise ValueError("impossible length")
+    if npad and npad != (4 - len(body) % 4) % 4:
+        raise ValueError("bad padding")
+    vals = []
+    for ch in body:
+        v = table.get(ch)
+        if v is None:
+            raise ValueError("invalid character %r" % ch)
+        vals.append(v)
+    out = bytearray()
+    n_full = len(vals) - len(vals) % 4
+    for i in range(0, n_full, 4):
+        n = (vals[i] << 18) | (vals[i + 1] << 12) | (vals[i + 2] << 6) | vals[i + 3]
+        out += bytes(((n >> 16) & 255, (n >> 8) & 255, n & 255))
+    rest = len(vals) - n_full
+    if rest == 2:
+        a, b = vals[n_full], vals[n_full + 1]
+        if b & 0x0F:
+            raise ValueError("non-canonical encoding")
+        out.append(((a << 2) | (b >> 4)) & 255)
+    elif rest == 3:
+        a, b, c = vals[n_full], vals[n_full + 1], vals[n_full + 2]
+        if c & 0x03:
+            raise ValueError("non-canonical encoding")
+        n = (a << 18) | (b << 12) | (c << 6)
+        out += bytes(((n >> 16) & 255, (n >> 8) & 255))
+    return bytes(out)
 
 
 def b64_roundtrip_len(n):
-    raise NotImplementedError
+    return 4 * ((n + 2) // 3)
 
 
 def _run_tests():
