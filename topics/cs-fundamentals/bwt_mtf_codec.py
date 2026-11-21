@@ -40,19 +40,72 @@ Run: python3 bwt_mtf_codec.py
 
 
 def bwt(s):
-    raise NotImplementedError
+    n = len(s)
+    if n == 0:
+        return "", 0
+    doubled = s + s
+    order = sorted(range(n), key=lambda i: doubled[i:i + n])   # sorted() is stable
+    last = "".join(s[i - 1] for i in order)
+    index = next(k for k, i in enumerate(order) if doubled[i:i + n] == s)
+    return last, index
 
 
 def inverse_bwt(last, index):
-    raise NotImplementedError
+    n = len(last)
+    if n == 0:
+        return ""
+    # C[c] = number of characters in `last` strictly smaller than c
+    counts = {}
+    for ch in last:
+        counts[ch] = counts.get(ch, 0) + 1
+    C = {}
+    total = 0
+    for ch in sorted(counts):
+        C[ch] = total
+        total += counts[ch]
+    # LF[i] = row whose rotation starts with last[i] (k-th c in last == k-th c in first)
+    seen = {}
+    lf = [0] * n
+    for i, ch in enumerate(last):
+        k = seen.get(ch, 0)
+        lf[i] = C[ch] + k
+        seen[ch] = k + 1
+    out = []
+    r = index
+    for _ in range(n):
+        out.append(last[r])
+        r = lf[r]
+    out.reverse()
+    return "".join(out)
 
 
 def mtf_encode(s, alphabet):
-    raise NotImplementedError
+    table = list(alphabet)
+    codes = []
+    for ch in s:
+        try:
+            i = table.index(ch)
+        except ValueError:
+            raise ValueError("character %r not in alphabet" % ch) from None
+        codes.append(i)
+        if i:
+            del table[i]
+            table.insert(0, ch)
+    return codes
 
 
 def mtf_decode(codes, alphabet):
-    raise NotImplementedError
+    table = list(alphabet)
+    out = []
+    for c in codes:
+        if not 0 <= c < len(table):
+            raise ValueError("code %r out of range" % (c,))
+        ch = table[c]
+        out.append(ch)
+        if c:
+            del table[c]
+            table.insert(0, ch)
+    return "".join(out)
 
 
 def _run_tests():
