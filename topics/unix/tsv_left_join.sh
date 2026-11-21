@@ -58,6 +58,69 @@
 #   ./tsv_left_join.sh -k x:1 /tmp/users.tsv /tmp/orders.tsv   -> usage on stderr, exit 2
 #   ./tsv_left_join.sh /tmp/users.tsv                          -> usage on stderr, exit 2
 
-# TODO: replace this line with your implementation
-echo "not implemented" >&2
-exit 1
+usage() {
+    echo "usage: $(basename "$0") [-k L:R] LEFT.tsv RIGHT.tsv   (L, R = 1-based key columns)" >&2
+    exit 2
+}
+
+lk=1
+rk=1
+while getopts ":k:" opt; do
+    case "$opt" in
+        k) case "$OPTARG" in
+               *:*) lk="${OPTARG%%:*}"; rk="${OPTARG#*:}" ;;
+               *)   usage ;;
+           esac
+           case "$lk" in ''|*[!0-9]*) usage ;; esac
+           case "$rk" in ''|*[!0-9]*) usage ;; esac
+           lk=$((10#$lk)); rk=$((10#$rk))
+           { [ "$lk" -ge 1 ] && [ "$rk" -ge 1 ]; } || usage ;;
+        *) usage ;;
+    esac
+done
+shift $((OPTIND - 1))
+[ $# -eq 2 ] || usage
+left="$1"
+right="$2"
+for f in "$left" "$right"; do
+    { [ -f "$f" ] && [ -r "$f" ]; } || usage
+done
+ncols() { head -n 1 "$1" | awk -F'\t' '{ print NF }'; }
+[ "$lk" -le "$(ncols "$left")" ] || usage
+[ "$rk" -le "$(ncols "$right")" ] || usage
+
+awk -F'\t' -v OFS='\t' -v lk="$lk" -v rk="$rk" '
+function strip_cr() { sub(/\r$/, ""); }
+# RIGHT file first: remember the non-key columns of every row, grouped by key
+NR == FNR {
+    strip_cr()
+    rest = ""
+    for (i = 1; i <= NF; i++) if (i != rk) rest = rest OFS $i
+    if (FNR == 1) {
+        rhead = rest
+        filler = ""
+        for (i = 1; i < NF; i++) filler = filler OFS "NULL"
+        next
+    }
+    key = $rk
+    if (!(key in cnt)) order[++nkeys] = key
+    row[key, ++cnt[key]] = rest
+    next
+}
+# LEFT file: emit in file order, fanning out over all matches
+{
+    strip_cr()
+    if (FNR == 1) { print $0 rhead; next }
+    key = $lk
+    if (key in cnt) {
+        used[key] = 1
+        for (j = 1; j <= cnt[key]; j++) print $0 row[key, j]
+    } else {
+        print $0 filler
+    }
+}
+END {
+    unmatched = 0
+    for (k = 1; k <= nkeys; k++) if (!(order[k] in used)) unmatched += cnt[order[k]]
+    printf "unmatched right rows: %d\n", unmatched > "/dev/stderr"
+}' "$right" "$left"
