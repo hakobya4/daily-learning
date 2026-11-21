@@ -36,20 +36,129 @@ Run: python3 karatsuba_bigmul.py
 THRESHOLD = 32
 
 
+_DIGITS = frozenset("0123456789")
+
+
+def _check(*nums):
+    for x in nums:
+        if not isinstance(x, str) or not x or not set(x) <= _DIGITS:
+            raise ValueError("not a non-negative decimal string: %r" % (x,))
+
+
+def _to_digits(s):
+    """Decimal string -> little-endian list of ints, leading zeros stripped ([] for 0)."""
+    d = [ord(c) - 48 for c in reversed(s)]
+    while d and d[-1] == 0:
+        d.pop()
+    return d
+
+
+def _to_str(d):
+    while d and d[-1] == 0:
+        d.pop()
+    return "".join(chr(48 + x) for x in reversed(d)) if d else "0"
+
+
+def _add(x, y):
+    if len(x) < len(y):
+        x, y = y, x
+    out = []
+    carry = 0
+    for i in range(len(x)):
+        s = x[i] + (y[i] if i < len(y) else 0) + carry
+        if s >= 10:
+            out.append(s - 10)
+            carry = 1
+        else:
+            out.append(s)
+            carry = 0
+    if carry:
+        out.append(1)
+    return out
+
+
+def _sub(x, y):
+    """x - y for little-endian digit lists with x >= y."""
+    out = []
+    borrow = 0
+    for i in range(len(x)):
+        s = x[i] - (y[i] if i < len(y) else 0) - borrow
+        if s < 0:
+            out.append(s + 10)
+            borrow = 1
+        else:
+            out.append(s)
+            borrow = 0
+    if borrow:
+        raise ValueError("sub_str requires a >= b")
+    while out and out[-1] == 0:
+        out.pop()
+    return out
+
+
+def _school(x, y):
+    if not x or not y:
+        return []
+    res = [0] * (len(x) + len(y))
+    for i, xi in enumerate(x):
+        if xi == 0:
+            continue
+        carry = 0
+        k = i
+        for yj in y:
+            t = res[k] + xi * yj + carry
+            carry, res[k] = divmod(t, 10)
+            k += 1
+        while carry:
+            t = res[k] + carry
+            carry, res[k] = divmod(t, 10)
+            k += 1
+    while res and res[-1] == 0:
+        res.pop()
+    return res
+
+
+def _shift(x, k):
+    return [0] * k + x if x else []
+
+
+def _kara(x, y):
+    if len(x) < THRESHOLD or len(y) < THRESHOLD:
+        return _school(x, y)
+    m = max(len(x), len(y)) // 2
+    x0, x1 = x[:m], x[m:]
+    y0, y1 = y[:m], y[m:]
+    while x0 and x0[-1] == 0:
+        x0.pop()
+    while y0 and y0[-1] == 0:
+        y0.pop()
+    z2 = _kara(x1, y1)
+    z0 = _kara(x0, y0)
+    z1 = _sub(_sub(_kara(_add(x1, x0), _add(y1, y0)), z2), z0)
+    res = _add(_add(_shift(z2, 2 * m), _shift(z1, m)), z0)
+    while res and res[-1] == 0:
+        res.pop()
+    return res
+
+
 def add_str(a, b):
-    raise NotImplementedError
+    _check(a, b)
+    return _to_str(_add(_to_digits(a), _to_digits(b)))
 
 
 def sub_str(a, b):
-    raise NotImplementedError
+    _check(a, b)
+    return _to_str(_sub(_to_digits(a), _to_digits(b)))
 
 
 def schoolbook_mul(a, b):
-    raise NotImplementedError
+    _check(a, b)
+    return _to_str(_school(_to_digits(a), _to_digits(b)))
 
 
 def karatsuba_mul(a, b):
-    raise NotImplementedError
+    _check(a, b)
+    return _to_str(_kara(_to_digits(a), _to_digits(b)))
 
 
 def _run_tests():
