@@ -46,20 +46,68 @@ COUNTRY_LENGTHS = {
 }
 
 
+_DIGITS = "0123456789"
+_UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+
+def _luhn_sum(digits):
+    total = 0
+    for pos, ch in enumerate(reversed(digits)):
+        d = ord(ch) - 48
+        if pos % 2 == 1:
+            d *= 2
+            if d > 9:
+                d -= 9
+        total += d
+    return total
+
+
 def luhn_valid(number):
-    raise NotImplementedError
+    digits = []
+    for ch in number:
+        if ch in " -":
+            continue
+        if ch not in _DIGITS:
+            return False
+        digits.append(ch)
+    if len(digits) < 2:
+        return False
+    return _luhn_sum(digits) % 10 == 0
 
 
 def luhn_check_digit(payload):
-    raise NotImplementedError
+    if not payload or any(ch not in _DIGITS for ch in payload):
+        raise ValueError("payload must be a non-empty digit string")
+    return str((10 - _luhn_sum(payload + "0") % 10) % 10)
+
+
+def _mod97(digit_string, chunk=9):
+    rem = 0
+    for i in range(0, len(digit_string), chunk):
+        part = digit_string[i:i + chunk]
+        rem = int(str(rem) + part) % 97
+    return rem
 
 
 def iban_valid(iban):
-    raise NotImplementedError
+    s = iban.replace(" ", "").upper()
+    if not 15 <= len(s) <= 34:
+        return False
+    if any(ch not in _DIGITS and ch not in _UPPER for ch in s):
+        return False
+    if s[0] not in _UPPER or s[1] not in _UPPER or s[2] not in _DIGITS or s[3] not in _DIGITS:
+        return False
+    expected = COUNTRY_LENGTHS.get(s[:2])
+    if expected is None or len(s) != expected:
+        return False
+    rearranged = s[4:] + s[:4]
+    digits = "".join(ch if ch in _DIGITS else str(_UPPER.index(ch) + 10) for ch in rearranged)
+    return _mod97(digits) == 1
 
 
 def iban_format(iban):
-    raise NotImplementedError
+    s = iban.replace(" ", "").upper()
+    return " ".join(s[i:i + 4] for i in range(0, len(s), 4))
 
 
 def _run_tests():
