@@ -46,6 +46,59 @@
 #   ./cron_field_expand.sh minute 1-2-3      -> stderr "invalid minute spec: 1-2-3", exit 1
 #   ./cron_field_expand.sh week 1            -> usage on stderr, exit 2
 
-# TODO: replace this line with your implementation
-echo "not implemented" >&2
-exit 1
+usage() {
+    echo "usage: $(basename "$0") minute|hour|dom|month|dow SPEC" >&2
+    exit 2
+}
+
+[ $# -eq 2 ] || usage
+field="$1"
+spec="$2"
+case "$field" in
+    minute) lo=0; hi=59 ;;
+    hour)   lo=0; hi=23 ;;
+    dom)    lo=1; hi=31 ;;
+    month)  lo=1; hi=12 ;;
+    dow)    lo=0; hi=7 ;;      # 7 is accepted as Sunday and folded to 0 below
+    *)      usage ;;
+esac
+
+awk -v field="$field" -v spec="$spec" -v lo="$lo" -v hi="$hi" '
+function bad() {
+    printf "invalid %s spec: %s\n", field, spec > "/dev/stderr"
+    exit 1
+}
+function num(s) { if (s !~ /^[0-9]+$/) bad(); return s + 0 }
+BEGIN {
+    if (spec == "") bad()
+    n = split(spec, items, ",")
+    for (k = 1; k <= n; k++) {
+        item = items[k]
+        if (item == "") bad()
+        step = 1; hasstep = 0
+        if (index(item, "/")) {
+            if (split(item, parts, "/") != 2) bad()
+            item = parts[1]
+            step = num(parts[2]); hasstep = 1
+            if (step < 1) bad()
+        }
+        if (item == "*") {
+            a = lo; b = hi
+        } else if (index(item, "-")) {
+            if (split(item, r, "-") != 2) bad()
+            a = num(r[1]); b = num(r[2])
+            if (a > b) bad()
+        } else {
+            a = num(item)
+            b = hasstep ? hi : a
+        }
+        if (a < lo || b > hi) bad()
+        for (v = a; v <= b; v += step)
+            seen[(field == "dow" && v == 7) ? 0 : v] = 1
+    }
+    top = (field == "dow") ? 6 : hi
+    out = ""
+    for (v = lo; v <= top; v++)
+        if (v in seen) out = (out == "" ? v : out "," v)
+    print out
+}'
