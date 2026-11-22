@@ -64,6 +64,63 @@
 # If you have `hexdump` installed, `diff <(./hexdump_lite.sh f) <(hexdump -C f)` should
 # be empty for any non-empty file.
 
-# TODO: replace this line with your implementation
-echo "not implemented" >&2
-exit 1
+prog=hexdump_lite.sh
+usage() { echo "usage: $prog [-v] [-s SKIP] [-n LEN] [FILE]" >&2; exit 2; }
+
+squeeze=1 skip=0 len=
+while getopts ":vs:n:" opt; do
+    case $opt in
+        v) squeeze=0 ;;
+        s) skip=$OPTARG ;;
+        n) len=$OPTARG ;;
+        *) usage ;;
+    esac
+done
+shift $((OPTIND - 1))
+[ $# -le 1 ] || usage
+case $skip in ''|*[!0-9]*) usage ;; esac
+if [ -n "$len" ]; then case $len in *[!0-9]*) usage ;; esac; fi
+
+file=${1:--}
+if [ "$file" != "-" ] && { [ ! -f "$file" ] || [ ! -r "$file" ]; }; then
+    echo "$prog: $file: cannot read" >&2
+    exit 1
+fi
+
+{
+    if [ "$file" = "-" ]; then cat; else cat -- "$file"; fi
+} | tail -c +"$((skip + 1))" | { if [ -n "$len" ]; then head -c "$len"; else cat; fi; } |
+od -An -v -tu1 |
+awk -v skip="$skip" -v squeeze="$squeeze" '
+function flush(   i, hex, asc, v, line) {
+    if (n == 0) return
+    hex = ""; asc = ""
+    for (i = 0; i < 16; i++) {
+        if (i < n) {
+            v = buf[i]
+            hex = hex sprintf("%02x ", v)
+            asc = asc ((v >= 32 && v <= 126) ? sprintf("%c", v) : ".")
+        } else {
+            hex = hex "   "
+        }
+        if (i == 7) hex = hex " "
+    }
+    if (squeeze && n == 16 && have_prev && hex == prev) {
+        if (!starred) { print "*"; starred = 1 }
+    } else {
+        printf "%08x  %s |%s|\n", off, hex, asc
+        starred = 0
+    }
+    if (n == 16) { prev = hex; have_prev = 1 } else { have_prev = 0 }
+    off += n
+    n = 0
+}
+BEGIN { off = skip + 0; n = 0 }
+{
+    for (f = 1; f <= NF; f++) {
+        buf[n++] = $f + 0
+        if (n == 16) flush()
+    }
+}
+END { flush(); printf "%08x\n", off }
+'
