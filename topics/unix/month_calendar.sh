@@ -74,6 +74,37 @@
 # Bonus check if you have Python: python3 -c "import calendar" can tell you the
 # weekday of day 1 (calendar.weekday(y, m, 1), Monday = 0) for random months.
 
-# TODO: replace this line with your implementation
-echo "not implemented" >&2
-exit 1
+usage() { echo "usage: month_calendar.sh [-s] YEAR MONTH" >&2; exit 2; }
+
+sunday=0
+if [ "${1-}" = "-s" ]; then sunday=1; shift; fi
+[ $# -eq 2 ] || usage
+case $1 in ''|*[!0-9]*) usage ;; esac
+case $2 in ''|*[!0-9]*) usage ;; esac
+year=$((10#$1)) month=$((10#$2))
+{ [ "$year" -ge 1 ] && [ "$year" -le 9999 ] && [ "$month" -ge 1 ] && [ "$month" -le 12 ]; } || usage
+
+awk -v y="$year" -v m="$month" -v sunday="$sunday" 'BEGIN {
+    split("January February March April May June July August September October November December", names, " ")
+    split("31 28 31 30 31 30 31 31 30 31 30 31", mdays, " ")
+    split("0 3 2 5 0 3 5 1 4 6 2 4", t, " ")
+    leap = (y % 4 == 0 && y % 100 != 0) || (y % 400 == 0)
+    ndays = mdays[m] + (m == 2 && leap ? 1 : 0)
+
+    yy = (m < 3) ? y - 1 : y
+    dow = (yy + int(yy / 4) - int(yy / 100) + int(yy / 400) + t[m] + 1) % 7   # 0 = Sunday
+    col = sunday ? dow : (dow + 6) % 7
+
+    title = names[m] " " y
+    pad = int((20 - length(title)) / 2)
+    printf "%*s%s\n", pad, "", title
+    print (sunday ? "Su Mo Tu We Th Fr Sa" : "Mo Tu We Th Fr Sa Su")
+
+    line = ""
+    for (i = 0; i < col; i++) line = line "   "
+    for (d = 1; d <= ndays; d++) {
+        line = line sprintf("%2d ", d)
+        if (++col == 7) { sub(/ +$/, "", line); print line; line = ""; col = 0 }
+    }
+    if (line != "") { sub(/ +$/, "", line); print line }
+}'
