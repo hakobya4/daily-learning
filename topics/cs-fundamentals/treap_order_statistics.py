@@ -60,31 +60,132 @@ class Treap:
         self._root = None
 
     def insert(self, key):
-        raise NotImplementedError
+        if key in self:
+            return False
+        left, right = self._split(self._root, key)
+        node = _Node(key, self._rng.random())
+        self._root = self._merge(self._merge(left, node), right)
+        return True
+
+    @staticmethod
+    def _size(t):
+        return t.size if t is not None else 0
+
+    @classmethod
+    def _update(cls, t):
+        t.size = 1 + cls._size(t.left) + cls._size(t.right)
+
+    @classmethod
+    def _split(cls, t, key):
+        """(keys < key, keys >= key)"""
+        if t is None:
+            return None, None
+        if t.key < key:
+            l, r = cls._split(t.right, key)
+            t.right = l
+            cls._update(t)
+            return t, r
+        l, r = cls._split(t.left, key)
+        t.left = r
+        cls._update(t)
+        return l, t
+
+    @classmethod
+    def _merge(cls, a, b):
+        if a is None:
+            return b
+        if b is None:
+            return a
+        if a.prio > b.prio:
+            a.right = cls._merge(a.right, b)
+            cls._update(a)
+            return a
+        b.left = cls._merge(a, b.left)
+        cls._update(b)
+        return b
+
+    @classmethod
+    def _split_first(cls, t):
+        """Detach the leftmost node: returns (leftmost_node, rest)."""
+        if t.left is None:
+            rest = t.right
+            t.right = None
+            t.size = 1
+            return t, rest
+        first, t.left = cls._split_first(t.left)
+        cls._update(t)
+        return first, t
 
     def remove(self, key):
-        raise NotImplementedError
+        if key not in self:
+            return False
+        left, right = self._split(self._root, key)
+        _, right = self._split_first(right)   # leftmost of right is exactly `key`
+        self._root = self._merge(left, right)
+        return True
 
     def __contains__(self, key):
-        raise NotImplementedError
+        t = self._root
+        while t is not None:
+            if key == t.key:
+                return True
+            t = t.left if key < t.key else t.right
+        return False
 
     def __len__(self):
-        raise NotImplementedError
+        return self._size(self._root)
 
     def kth(self, k):
-        raise NotImplementedError
+        if not 0 <= k < len(self):
+            raise IndexError("treap index out of range")
+        t = self._root
+        while True:
+            ls = self._size(t.left)
+            if k < ls:
+                t = t.left
+            elif k == ls:
+                return t.key
+            else:
+                k -= ls + 1
+                t = t.right
 
     def rank(self, key):
-        raise NotImplementedError
+        r, t = 0, self._root
+        while t is not None:
+            if t.key < key:
+                r += self._size(t.left) + 1
+                t = t.right
+            else:
+                t = t.left
+        return r
 
     def range_count(self, lo, hi):
-        raise NotImplementedError
+        if not lo < hi:
+            return 0
+        return self.rank(hi) - self.rank(lo)
 
     def __iter__(self):
-        raise NotImplementedError
+        stack, t = [], self._root
+        while stack or t is not None:
+            while t is not None:
+                stack.append(t)
+                t = t.left
+            t = stack.pop()
+            yield t.key
+            t = t.right
 
     def height(self):
-        raise NotImplementedError
+        if self._root is None:
+            return 0
+        best, stack = 0, [(self._root, 1)]
+        while stack:
+            t, d = stack.pop()
+            best = max(best, d)
+            if t.left is not None:
+                stack.append((t.left, d + 1))
+            if t.right is not None:
+                stack.append((t.right, d + 1))
+        return best
 
 
 def _run_tests():
