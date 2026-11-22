@@ -52,19 +52,123 @@ from itertools import product
 
 
 def accepts(dfa, word):
-    raise NotImplementedError
+    state = dfa["start"]
+    alphabet = set(dfa["alphabet"])
+    for ch in word:
+        if ch not in alphabet:
+            return False
+        key = (state, ch)
+        if key not in dfa["delta"]:
+            return False
+        state = dfa["delta"][key]
+    return state in dfa["accept"]
 
 
 def reachable_states(dfa):
-    raise NotImplementedError
+    from collections import deque
+    seen = {dfa["start"]}
+    queue = deque([dfa["start"]])
+    while queue:
+        s = queue.popleft()
+        for a in dfa["alphabet"]:
+            nxt = dfa["delta"].get((s, a))
+            if nxt is not None and nxt not in seen:
+                seen.add(nxt)
+                queue.append(nxt)
+    return seen
 
 
 def minimize(dfa):
-    raise NotImplementedError
+    alphabet = list(dfa["alphabet"])
+    states = reachable_states(dfa)
+    DEAD = object()                                    # unique sentinel
+    delta = {}
+    need_dead = False
+    for s in states:
+        for a in alphabet:
+            nxt = dfa["delta"].get((s, a))
+            if nxt is None:
+                nxt, need_dead = DEAD, True
+            delta[(s, a)] = nxt
+    all_states = set(states)
+    if need_dead:
+        all_states.add(DEAD)
+        for a in alphabet:
+            delta[(DEAD, a)] = DEAD
+    accept = {s for s in states if s in dfa["accept"]}
+
+    # Moore refinement: block id per state, refine by signature until stable
+    block = {s: (1 if s in accept else 0) for s in all_states}
+    while True:
+        sigs = {}
+        new_block = {}
+        for s in all_states:
+            sig = (block[s],) + tuple(block[delta[(s, a)]] for a in alphabet)
+            new_block[s] = sigs.setdefault(sig, len(sigs))
+        if len(sigs) == len(set(block.values())):
+            break
+        block = new_block
+    block = new_block
+
+    groups = {}
+    for s in all_states:
+        groups.setdefault(block[s], set()).add(s)
+
+    # live blocks: those from which an accepting block is reachable
+    preds = {b: set() for b in groups}
+    for (s, a), t in delta.items():
+        preds[block[t]].add(block[s])
+    live = {block[s] for s in accept}
+    stack = list(live)
+    while stack:
+        b = stack.pop()
+        for p in preds[b]:
+            if p not in live:
+                live.add(p)
+                stack.append(p)
+
+    start_block = block[dfa["start"]]
+    if start_block not in live:
+        return {"alphabet": alphabet, "start": frozenset(), "accept": set(), "delta": {}}
+
+    name = {b: frozenset(x for x in groups[b] if x is not DEAD) for b in groups if b in live}
+    new_delta = {}
+    for b in name:
+        rep = next(iter(groups[b]))
+        for a in alphabet:
+            tb = block[delta[(rep, a)]]
+            if tb in live:
+                new_delta[(name[b], a)] = name[tb]
+    new_accept = {name[b] for b in name if groups[b] & accept}
+    return {"alphabet": alphabet, "start": name[start_block], "accept": new_accept, "delta": new_delta}
 
 
 def equivalent(d1, d2):
-    raise NotImplementedError
+    from collections import deque
+    DEAD = object()
+    alphabet = list(dict.fromkeys(list(d1["alphabet"]) + list(d2["alphabet"])))
+
+    def step(d, s, a):
+        if s is DEAD:
+            return DEAD
+        return d["delta"].get((s, a), DEAD)
+
+    def acc(d, s):
+        return s is not DEAD and s in d["accept"]
+
+    start = (d1["start"], d2["start"])
+    seen = {start}
+    queue = deque([start])
+    while queue:
+        p, q = queue.popleft()
+        if acc(d1, p) != acc(d2, q):
+            return False
+        for a in alphabet:
+            pair = (step(d1, p, a), step(d2, q, a))
+            if pair not in seen:
+                seen.add(pair)
+                queue.append(pair)
+    return True
 
 
 def _all_words(alphabet, max_len):
