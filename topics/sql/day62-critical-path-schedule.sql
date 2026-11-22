@@ -103,12 +103,79 @@ INSERT INTO deps (task_id, depends_on) VALUES
  (10, 9), (10, 8), (10, 11);
 
 -- Q1: earliest start / earliest finish
--- TODO: write your query here
+WITH RECURSIVE paths(task_id, ef) AS (
+  -- roots: tasks with no prerequisites start at day 0
+  SELECT t.task_id, t.duration
+  FROM tasks t
+  WHERE NOT EXISTS (SELECT 1 FROM deps d WHERE d.task_id = t.task_id)
+  UNION ALL
+  -- extend every path one edge forward: successor finishes after its predecessor
+  SELECT d.task_id, p.ef + t.duration
+  FROM paths p
+  JOIN deps d  ON d.depends_on = p.task_id
+  JOIN tasks t ON t.task_id = d.task_id
+),
+early AS (
+  SELECT task_id, MAX(ef) AS ef FROM paths GROUP BY task_id
+)
+SELECT t.name, e.ef - t.duration AS es, e.ef
+FROM early e JOIN tasks t ON t.task_id = e.task_id
+ORDER BY es, t.name;
 
 
 -- Q2: latest start, slack and the critical path
--- TODO: write your query here
+WITH RECURSIVE paths(task_id, ef) AS (
+  SELECT t.task_id, t.duration
+  FROM tasks t
+  WHERE NOT EXISTS (SELECT 1 FROM deps d WHERE d.task_id = t.task_id)
+  UNION ALL
+  SELECT d.task_id, p.ef + t.duration
+  FROM paths p
+  JOIN deps d  ON d.depends_on = p.task_id
+  JOIN tasks t ON t.task_id = d.task_id
+),
+early AS (
+  SELECT task_id, MAX(ef) AS ef FROM paths GROUP BY task_id
+),
+proj AS (
+  SELECT MAX(ef) AS project_end FROM early
+),
+back(task_id, ls) AS (
+  -- sinks: nothing depends on them, so they may start as late as end - duration
+  SELECT t.task_id, (SELECT project_end FROM proj) - t.duration
+  FROM tasks t
+  WHERE NOT EXISTS (SELECT 1 FROM deps d WHERE d.depends_on = t.task_id)
+  UNION ALL
+  -- walk edges backwards: a prerequisite must finish before its dependent's start
+  SELECT d.depends_on, b.ls - t.duration
+  FROM back b
+  JOIN deps d  ON d.task_id = b.task_id
+  JOIN tasks t ON t.task_id = d.depends_on
+),
+late AS (
+  SELECT task_id, MIN(ls) AS ls FROM back GROUP BY task_id
+)
+SELECT t.name,
+       e.ef - t.duration                      AS es,
+       l.ls,
+       l.ls - (e.ef - t.duration)             AS slack,
+       CASE WHEN l.ls = e.ef - t.duration THEN 'Y' ELSE 'N' END AS critical
+FROM tasks t
+JOIN early e ON e.task_id = t.task_id
+JOIN late  l ON l.task_id = t.task_id
+ORDER BY slack, es, t.name;
 
 
 -- Q3: number of distinct transitive prerequisites per task
--- TODO: write your query here
+WITH RECURSIVE closure(task_id, prereq) AS (
+  SELECT task_id, depends_on FROM deps
+  UNION                                   -- UNION de-duplicates (task, prereq) pairs
+  SELECT c.task_id, d.depends_on
+  FROM closure c
+  JOIN deps d ON d.task_id = c.prereq
+)
+SELECT t.name, COUNT(c.prereq) AS n_prereqs
+FROM tasks t
+LEFT JOIN closure c ON c.task_id = t.task_id
+GROUP BY t.task_id, t.name
+ORDER BY n_prereqs DESC, t.name;
