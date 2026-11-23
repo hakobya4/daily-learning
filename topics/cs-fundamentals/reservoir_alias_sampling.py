@@ -48,22 +48,79 @@ import random
 
 
 def reservoir_sample(stream, k, rng):
-    raise NotImplementedError
+    if k < 0:
+        raise ValueError("k must be >= 0")
+    reservoir = []
+    for i, item in enumerate(stream):
+        if i < k:
+            reservoir.append(item)
+        else:
+            j = rng.randrange(i + 1)
+            if j < k:
+                reservoir[j] = item
+    return reservoir
 
 
 def weighted_reservoir_sample(stream, k, rng):
-    raise NotImplementedError
+    if k < 0:
+        raise ValueError("k must be >= 0")
+    heap = []  # min-heap of (key, seq, item)
+    for seq, (item, weight) in enumerate(stream):
+        if not weight > 0:
+            raise ValueError(f"weight must be > 0, got {weight!r}")
+        key = rng.random() ** (1.0 / weight)
+        if k == 0:
+            continue
+        if len(heap) < k:
+            heapq.heappush(heap, (key, seq, item))
+        elif key > heap[0][0]:
+            heapq.heapreplace(heap, (key, seq, item))
+    heap.sort(reverse=True)
+    return [item for _, _, item in heap]
 
 
 class AliasTable:
     def __init__(self, weights):
-        raise NotImplementedError
+        weights = list(weights)
+        n = len(weights)
+        if n == 0:
+            raise ValueError("need at least one weight")
+        if any(w < 0 for w in weights):
+            raise ValueError("weights must be non-negative")
+        total = float(sum(weights))
+        if not total > 0:
+            raise ValueError("at least one weight must be positive")
+        self.n = n
+        scaled = [w * n / total for w in weights]
+        self.prob = [0.0] * n
+        self.alias = list(range(n))
+        small = [i for i, p in enumerate(scaled) if p < 1.0]
+        large = [i for i, p in enumerate(scaled) if p >= 1.0]
+        while small and large:
+            s = small.pop()
+            l = large.pop()
+            self.prob[s] = scaled[s]
+            self.alias[s] = l
+            scaled[l] -= (1.0 - scaled[s])
+            if scaled[l] < 1.0:
+                small.append(l)
+            else:
+                large.append(l)
+        for i in large + small:
+            self.prob[i] = 1.0
+            self.alias[i] = i
 
     def sample(self, rng):
-        raise NotImplementedError
+        c = rng.randrange(self.n)
+        return c if rng.random() < self.prob[c] else self.alias[c]
 
     def probabilities(self):
-        raise NotImplementedError
+        n = self.n
+        out = [0.0] * n
+        for c in range(n):
+            out[c] += self.prob[c] / n
+            out[self.alias[c]] += (1.0 - self.prob[c]) / n
+        return out
 
 
 def _close(observed, expected_p, trials, sigmas=5.0):
