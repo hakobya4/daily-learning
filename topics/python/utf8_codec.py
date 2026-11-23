@@ -55,19 +55,82 @@ class UTF8Error(ValueError):
 
 
 def encode_code_point(cp):
-    raise NotImplementedError
+    if cp < 0 or cp > 0x10FFFF:
+        raise ValueError(f"code point out of range: {cp:#x}")
+    if 0xD800 <= cp <= 0xDFFF:
+        raise ValueError(f"surrogate code point: {cp:#x}")
+    if cp < 0x80:
+        return bytes([cp])
+    if cp < 0x800:
+        return bytes([0xC0 | (cp >> 6), 0x80 | (cp & 0x3F)])
+    if cp < 0x10000:
+        return bytes([0xE0 | (cp >> 12), 0x80 | ((cp >> 6) & 0x3F), 0x80 | (cp & 0x3F)])
+    return bytes([0xF0 | (cp >> 18), 0x80 | ((cp >> 12) & 0x3F),
+                  0x80 | ((cp >> 6) & 0x3F), 0x80 | (cp & 0x3F)])
 
 
 def utf8_encode(s):
-    raise NotImplementedError
+    out = bytearray()
+    for ch in s:
+        out += encode_code_point(ord(ch))
+    return bytes(out)
 
 
 def utf8_decode(data, errors="strict"):
-    raise NotImplementedError
+    if errors not in ("strict", "replace"):
+        raise ValueError(f"unknown errors mode: {errors!r}")
+    out = []
+    i, n = 0, len(data)
+    while i < n:
+        b = data[i]
+        if b < 0x80:
+            out.append(chr(b))
+            i += 1
+            continue
+        # determine sequence length and the allowed range for the 2nd byte
+        if 0xC2 <= b <= 0xDF:
+            need, lo, hi, cp = 1, 0x80, 0xBF, b & 0x1F
+        elif 0xE0 <= b <= 0xEF:
+            need, cp = 2, b & 0x0F
+            lo, hi = (0xA0, 0xBF) if b == 0xE0 else (0x80, 0x9F) if b == 0xED else (0x80, 0xBF)
+        elif 0xF0 <= b <= 0xF4:
+            need, cp = 3, b & 0x07
+            lo, hi = (0x90, 0xBF) if b == 0xF0 else (0x80, 0x8F) if b == 0xF4 else (0x80, 0xBF)
+        else:
+            if errors == "strict":
+                raise UTF8Error(i, f"invalid lead byte {b:#04x}")
+            out.append("�")
+            i += 1
+            continue
+        j = i + 1
+        ok = True
+        for k in range(need):
+            if j >= n:
+                ok = False
+                reason = "truncated sequence"
+                break
+            c = data[j]
+            l, h = (lo, hi) if k == 0 else (0x80, 0xBF)
+            if not (l <= c <= h):
+                ok = False
+                reason = (f"unexpected byte {c:#04x} (overlong, surrogate or out of range)"
+                          if k == 0 and 0x80 <= c <= 0xBF else f"expected continuation, got {c:#04x}")
+                break
+            cp = (cp << 6) | (c & 0x3F)
+            j += 1
+        if ok:
+            out.append(chr(cp))
+            i = j
+        else:
+            if errors == "strict":
+                raise UTF8Error(i, reason)
+            out.append("�")
+            i = j  # the offending byte (if any) is re-examined as a new lead
+    return "".join(out)
 
 
 def count_code_points(data):
-    raise NotImplementedError
+    return sum(1 for b in data if (b & 0xC0) != 0x80)
 
 
 def _run_tests():

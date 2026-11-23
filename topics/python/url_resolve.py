@@ -39,19 +39,79 @@ Run: python3 url_resolve.py
 
 
 def split_uri(ref):
-    raise NotImplementedError
+    import re
+    m = re.match(r"^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?", ref)
+    return (m.group(2), m.group(4), m.group(5), m.group(7), m.group(9))
 
 
 def unsplit_uri(scheme, authority, path, query, fragment):
-    raise NotImplementedError
+    out = ""
+    if scheme is not None:
+        out += scheme + ":"
+    if authority is not None:
+        out += "//" + authority
+    out += path
+    if query is not None:
+        out += "?" + query
+    if fragment is not None:
+        out += "#" + fragment
+    return out
 
 
 def remove_dot_segments(path):
-    raise NotImplementedError
+    inp, out = path, ""
+    while inp:
+        if inp.startswith("../"):                     # A
+            inp = inp[3:]
+        elif inp.startswith("./"):
+            inp = inp[2:]
+        elif inp.startswith("/./"):                   # B
+            inp = inp[2:]
+        elif inp == "/.":
+            inp = "/"
+        elif inp.startswith("/../"):                  # C
+            inp = inp[3:]
+            out = out[:out.rfind("/")] if "/" in out else ""
+        elif inp == "/..":
+            inp = "/"
+            out = out[:out.rfind("/")] if "/" in out else ""
+        elif inp in (".", ".."):                      # D
+            inp = ""
+        else:                                         # E
+            start = 1 if inp.startswith("/") else 0
+            nxt = inp.find("/", start)
+            if nxt == -1:
+                nxt = len(inp)
+            out += inp[:nxt]
+            inp = inp[nxt:]
+    return out
 
 
 def resolve(base, ref):
-    raise NotImplementedError
+    bs, ba, bp, bq, _ = split_uri(base)
+    rs, ra, rp, rq, rf = split_uri(ref)
+    if rs is not None:
+        ts, ta, tp, tq = rs, ra, remove_dot_segments(rp), rq
+    else:
+        if ra is not None:
+            ta, tp, tq = ra, remove_dot_segments(rp), rq
+        else:
+            if rp == "":
+                tp = bp
+                tq = rq if rq is not None else bq
+            else:
+                if rp.startswith("/"):
+                    tp = remove_dot_segments(rp)
+                else:
+                    if ba is not None and bp == "":
+                        merged = "/" + rp
+                    else:
+                        merged = bp[:bp.rfind("/") + 1] + rp
+                    tp = remove_dot_segments(merged)
+                tq = rq
+            ta = ba
+        ts = bs
+    return unsplit_uri(ts, ta, tp, tq, rf)
 
 
 def _run_tests():

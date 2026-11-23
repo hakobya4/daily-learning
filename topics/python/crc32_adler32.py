@@ -57,23 +57,61 @@ POLY = 0xEDB88320
 
 
 def crc32_bitwise(data, crc=0):
-    raise NotImplementedError
+    crc ^= 0xFFFFFFFF
+    for byte in data:
+        crc ^= byte
+        for _ in range(8):
+            if crc & 1:
+                crc = (crc >> 1) ^ POLY
+            else:
+                crc >>= 1
+    return crc ^ 0xFFFFFFFF
 
 
 def make_crc_table():
-    raise NotImplementedError
+    table = []
+    for n in range(256):
+        c = n
+        for _ in range(8):
+            c = (c >> 1) ^ POLY if c & 1 else c >> 1
+        table.append(c)
+    return table
+
+
+_CRC_TABLE = make_crc_table()
+_CRC_REV = {v >> 24: i for i, v in enumerate(_CRC_TABLE)}
 
 
 def crc32_table(data, crc=0):
-    raise NotImplementedError
+    table = _CRC_TABLE
+    crc ^= 0xFFFFFFFF
+    for byte in data:
+        crc = table[(crc ^ byte) & 0xFF] ^ (crc >> 8)
+    return crc ^ 0xFFFFFFFF
 
 
 def adler32(data, value=1):
-    raise NotImplementedError
+    MOD = 65521
+    a, b = value & 0xFFFF, value >> 16
+    view = memoryview(bytes(data))
+    for start in range(0, len(view), 5552):
+        for byte in view[start:start + 5552]:
+            a += byte
+            b += a
+        a %= MOD
+        b %= MOD
+    return (b << 16) | a
 
 
 def find_crc_collision_bytes(target_crc, prefix):
-    raise NotImplementedError
+    table, rev = _CRC_TABLE, _CRC_REV
+    assert len(rev) == 256
+    reg = target_crc ^ 0xFFFFFFFF
+    for _ in range(4):
+        i = rev[reg >> 24]
+        reg = (((reg ^ table[i]) << 8) | i) & 0xFFFFFFFF
+    x = reg ^ (crc32_table(prefix) ^ 0xFFFFFFFF)
+    return x.to_bytes(4, "little")          # the forward loop consumes the LOW byte first
 
 
 def _run_tests():
