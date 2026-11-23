@@ -70,12 +70,48 @@ INSERT INTO deliveries (delivery_id, courier, minutes) VALUES
     (25, 'eli',   14), (26, 'eli',   16);
 
 -- Q1: median per courier
--- TODO: write your query here
+WITH ranked AS (
+    SELECT courier, minutes,
+           ROW_NUMBER() OVER (PARTITION BY courier ORDER BY minutes) AS rn,
+           COUNT(*)     OVER (PARTITION BY courier)                  AS n
+    FROM deliveries
+)
+SELECT courier, n, AVG(minutes * 1.0) AS median_minutes
+FROM ranked
+WHERE rn IN ((n + 1) / 2, (n + 2) / 2)
+GROUP BY courier, n
+ORDER BY courier;
 
 
 -- Q2: mode(s) per courier, ties included, only when the top frequency > 1
--- TODO: write your query here
+WITH freq AS (
+    SELECT courier, minutes, COUNT(*) AS times
+    FROM deliveries
+    GROUP BY courier, minutes
+), ranked AS (
+    SELECT courier, minutes, times,
+           MAX(times) OVER (PARTITION BY courier) AS top
+    FROM freq
+)
+SELECT courier, minutes, times
+FROM ranked
+WHERE times = top AND top > 1
+ORDER BY courier, minutes;
 
 
 -- Q3: nearest-rank p90 per courier and how many deliveries were slower
--- TODO: write your query here
+WITH ranked AS (
+    SELECT courier, minutes,
+           ROW_NUMBER() OVER (PARTITION BY courier ORDER BY minutes) AS rn,
+           COUNT(*)     OVER (PARTITION BY courier)                  AS n
+    FROM deliveries
+), p90 AS (
+    SELECT courier, minutes AS p90_minutes
+    FROM ranked
+    WHERE rn = (9 * n + 9) / 10
+)
+SELECT p.courier, p.p90_minutes,
+       (SELECT COUNT(*) FROM deliveries d
+         WHERE d.courier = p.courier AND d.minutes > p.p90_minutes) AS slower_than_p90
+FROM p90 p
+ORDER BY p.courier;
