@@ -53,20 +53,77 @@ from datetime import datetime
 KEYS = ("years", "months", "weeks", "days", "hours", "minutes", "seconds")
 
 
+import calendar
+import re
+from datetime import timedelta
+
+_DUR_RE = re.compile(
+    r"(-)?P"
+    r"(?:([0-9]+)Y)?(?:([0-9]+)M)?(?:([0-9]+)W)?(?:([0-9]+)D)?"
+    r"(?:(T)(?:([0-9]+)H)?(?:([0-9]+)M)?(?:([0-9]+)S)?)?"
+)
+
+
 def parse_duration(s):
-    raise NotImplementedError
+    if not isinstance(s, str):
+        raise ValueError("duration must be a string")
+    m = _DUR_RE.fullmatch(s)
+    if m is None:
+        raise ValueError(f"invalid ISO 8601 duration: {s!r}")
+    neg, y, mo, w, d, t, h, mi, sec = m.groups()
+    date_parts = (y, mo, w, d)
+    time_parts = (h, mi, sec)
+    if t is not None and all(p is None for p in time_parts):
+        raise ValueError(f"'T' must be followed by a time component: {s!r}")
+    if all(p is None for p in date_parts + time_parts):
+        raise ValueError(f"duration has no components: {s!r}")
+    sign = -1 if neg else 1
+    values = [sign * int(p) if p is not None else 0 for p in date_parts + time_parts]
+    return dict(zip(KEYS, values))
 
 
 def format_duration(d):
-    raise NotImplementedError
+    vals = [int(d.get(k, 0)) for k in KEYS]
+    nonzero = [v for v in vals if v != 0]
+    if not nonzero:
+        return "PT0S"
+    if all(v < 0 for v in nonzero):
+        sign = "-"
+    elif all(v > 0 for v in nonzero):
+        sign = ""
+    else:
+        raise ValueError("mixed-sign durations cannot be represented")
+    vals = [abs(v) for v in vals]
+    out = [sign, "P"]
+    for v, unit in zip(vals[:4], "YMWD"):
+        if v:
+            out.append(f"{v}{unit}")
+    if any(vals[4:]):
+        out.append("T")
+        for v, unit in zip(vals[4:], "HMS"):
+            if v:
+                out.append(f"{v}{unit}")
+    return "".join(out)
 
 
 def add_duration(dt, d):
-    raise NotImplementedError
+    months = d.get("years", 0) * 12 + d.get("months", 0)
+    total = dt.year * 12 + (dt.month - 1) + months
+    year, month0 = divmod(total, 12)
+    month = month0 + 1
+    day = min(dt.day, calendar.monthrange(year, month)[1])
+    out = dt.replace(year=year, month=month, day=day)
+    out = out + timedelta(days=d.get("weeks", 0) * 7 + d.get("days", 0))
+    out = out + timedelta(hours=d.get("hours", 0), minutes=d.get("minutes", 0),
+                          seconds=d.get("seconds", 0))
+    return out
 
 
 def fixed_seconds(d):
-    raise NotImplementedError
+    if d.get("years", 0) or d.get("months", 0):
+        raise ValueError("durations with years or months have no fixed length")
+    return (d.get("weeks", 0) * 7 * 86400 + d.get("days", 0) * 86400
+            + d.get("hours", 0) * 3600 + d.get("minutes", 0) * 60 + d.get("seconds", 0))
 
 
 def _run_tests():
