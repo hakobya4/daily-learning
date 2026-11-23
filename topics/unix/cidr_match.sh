@@ -74,6 +74,73 @@
 #                                         -> stderr "line 1: bad cidr" (no label), exit 2
 #   ./cidr_match.sh                       -> usage on stderr, exit 2
 
-# TODO: replace this line with your implementation
-echo "not implemented" >&2
-exit 1
+set -u
+
+usage() { echo "usage: $0 CIDR_FILE < ips.txt" >&2; exit 2; }
+
+[ "$#" -eq 1 ] || usage
+[ -f "$1" ] && [ -r "$1" ] || usage
+
+exec awk -v file="$1" '
+# dotted-quad -> number, or -1 if invalid
+function ip2num(s,    p, n, i, v) {
+    n = split(s, p, ".")
+    if (n != 4) return -1
+    v = 0
+    for (i = 1; i <= 4; i++) {
+        if (p[i] !~ /^(0|[1-9][0-9]?[0-9]?)$/) return -1
+        if (p[i] + 0 > 255) return -1
+        v = v * 256 + p[i]
+    }
+    # reject anything split() would hide (e.g. trailing dot is n==5 anyway)
+    return v
+}
+function trim(s) { sub(/^[ \t\r]+/, "", s); sub(/[ \t\r]+$/, "", s); return s }
+BEGIN {
+    nr = 0; lineno = 0
+    while ((getline line < file) > 0) {
+        lineno++
+        sub(/#.*/, "", line)
+        line = trim(line)
+        if (line == "") continue
+        # first field = cidr, rest = label
+        if (match(line, /[ \t]+/)) {
+            cidr = substr(line, 1, RSTART - 1)
+            label = trim(substr(line, RSTART + RLENGTH))
+        } else {
+            cidr = line; label = ""
+        }
+        if (label == "" || cidr !~ /^[0-9.]+\/(0|[1-9][0-9]?)$/) {
+            print "line " lineno ": bad cidr" > "/dev/stderr"; exit 2
+        }
+        slash = index(cidr, "/")
+        addr = substr(cidr, 1, slash - 1)
+        len = substr(cidr, slash + 1) + 0
+        net = ip2num(addr)
+        if (net < 0 || len > 32) {
+            print "line " lineno ": bad cidr" > "/dev/stderr"; exit 2
+        }
+        d = 2 ^ (32 - len)
+        if (net % d != 0) {
+            print "line " lineno ": host bits set" > "/dev/stderr"; exit 2
+        }
+        nr++
+        R_net[nr] = net; R_div[nr] = d; R_len[nr] = len
+        R_out[nr] = label " (" cidr ")"
+    }
+    close(file)
+}
+{
+    ip = trim($0)
+    if (ip == "") next
+    v = ip2num(ip)
+    if (v < 0) { print ip "\tinvalid"; next }
+    best = 0; bestlen = -1
+    for (i = 1; i <= nr; i++) {
+        if (R_len[i] > bestlen && int(v / R_div[i]) == int(R_net[i] / R_div[i])) {
+            best = i; bestlen = R_len[i]
+        }
+    }
+    print ip "\t" (best ? R_out[best] : "-")
+}
+'
