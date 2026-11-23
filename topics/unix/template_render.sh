@@ -69,6 +69,75 @@
 #        -> stderr "vars line 2: bad assignment", exit 2
 #   ./template_render.sh                                         -> usage, exit 2
 
-# TODO: replace this line with your implementation
-echo "not implemented" >&2
-exit 1
+set -u
+
+usage() { echo "usage: $0 VARS_FILE < template.txt" >&2; exit 2; }
+
+[ "$#" -eq 1 ] || usage
+[ -f "$1" ] && [ -r "$1" ] || usage
+
+# Pass the file name through ENVIRON, not -v, so backslashes in it are not interpreted.
+TPL_VARS_FILE="$1" exec awk '
+function fail(code, msg) {
+    if (!err) { print msg > "/dev/stderr"; err = code }
+    exit
+}
+BEGIN {
+    err = 0; nout = 0
+    file = ENVIRON["TPL_VARS_FILE"]
+    vn = 0
+    while ((getline line < file) > 0) {
+        vn++
+        tmp = line
+        sub(/^[ \t\r]+/, "", tmp)
+        if (tmp == "" || substr(tmp, 1, 1) == "#") continue
+        eq = index(line, "=")
+        key = (eq > 0) ? substr(line, 1, eq - 1) : ""
+        if (eq == 0 || key !~ /^[A-Za-z_][A-Za-z0-9_]*$/) {
+            close(file)
+            fail(2, "vars line " vn ": bad assignment")
+        }
+        val[key] = substr(line, eq + 1)
+        def[key] = 1
+    }
+    close(file)
+}
+{
+    s = $0; out = ""
+    while ((p = index(s, "$")) > 0) {
+        out = out substr(s, 1, p - 1)
+        nxt = substr(s, p + 1, 1)
+        if (nxt == "$") {                       # $$ -> $
+            out = out "$"; s = substr(s, p + 2); continue
+        }
+        if (nxt != "{") {                       # any other $ is literal
+            out = out "$"; s = substr(s, p + 1); continue
+        }
+        rest = substr(s, p + 2)
+        close_at = index(rest, "}")
+        if (close_at == 0) fail(3, "line " NR ": unterminated ${")
+        inner = substr(rest, 1, close_at - 1)
+        s = substr(rest, close_at + 1)
+        dpos = index(inner, ":-")
+        if (dpos > 0) {
+            name = substr(inner, 1, dpos - 1)
+            dflt = substr(inner, dpos + 2)
+        } else {
+            name = inner
+        }
+        if (name !~ /^[A-Za-z_][A-Za-z0-9_]*$/)
+            fail(3, "line " NR ": bad variable name \"" name "\"")
+        if (dpos > 0) {
+            out = out ((name in def && val[name] != "") ? val[name] : dflt)
+        } else {
+            if (!(name in def)) fail(3, "line " NR ": undefined variable " name)
+            out = out val[name]
+        }
+    }
+    rendered[++nout] = out s
+}
+END {
+    if (err) exit err
+    for (i = 1; i <= nout; i++) print rendered[i]
+}
+'
