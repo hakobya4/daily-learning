@@ -53,15 +53,182 @@ class BencodeError(ValueError):
 
 
 def bencode(value):
-    raise NotImplementedError
+    out = []
+
+    def key_bytes(k):
+        if isinstance(k, bytes):
+            return k
+        if isinstance(k, str):
+            return k.encode("utf-8")
+        raise TypeError(f"dict key must be bytes or str, not {type(k).__name__}")
+
+    # explicit work stack: items are either values to encode or raw bytes to emit
+    stack = [value]
+    while stack:
+        v = stack.pop()
+        if isinstance(v, _Raw):
+            out.append(v.b)
+        elif isinstance(v, bool):
+            raise TypeError("bool is not bencodable")
+        elif isinstance(v, int):
+            out.append(b"i%de" % v)
+        elif isinstance(v, (bytes, bytearray)):
+            out.append(b"%d:" % len(v) + bytes(v))
+        elif isinstance(v, str):
+            b = v.encode("utf-8")
+            out.append(b"%d:" % len(b) + b)
+        elif isinstance(v, (list, tuple)):
+            out.append(b"l")
+            stack.append(_Raw(b"e"))
+            stack.extend(reversed(v))
+        elif isinstance(v, dict):
+            items = []
+            seen = set()
+            for k, val in v.items():
+                kb = key_bytes(k)
+                if kb in seen:
+                    raise ValueError(f"duplicate dictionary key {kb!r}")
+                seen.add(kb)
+                items.append((kb, val))
+            items.sort(key=lambda kv: kv[0])
+            out.append(b"d")
+            stack.append(_Raw(b"e"))
+            for kb, val in reversed(items):
+                stack.append(val)
+                stack.append(_Raw(b"%d:" % len(kb) + kb))
+        else:
+            raise TypeError(f"cannot bencode {type(v).__name__}")
+    return b"".join(out)
+
+
+class _Raw:
+    __slots__ = ("b",)
+
+    def __init__(self, b):
+        self.b = b
+
+
+def _parse_int(data, pos):
+    """data[pos] == 'i'. Returns (value, new_pos)."""
+    end = data.find(b"e", pos + 1)
+    if end == -1:
+        raise BencodeError("unterminated integer")
+    body = data[pos + 1:end]
+    neg = body.startswith(b"-")
+    digits = body[1:] if neg else body
+    if not digits or not digits.isdigit() or not all(48 <= c <= 57 for c in digits):
+        raise BencodeError(f"bad integer {body!r}")
+    if len(digits) > 1 and digits[0:1] == b"0":
+        raise BencodeError("leading zero in integer")
+    if neg and digits == b"0":
+        raise BencodeError("negative zero")
+    return int(body), end + 1
+
+
+def _parse_str(data, pos):
+    colon = data.find(b":", pos)
+    if colon == -1:
+        raise BencodeError("missing ':' in string")
+    ln = data[pos:colon]
+    if not ln or not all(48 <= c <= 57 for c in ln):
+        raise BencodeError(f"bad string length {ln!r}")
+    if len(ln) > 1 and ln[0:1] == b"0":
+        raise BencodeError("leading zero in string length")
+    n = int(ln)
+    start = colon + 1
+    if start + n > len(data):
+        raise BencodeError("string runs past end of input")
+    return data[start:start + n], start + n
+
+
+def _decode(data, pos=0, spans=None):
+    """Decode one value starting at pos. Returns (value, end).
+    If spans is a dict, records top-level dict key -> (start, end) of its value."""
+    n = len(data)
+    if pos >= n:
+        raise BencodeError("unexpected end of input")
+    # stack entries: [container, pending_key_or_None, last_key, value_start]
+    stack = []
+    result = None
+    done = False
+    while True:
+        if pos >= n:
+            raise BencodeError("unexpected end of input")
+        c = data[pos]
+        if c == 0x65:  # 'e'
+            if not stack:
+                raise BencodeError("unexpected 'e'")
+            frame = stack.pop()
+            if isinstance(frame[0], dict) and frame[1] is not None:
+                raise BencodeError("dictionary key without value")
+            pos += 1
+            value = frame[0]
+        elif c == 0x6C:  # 'l'
+            stack.append([[], None, None, pos])
+            pos += 1
+            continue
+        elif c == 0x64:  # 'd'
+            stack.append([{}, None, None, pos])
+            pos += 1
+            continue
+        elif c == 0x69:  # 'i'
+            vstart = pos
+            value, pos = _parse_int(data, pos)
+        elif 48 <= c <= 57:
+            vstart = pos
+            value, pos = _parse_str(data, pos)
+        else:
+            raise BencodeError(f"unexpected byte {bytes([c])!r} at {pos}")
+
+        # attach value to parent
+        if not stack:
+            return value, pos
+        parent = stack[-1]
+        cont = parent[0]
+        if isinstance(cont, list):
+            cont.append(value)
+        else:
+            if parent[1] is None:
+                if not isinstance(value, bytes):
+                    raise BencodeError("dictionary key must be a byte string")
+                if parent[2] is not None and not (value > parent[2]):
+                    raise BencodeError("dictionary keys not in strictly increasing order")
+                parent[1] = value
+                parent[3] = pos  # value starts right after the key
+            else:
+                key = parent[1]
+                cont[key] = value
+                if spans is not None and len(stack) == 1:
+                    spans[key] = (parent[3], pos)
+                parent[2] = key
+                parent[1] = None
 
 
 def bdecode(data):
-    raise NotImplementedError
+    data = bytes(data)
+    if not data:
+        raise BencodeError("empty input")
+    value, end = _decode(data, 0)
+    if end != len(data):
+        raise BencodeError("trailing bytes after value")
+    return value
 
 
 def info_hash_hex(torrent):
-    raise NotImplementedError
+    import hashlib
+    data = bytes(torrent)
+    if not data:
+        raise BencodeError("empty input")
+    spans = {}
+    value, end = _decode(data, 0, spans)
+    if end != len(data):
+        raise BencodeError("trailing bytes after value")
+    if not isinstance(value, dict):
+        raise BencodeError("torrent is not a dictionary")
+    if b"info" not in spans:
+        raise BencodeError("no info key")
+    s, e = spans[b"info"]
+    return hashlib.sha1(data[s:e]).hexdigest()
 
 
 def _run_tests():
