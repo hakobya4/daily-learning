@@ -55,44 +55,135 @@ Run: python3 gap_buffer_editor.py
 
 class GapBuffer:
     def __init__(self, text="", capacity=16):
-        raise NotImplementedError
+        cap = max(capacity, len(text) + 16, 1)
+        self.buf = [None] * cap
+        n = len(text)
+        self.buf[:n] = list(text)
+        self.gap_start = n
+        self.gap_end = cap
+        self.moves = 0
+        self._undo = []   # (kind, pos, s) with kind in {"ins", "bs", "del"}
+        self._redo = []
 
+    # ---- basic queries ----
     @property
     def cursor(self):
-        raise NotImplementedError
+        return self.gap_start
 
     def __len__(self):
-        raise NotImplementedError
+        return len(self.buf) - (self.gap_end - self.gap_start)
 
     def text(self):
-        raise NotImplementedError
+        return "".join(self.buf[:self.gap_start]) + "".join(self.buf[self.gap_end:])
 
     def gap_size(self):
-        raise NotImplementedError
+        return self.gap_end - self.gap_start
 
+    # ---- cursor movement ----
     def move_to(self, pos):
-        raise NotImplementedError
+        pos = max(0, min(pos, len(self)))
+        gs, ge = self.gap_start, self.gap_end
+        if pos < gs:
+            d = gs - pos
+            self.buf[ge - d:ge] = self.buf[pos:gs]
+            self.gap_start, self.gap_end = pos, ge - d
+            self.moves += d
+        elif pos > gs:
+            d = pos - gs
+            self.buf[gs:gs + d] = self.buf[ge:ge + d]
+            self.gap_start, self.gap_end = gs + d, ge + d
+            self.moves += d
 
     def left(self, n=1):
-        raise NotImplementedError
+        self.move_to(self.cursor - max(0, n))
 
     def right(self, n=1):
-        raise NotImplementedError
+        self.move_to(self.cursor + max(0, n))
 
+    # ---- raw edits (no undo bookkeeping) ----
+    def _grow(self, need):
+        cap = len(self.buf)
+        new_cap = max(2 * cap, len(self) + need + 16)
+        tail = self.buf[self.gap_end:]
+        new = self.buf[:self.gap_start] + [None] * (new_cap - self.gap_start - len(tail)) + tail
+        self.buf = new
+        self.gap_end = new_cap - len(tail)
+
+    def _insert_here(self, s):
+        if len(s) > self.gap_size():
+            self._grow(len(s))
+        gs = self.gap_start
+        self.buf[gs:gs + len(s)] = list(s)
+        self.gap_start = gs + len(s)
+
+    def _delete_after(self, n):
+        n = max(0, min(n, len(self.buf) - self.gap_end))
+        ge = self.gap_end
+        out = "".join(self.buf[ge:ge + n])
+        self.buf[ge:ge + n] = [None] * n
+        self.gap_end = ge + n
+        return out
+
+    def _delete_before(self, n):
+        n = max(0, min(n, self.gap_start))
+        gs = self.gap_start
+        out = "".join(self.buf[gs - n:gs])
+        self.buf[gs - n:gs] = [None] * n
+        self.gap_start = gs - n
+        return out
+
+    def _record(self, step):
+        self._undo.append(step)
+        self._redo.clear()
+
+    # ---- public edits ----
     def insert(self, s):
-        raise NotImplementedError
+        if not s:
+            return
+        pos = self.cursor
+        self._insert_here(s)
+        self._record(("ins", pos, s))
 
     def backspace(self, n=1):
-        raise NotImplementedError
+        out = self._delete_before(n)
+        if out:
+            self._record(("bs", self.cursor, out))
+        return out
 
     def delete(self, n=1):
-        raise NotImplementedError
+        out = self._delete_after(n)
+        if out:
+            self._record(("del", self.cursor, out))
+        return out
 
     def undo(self):
-        raise NotImplementedError
+        if not self._undo:
+            return False
+        kind, pos, s = step = self._undo.pop()
+        if kind == "ins":
+            self.move_to(pos)
+            self._delete_after(len(s))          # cursor before = pos
+        elif kind == "bs":
+            self.move_to(pos)
+            self._insert_here(s)                # cursor before = pos + len(s)
+        else:  # "del"
+            self.move_to(pos)
+            self._insert_here(s)
+            self.move_to(pos)                   # cursor before = pos
+        self._redo.append(step)
+        return True
 
     def redo(self):
-        raise NotImplementedError
+        if not self._redo:
+            return False
+        kind, pos, s = step = self._redo.pop()
+        self.move_to(pos)
+        if kind == "ins":
+            self._insert_here(s)                # cursor after = pos + len(s)
+        else:
+            self._delete_after(len(s))          # cursor after = pos
+        self._undo.append(step)
+        return True
 
 
 def _run_tests():
