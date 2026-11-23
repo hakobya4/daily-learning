@@ -54,26 +54,76 @@ def ring_hash(s):
 
 class HashRing:
     def __init__(self, vnodes=100):
-        raise NotImplementedError
+        if vnodes < 1:
+            raise ValueError("vnodes must be >= 1")
+        self.vnodes = vnodes
+        self._order = {}        # name -> insertion sequence number (tie-breaker)
+        self._seq = 0
+        self._points = []       # sorted list of (position, seq, name)
+        self._positions = []    # parallel sorted list of positions for bisect
+
+    def _rebuild_positions(self):
+        self._positions = [p for p, _, _ in self._points]
 
     def add_node(self, name):
-        raise NotImplementedError
+        if name in self._order:
+            raise ValueError(f"node {name!r} already present")
+        seq = self._seq
+        self._seq += 1
+        self._order[name] = seq
+        self._points.extend((ring_hash(f"{name}#{i}"), seq, name) for i in range(self.vnodes))
+        self._points.sort()
+        self._rebuild_positions()
 
     def remove_node(self, name):
-        raise NotImplementedError
+        if name not in self._order:
+            raise KeyError(name)
+        del self._order[name]
+        self._points = [pt for pt in self._points if pt[2] != name]
+        self._rebuild_positions()
 
     def nodes(self):
-        raise NotImplementedError
+        return sorted(self._order)
+
+    def _start_index(self, key):
+        if not self._points:
+            raise LookupError("hash ring is empty")
+        i = bisect.bisect_left(self._positions, ring_hash(key))
+        return 0 if i == len(self._positions) else i
 
     def get_node(self, key):
-        raise NotImplementedError
+        return self._points[self._start_index(key)][2]
 
     def get_nodes(self, key, n):
-        raise NotImplementedError
+        if n <= 0:
+            return []
+        start = self._start_index(key)
+        want = min(n, len(self._order))
+        out, seen = [], set()
+        total = len(self._points)
+        for off in range(total):
+            name = self._points[(start + off) % total][2]
+            if name not in seen:
+                seen.add(name)
+                out.append(name)
+                if len(out) == want:
+                    break
+        return out
 
 
 def jump_hash(key, num_buckets):
-    raise NotImplementedError
+    if num_buckets < 1:
+        raise ValueError("num_buckets must be >= 1")
+    if not isinstance(key, int) or key < 0:
+        raise ValueError("key must be a non-negative int")
+    mask = (1 << 64) - 1
+    key &= mask
+    b, j = -1, 0
+    while j < num_buckets:
+        b = j
+        key = (key * 2862933555777941757 + 1) & mask
+        j = int((b + 1) * (float(1 << 31) / ((key >> 33) + 1)))
+    return b
 
 
 def _brute_owner(node_names, vnodes, key):
